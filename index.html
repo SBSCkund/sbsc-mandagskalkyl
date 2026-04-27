@@ -11,10 +11,9 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: #f3ede4; font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif; }
 input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { opacity: 1; }
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #c4b09a; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #9a8878; }
 
 input:focus, select:focus, textarea:focus { outline: none; border-color: #FFA300 !important; box-shadow: 0 0 0 3px rgba(255,163,0,0.15) !important; }
 input:hover:not(:focus), select:hover:not(:focus) { border-color: #c4b09a; }
@@ -3004,6 +3003,8 @@ function App() {
     ex27001cb: "",
     extraNotes: "",
     offerCondition: "",
+    createdBy: "",
+    approvedBy: "",
     rabatt: "0",
     // procentrabatt, 0 = ingen rabatt
     stage1Pct: "25",
@@ -4796,7 +4797,43 @@ function App() {
           marginLeft: 6
         }
       }, "\u26A0 Dagsrate: ", parseInt(snap.dayRate).toLocaleString("sv-SE"), " kr/dag (avviker fr\xE5n standardrate 24 520 kr/dag).")));
-    })(), /*#__PURE__*/React.createElement(Sec, null, "Vad ing\xE5r"), [[`Initial certifiering (${fmt(prices.totalInit)} auditdagar)`, "Steg 1: dokumentationsgranskning och beredskapsanalys. Steg 2: fullständig revision på plats. Inkluderar certifikatutfärdande och SBSC-registrering."], [`Periodisk revision år 1 & 2 (${fmt(prices.surv)} dagar/tillfälle)`, "Periodisk revision genomförs med ca 1/3 av initial audittid för att säkerställa fortsatt efterlevnad och aktiv certifikatstatus."], [`Omcertifiering år 3 (${fmt(prices.recert)} auditdagar)`, "Förnyad fullständig revision med minst 2/3 av initial audittid. Nytt certifikat utfärdas för ytterligare tre år."], ["Resor och övernattningar ingår", "Inga tillkommande resekostnader faktureras. Resor och övernattningar är inkluderade i priset."], ["SWEDAC-ackrediterad certifiering", "SBSC är ackrediterat av SWEDAC. Certifikaten är internationellt erkända via IAF MLA."]].map(([h, t], i) => /*#__PURE__*/React.createElement("div", {
+    })(), snap.offerCondition && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginBottom: 20,
+        background: "#fff8f8",
+        border: "2px solid #BF0D3E",
+        borderLeft: "5px solid #BF0D3E",
+        borderRadius: C.rSm,
+        padding: "14px 18px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 16
+      }
+    }, "\u26A0"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: MONO,
+        fontWeight: 700,
+        color: "#BF0D3E",
+        fontSize: 10,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase"
+      }
+    }, "Pris g\xE4ller under f\xF6ruts\xE4ttning att")), /*#__PURE__*/React.createElement("p", {
+      style: {
+        fontFamily: MONO,
+        fontSize: 11,
+        color: C.ink2,
+        lineHeight: 1.9
+      }
+    }, snap.offerCondition)), /*#__PURE__*/React.createElement(Sec, null, "Vad ing\xE5r"), [[`Initial certifiering (${fmt(prices.totalInit)} auditdagar)`, "Steg 1: dokumentationsgranskning och beredskapsanalys. Steg 2: fullständig revision på plats. Inkluderar certifikatutfärdande och SBSC-registrering."], [`Periodisk revision år 1 & 2 (${fmt(prices.surv)} dagar/tillfälle)`, "Periodisk revision genomförs med ca 1/3 av initial audittid för att säkerställa fortsatt efterlevnad och aktiv certifikatstatus."], [`Omcertifiering år 3 (${fmt(prices.recert)} auditdagar)`, "Förnyad fullständig revision med minst 2/3 av initial audittid. Nytt certifikat utfärdas för ytterligare tre år."], ["Resor och övernattningar ingår", "Inga tillkommande resekostnader faktureras. Resor och övernattningar är inkluderade i priset."], ["SWEDAC-ackrediterad certifiering", "SBSC är ackrediterat av SWEDAC. Certifikaten är internationellt erkända via IAF MLA."]].map(([h, t], i) => /*#__PURE__*/React.createElement("div", {
       key: i,
       style: {
         display: "flex",
@@ -4901,27 +4938,7 @@ function App() {
       style: {
         color: C.accent
       }
-    }, "sbsc.se/certifieringsbestammelser"), ")")), /*#__PURE__*/React.createElement("p", null, "Priser \xE4r i svenska kronor exklusive moms. Samtliga resekostnader \xE4r inkluderade. Prisuppgifter baseras p\xE5 aktuell mandagsber\xE4kning och kan justeras vid f\xF6r\xE4ndring i verksamhetens omfattning eller antal anst\xE4llda."), snap.offerCondition && /*#__PURE__*/React.createElement("div", {
-      style: {
-        marginTop: 10,
-        paddingTop: 10,
-        borderTop: "1px solid " + C.border
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontWeight: 700,
-        color: "#BF0D3E",
-        fontSize: 9,
-        marginBottom: 4,
-        letterSpacing: "0.06em",
-        textTransform: "uppercase"
-      }
-    }, "Pris g\xE4ller under f\xF6ruts\xE4ttning att"), /*#__PURE__*/React.createElement("p", {
-      style: {
-        color: C.ink2,
-        lineHeight: 1.9
-      }
-    }, snap.offerCondition))), /*#__PURE__*/React.createElement("div", {
+    }, "sbsc.se/certifieringsbestammelser"), ")")), /*#__PURE__*/React.createElement("p", null, "Priser \xE4r i svenska kronor exklusive moms. Samtliga resekostnader \xE4r inkluderade. Prisuppgifter baseras p\xE5 aktuell mandagsber\xE4kning och kan justeras vid f\xF6r\xE4ndring i verksamhetens omfattning eller antal anst\xE4llda.")), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 12,
         background: C.surface,
@@ -4965,7 +4982,56 @@ function App() {
       style: {
         color: C.ink
       }
-    }, bold), " \u2014 ", text)))), /*#__PURE__*/React.createElement("div", {
+    }, bold), " \u2014 ", text)))), (snap.createdBy || snap.approvedBy) && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginBottom: 20,
+        background: C.s2,
+        border: `1px solid ${C.border}`,
+        borderRadius: C.rSm,
+        padding: "10px 14px",
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 16,
+        fontFamily: MONO,
+        fontSize: 10
+      }
+    }, snap.createdBy && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: C.muted,
+        fontSize: 9,
+        textTransform: "uppercase",
+        letterSpacing: "0.08em",
+        marginBottom: 2
+      }
+    }, "Uppr\xE4ttad av"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: C.ink,
+        fontWeight: 600
+      }
+    }, snap.createdBy), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: C.muted,
+        fontSize: 9
+      }
+    }, ds)), snap.approvedBy && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: C.muted,
+        fontSize: 9,
+        textTransform: "uppercase",
+        letterSpacing: "0.08em",
+        marginBottom: 2
+      }
+    }, "Granskad och godk\xE4nd av"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: C.green,
+        fontWeight: 700
+      }
+    }, "\u2713 ", snap.approvedBy), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: C.muted,
+        fontSize: 9
+      }
+    }, ds))), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 32,
         paddingTop: 16,
@@ -5017,7 +5083,54 @@ function App() {
         fontWeight: 500,
         color: C.ink
       }
-    }, "M\xE5rten Wall\xE9n"), /*#__PURE__*/React.createElement("div", null, "Verkst\xE4llande direkt\xF6r"), /*#__PURE__*/React.createElement("div", null, "Ort och datum:")))), /*#__PURE__*/React.createElement(DocFoot, {
+    }, snap.createdBy || "Mårten Wallén"), /*#__PURE__*/React.createElement("div", null, "Verkst\xE4llande direkt\xF6r"), /*#__PURE__*/React.createElement("div", null, "Ort och datum:")))), (snap.createdBy || snap.approvedBy) && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 20,
+        paddingTop: 12,
+        borderTop: `1px solid ${C.border}`,
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 20,
+        fontFamily: MONO,
+        fontSize: 10
+      }
+    }, snap.createdBy && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: C.muted,
+        fontSize: 9,
+        textTransform: "uppercase",
+        letterSpacing: "0.1em",
+        marginBottom: 2
+      }
+    }, "Uppr\xE4ttad av"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: C.ink,
+        fontWeight: 600
+      }
+    }, snap.createdBy), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: C.muted,
+        fontSize: 9
+      }
+    }, ds)), snap.approvedBy && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: C.muted,
+        fontSize: 9,
+        textTransform: "uppercase",
+        letterSpacing: "0.1em",
+        marginBottom: 2
+      }
+    }, "Granskad och godk\xE4nd av"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: C.green,
+        fontWeight: 700
+      }
+    }, "\u2713 ", snap.approvedBy), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: C.muted,
+        fontSize: 9
+      }
+    }, ds))), /*#__PURE__*/React.createElement(DocFoot, {
       ds: ds
     }));
   };
@@ -6273,6 +6386,25 @@ ${exportedHTML}
     onChange: v => set("cContact", v),
     placeholder: "Namn, roll"
   })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 8,
+      marginBottom: 9
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, {
+    tip: "Handl\xE4ggaren som uppr\xE4ttat kalkylen och offerten."
+  }, "Uppr\xE4ttad av"), /*#__PURE__*/React.createElement(Inp, {
+    value: f.createdBy,
+    onChange: v => set("createdBy", v),
+    placeholder: "Namn, titel"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, {
+    tip: "Revisor eller annan beh\xF6rig som granskat mandagsber\xE4kningen. Visas i underlag och offert."
+  }, "Granskad och godk\xE4nd av"), /*#__PURE__*/React.createElement(Inp, {
+    value: f.approvedBy,
+    onChange: v => set("approvedBy", v),
+    placeholder: "Namn, titel (valfritt)"
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
@@ -8717,62 +8849,78 @@ ${exportedHTML}
       fontSize: 10,
       color: C.green
     }
-  }, "\u2212", sek(Math.round(getPrices(result, f.rabatt, {}).rabattBeloppTotal)), " p\xE5 totalt pris"))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 9
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, {
-    tip: "SBSC:s dagsrate. \xC4ndras h\xE4r vid prisjustering \u2014 g\xE4ller f\xF6r denna ber\xE4kning."
-  }, "Dagsrate (kr/dag exkl. moms)"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "number",
-    min: "1000",
-    value: dayRate,
-    onChange: e => setDayRate(e.target.value === '' ? '' : parseInt(e.target.value) || DAY_RATE_DEFAULT),
-    onBlur: e => {
-      const v = parseInt(e.target.value);
-      if (!v || v < 1000) setDayRate(DAY_RATE_DEFAULT);
-    },
-    placeholder: String(DAY_RATE_DEFAULT),
-    style: {
-      flex: 1,
-      background: C.bg,
-      border: `1.5px solid ${C.border}`,
-      color: C.ink,
-      fontFamily: MONO,
-      fontSize: 12,
-      padding: "7px 9px",
-      outline: "none",
-      borderRadius: 6,
-      transition: "border-color .15s, box-shadow .15s"
-    }
-  }), dayRate !== DAY_RATE_DEFAULT && /*#__PURE__*/React.createElement("button", {
-    onClick: () => setDayRate(DAY_RATE_DEFAULT),
-    style: {
-      padding: "6px 10px",
-      background: "#fff3cd",
-      border: "1px solid #e8d88a",
-      fontFamily: MONO,
-      fontSize: 9,
-      cursor: "pointer",
-      borderRadius: 4,
-      color: "#7a5c1e",
-      flexShrink: 0
-    }
-  }, "\u21BA \xC5terst\xE4ll")), dayRate !== DAY_RATE_DEFAULT && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: MONO,
-      fontSize: 9,
-      color: "#BF0D3E",
-      marginTop: 3,
-      fontWeight: 600
-    }
-  }, "\u26A0 Avviker fr\xE5n standardrate ", sek(DAY_RATE_DEFAULT), "/dag \u2014 syns i offerten"))), /*#__PURE__*/React.createElement("div", {
+  }, "\u2212", sek(Math.round(getPrices(result, f.rabatt, {}).rabattBeloppTotal)), " p\xE5 totalt pris"))), (() => {
+    const [showRate, setShowRate] = React.useState(false);
+    React.useEffect(() => {
+      const h = e => {
+        if (e.ctrlKey && e.shiftKey && e.key === "P") {
+          e.preventDefault();
+          setShowRate(v => !v);
+        }
+      };
+      window.addEventListener("keydown", h);
+      return () => window.removeEventListener("keydown", h);
+    }, []);
+    if (!showRate) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginBottom: 9,
+        background: "#fffbeb",
+        border: "1px solid #e8d88a",
+        borderRadius: C.rSm,
+        padding: "8px 10px"
+      }
+    }, /*#__PURE__*/React.createElement(Lbl, {
+      tip: "Dold \u2014 Ctrl+Shift+P f\xF6r att st\xE4nga. Uppdateras vid prisjustering."
+    }, "Dagsrate (kr/dag exkl. moms)"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      min: "1000",
+      value: dayRate,
+      onChange: e => setDayRate(e.target.value === '' ? '' : parseInt(e.target.value) || DAY_RATE_DEFAULT),
+      onBlur: e => {
+        const v = parseInt(e.target.value);
+        if (!v || v < 1000) setDayRate(DAY_RATE_DEFAULT);
+      },
+      placeholder: String(DAY_RATE_DEFAULT),
+      style: {
+        flex: 1,
+        background: "white",
+        border: `1.5px solid #e8d88a`,
+        color: C.ink,
+        fontFamily: MONO,
+        fontSize: 12,
+        padding: "7px 9px",
+        outline: "none",
+        borderRadius: C.rSm
+      }
+    }), dayRate !== DAY_RATE_DEFAULT && /*#__PURE__*/React.createElement("button", {
+      onClick: () => setDayRate(DAY_RATE_DEFAULT),
+      style: {
+        padding: "5px 9px",
+        background: "white",
+        border: "1px solid #e8d88a",
+        fontFamily: MONO,
+        fontSize: 9,
+        cursor: "pointer",
+        borderRadius: 4,
+        color: "#7a5c1e"
+      }
+    }, "\u21BA \xC5terst\xE4ll")), dayRate !== DAY_RATE_DEFAULT && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: MONO,
+        fontSize: 9,
+        color: "#BF0D3E",
+        marginTop: 3,
+        fontWeight: 600
+      }
+    }, "\u26A0 Avviker fr\xE5n standard ", sek(DAY_RATE_DEFAULT), "/dag"));
+  })()), /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.bg,
       borderTop: "2px solid " + C.accent,
