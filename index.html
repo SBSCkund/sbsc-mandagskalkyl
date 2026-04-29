@@ -29,23 +29,24 @@ const DAY_RATE_DEFAULT = 24520;
 const SERIF = "'Open Sans', sans-serif";
 const MONO = "'Open Sans', sans-serif";
 const C = {
-  bg: "#fafaf8",
+  bg: "#f3ede4",
   surface: "#ffffff",
   s2: "#f7f3ec",
-  border: "#ede5d8",
-  border2: "#c4b09a",
-  ink: "#1a1208",
-  ink2: "#3d2e1e",
-  muted: "#9a8878",
+  border: "#ddd0c0",
+  border2: "#b8a08a",
+  ink: "#101820",
+  ink2: "#101820",
+  muted: "#6e5c4e",
+  label: "#101820",
   accent: "#FFA300",
-  accent2: "#C47A00",
-  shadow: "0 2px 8px rgba(26,18,8,0.07)",
-  shadowMd: "0 4px 16px rgba(26,18,8,0.10)",
-  shadowLg: "0 8px 32px rgba(26,18,8,0.13)",
+  accent2: "#E08C00",
+  shadow: "0 2px 8px rgba(16,24,32,0.07)",
+  shadowMd: "0 4px 20px rgba(16,24,32,0.11)",
+  shadowLg: "0 8px 32px rgba(16,24,32,0.14)",
   r: "10px",
   rSm: "6px",
   rLg: "14px",
-  gold: "#C47A00",
+  gold: "#7A4800",
   goldLt: "#FFF3DC",
   goldBd: "#FFA300",
   green: "#2E7D4F",
@@ -890,7 +891,7 @@ const Lbl = ({
     fontSize: 9,
     letterSpacing: "0.15em",
     textTransform: "uppercase",
-    color: C.muted,
+    color: C.ink,
     marginBottom: tip ? 2 : 3,
     fontFamily: MONO
   }
@@ -1012,7 +1013,7 @@ const SelHelp = ({
       border: "none",
       cursor: "pointer",
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: showHelp ? C.ink : "#fff",
       padding: "2px 7px",
       letterSpacing: "0.05em",
@@ -1042,7 +1043,7 @@ const SelHelp = ({
     }
   }, h.lbl), /*#__PURE__*/React.createElement("div", {
     style: {
-      color: C.ink2,
+      color: C.ink,
       marginBottom: 2
     }
   }, h.ex), /*#__PURE__*/React.createElement("div", {
@@ -1068,7 +1069,7 @@ const Chk = ({
     gap: 7,
     cursor: "pointer",
     fontSize: 11,
-    color: C.ink2,
+    color: C.ink,
     fontFamily: MONO
   }
 }, /*#__PURE__*/React.createElement("input", {
@@ -1085,8 +1086,8 @@ const Chk = ({
 }), label), tip && /*#__PURE__*/React.createElement("div", {
   style: {
     fontFamily: MONO,
-    fontSize: 9,
-    color: C.muted,
+    fontSize: 11,
+      color: C.ink,
     marginTop: 2,
     marginLeft: 20,
     lineHeight: 1.5
@@ -1104,7 +1105,7 @@ const InfoNote = ({
     borderLeft: `3px solid ${color}`,
     padding: "7px 10px",
     fontFamily: MONO,
-    fontSize: 9,
+    fontSize: 11,
     color: color,
     lineHeight: 1.6,
     marginBottom: 8
@@ -1167,7 +1168,7 @@ const DScore = ({
       border: "none",
       cursor: "pointer",
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: showHelp ? C.ink : "#fff",
       padding: "2px 7px",
       letterSpacing: "0.05em",
@@ -1209,13 +1210,13 @@ const DScore = ({
       color: DSCORE_EFFECT[String(i + 1)].color,
       border: "1px solid " + DSCORE_EFFECT[String(i + 1)].bd,
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       padding: "1px 6px",
       borderRadius: 3
     }
   }, DSCORE_EFFECT[String(i + 1)].label)), /*#__PURE__*/React.createElement("div", {
     style: {
-      color: C.ink2,
+      color: C.ink,
       marginBottom: 2
     }
   }, h.ex), /*#__PURE__*/React.createElement("div", {
@@ -1256,7 +1257,7 @@ const DScore = ({
       flex: 1,
       textAlign: "center",
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: parseInt(value) === v ? DSCORE_EFFECT[String(v)].color : C.muted,
       fontWeight: parseInt(value) === v ? 700 : 400,
       transition: "color .1s"
@@ -1269,7 +1270,7 @@ const DScore = ({
       borderRadius: 4,
       padding: "4px 8px",
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: effect.color,
       fontWeight: 600
     }
@@ -1305,8 +1306,9 @@ const DocTop = ({
   style: {
     textAlign: "right",
     fontFamily: MONO,
-    fontSize: 9,
-    color: C.muted,
+    fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
     lineHeight: 2
   },
   dangerouslySetInnerHTML: {
@@ -1324,10 +1326,10 @@ const DocTop = ({
 }, title), /*#__PURE__*/React.createElement("div", {
   style: {
     fontFamily: MONO,
-    fontSize: 9,
+    fontSize: 11,
     letterSpacing: "0.08em",
     textTransform: "uppercase",
-    color: C.muted,
+    color: C.ink,
     marginBottom: 20,
     borderLeft: "3px solid " + C.accent,
     paddingLeft: 10
@@ -1339,7 +1341,7 @@ const Sec = ({
 }) => /*#__PURE__*/React.createElement("div", {
   style: {
     fontFamily: MONO,
-    fontSize: 9,
+    fontSize: 11,
     letterSpacing: "0.15em",
     textTransform: "uppercase",
     color: purple ? C.purple : C.ink,
@@ -1372,7 +1374,7 @@ const Tag = ({
     background: bg,
     color,
     fontFamily: MONO,
-    fontSize: 9,
+    fontSize: 11,
     padding: "1px 8px",
     border: `1px solid ${bd}`,
     fontWeight: "normal",
@@ -1389,7 +1391,7 @@ const RegTag = ({
     background: purple ? C.purpleLt : C.s2,
     color: purple ? C.purple : C.accent,
     fontFamily: MONO,
-    fontSize: 9,
+    fontSize: 11,
     padding: "1px 8px",
     border: `1px solid ${purple ? C.purpleBd : C.border2}`,
     marginLeft: 6,
@@ -1459,10 +1461,11 @@ const KpiRow = ({
 }, /*#__PURE__*/React.createElement("div", {
   style: {
     fontFamily: MONO,
-    fontSize: 9,
+    fontSize: 11,
     letterSpacing: "0.1em",
     textTransform: "uppercase",
-    color: C.muted,
+    fontWeight: 600,
+      color: C.ink,
     marginBottom: 4
   }
 }, it.label), /*#__PURE__*/React.createElement("div", {
@@ -1476,8 +1479,9 @@ const KpiRow = ({
 }, it.value), /*#__PURE__*/React.createElement("div", {
   style: {
     fontFamily: MONO,
-    fontSize: 9,
-    color: C.muted,
+    fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
     marginTop: 2
   }
 }, it.unit))));
@@ -1500,7 +1504,7 @@ const YGrid = ({
     color: "#fff",
     padding: "7px 10px",
     fontFamily: MONO,
-    fontSize: 9,
+    fontSize: 11,
     letterSpacing: "0.08em",
     textTransform: "uppercase",
     textAlign: "center"
@@ -1515,14 +1519,14 @@ const YGrid = ({
     display: "flex",
     justifyContent: "space-between",
     fontFamily: MONO,
-    fontSize: 10,
+    fontSize: 11,
     padding: "3px 0",
     borderBottom: j < yr.rows.length - 1 ? `1px solid ${C.border}` : undefined,
     fontWeight: j === yr.rows.length - 1 ? 500 : "normal"
   }
 }, /*#__PURE__*/React.createElement("span", {
   style: {
-    color: C.muted
+    color: C.ink
   }
 }, k), /*#__PURE__*/React.createElement("span", null, v)))))));
 const InfoBand = ({
@@ -1544,7 +1548,7 @@ const InfoBand = ({
 }, rows.filter(Boolean).map(([k, v], i) => [/*#__PURE__*/React.createElement("span", {
   key: `k${i}`,
   style: {
-    color: C.muted
+    color: C.ink
   }
 }, k), /*#__PURE__*/React.createElement("span", {
   key: `v${i}`,
@@ -1567,17 +1571,17 @@ const Ref = ({
   return /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       background: C.s2,
       border: "1px solid " + C.border,
       padding: "8px 12px",
-      color: C.muted,
+      color: C.ink,
       lineHeight: 1.8,
       marginTop: 14
     }
   }, /*#__PURE__*/React.createElement("strong", {
     style: {
-      color: C.accent
+      color: "#101820"
     }
   }, "Regelverksbas:"), " ", refs.join(" · "), " \xB7 SBSC ackrediteras av SWEDAC");
 };
@@ -1589,8 +1593,9 @@ const DocFoot = ({
     paddingTop: 10,
     borderTop: "2px solid " + C.accent,
     fontFamily: MONO,
-    fontSize: 9,
-    color: C.muted
+    fontSize: 11,
+      fontWeight: 600,
+      color: C.ink
   }
 }, /*#__PURE__*/React.createElement("div", {
   style: {
@@ -1601,7 +1606,7 @@ const DocFoot = ({
 }, /*#__PURE__*/React.createElement("div", {
   style: {
     fontWeight: 600,
-    color: C.ink2
+    color: C.ink
   }
 }), /*#__PURE__*/React.createElement("div", null, ds)), /*#__PURE__*/React.createElement("div", {
   style: {
@@ -1610,7 +1615,7 @@ const DocFoot = ({
   }
 }, /*#__PURE__*/React.createElement("div", null, "Org.nr 556199\u20130143 \xB7 Rosenlundsgatan 40, 118 53 Stockholm \xB7 sbsc.se"), /*#__PURE__*/React.createElement("div", null, "Ackrediterat av SWEDAC \xB7 ", /*#__PURE__*/React.createElement("span", {
   style: {
-    color: C.muted
+    color: C.ink
   }
 }, "Kalkylator v1.1 \xB7 april 2026"))));
 
@@ -1637,7 +1642,7 @@ const FteHelper = ({
     onClick: () => setOpen(o => !o),
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       background: open ? "#e8d88a" : C.brand,
       border: "none",
       color: open ? "#333" : "#fff",
@@ -1658,7 +1663,7 @@ const FteHelper = ({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.teal,
       marginBottom: 8,
       lineHeight: 1.7
@@ -1718,7 +1723,7 @@ const FteHelper = ({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.teal,
       fontWeight: 700,
       marginBottom: 6,
@@ -1736,13 +1741,13 @@ const FteHelper = ({
       display: "flex",
       justifyContent: "space-between",
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       padding: "3px 0",
       borderBottom: `1px solid ${C.border}`
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      color: C.ink2
+      color: C.ink
     }
   }, "Heltidsanst\xE4llda"), /*#__PURE__*/React.createElement("strong", {
     style: {
@@ -1753,17 +1758,17 @@ const FteHelper = ({
       display: "flex",
       justifyContent: "space-between",
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       padding: "3px 0",
       borderBottom: `1px solid ${C.border}`
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      color: C.ink2
+      color: C.ink
     }
   }, calc.part, " deltid \xD7 (", f.ftePartHours || 4, "h \xF7 8h) ", /*#__PURE__*/React.createElement("span", {
     style: {
-      color: C.muted
+      color: C.ink
     }
   }, "\xA72.3.3")), /*#__PURE__*/React.createElement("strong", {
     style: {
@@ -1774,17 +1779,17 @@ const FteHelper = ({
       display: "flex",
       justifyContent: "space-between",
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       padding: "3px 0",
       borderBottom: `1px solid ${C.border}`
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      color: C.ink2
+      color: C.ink
     }
   }, "S\xE4songsanst\xE4llda (topps\xE4song) ", /*#__PURE__*/React.createElement("span", {
     style: {
-      color: C.muted
+      color: C.ink
     }
   }, "\xA72.3.1")), /*#__PURE__*/React.createElement("strong", {
     style: {
@@ -1795,17 +1800,17 @@ const FteHelper = ({
       display: "flex",
       justifyContent: "space-between",
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       padding: "3px 0",
       borderBottom: `1px solid ${C.border}`
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      color: C.ink2
+      color: C.ink
     }
   }, "Inhyrda inom scope ", /*#__PURE__*/React.createElement("span", {
     style: {
-      color: C.muted
+      color: C.ink
     }
   }, "\xA71.9")), /*#__PURE__*/React.createElement("strong", {
     style: {
@@ -1816,7 +1821,7 @@ const FteHelper = ({
       display: "flex",
       justifyContent: "space-between",
       fontFamily: MONO,
-      fontSize: 10,
+      fontSize: 11,
       padding: "5px 0",
       background: C.tealLt,
       margin: "2px -10px -8px",
@@ -1836,8 +1841,9 @@ const FteHelper = ({
   }, calc.total, " effektiva FTE")))), calc.total > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       lineHeight: 1.6
     }
   }, "Detta v\xE4rde anv\xE4nds f\xF6r att sl\xE5 upp basdagar i IAF MD 5:2023 Tabell QMS/EMS/OH&SMS.", hasDetail && " Deltidsomräkning och inhyrda dokumenteras i motiveringstexten.")) : /*#__PURE__*/React.createElement(Inp, {
@@ -1852,7 +1858,7 @@ const FteHelper = ({
   }), open && calc.total > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 10,
+      fontSize: 11,
       color: C.teal,
       marginTop: 3,
       fontWeight: 600
@@ -1921,7 +1927,7 @@ const RiskCommentHelp = ({
       border: "none",
       cursor: "pointer",
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: show ? "#333" : "#fff",
       padding: "2px 7px",
       letterSpacing: "0.05em",
@@ -1935,7 +1941,7 @@ const RiskCommentHelp = ({
       padding: "8px 10px",
       marginBottom: 6,
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       lineHeight: 1.7
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -1991,7 +1997,7 @@ const CombCompCalc = ({
       border: "1.5px solid " + (open ? C.accent : C.border),
       color: open ? C.ink : C.ink2,
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       padding: "3px 10px",
       cursor: "pointer",
       borderRadius: 4,
@@ -2011,7 +2017,7 @@ const CombCompCalc = ({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.ink,
       fontWeight: 700,
       marginBottom: 4
@@ -2047,8 +2053,9 @@ const CombCompCalc = ({
   }, "Z(Y\u22121)"))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       marginBottom: 8,
       lineHeight: 1.8,
       background: "#fff",
@@ -2070,12 +2077,12 @@ const CombCompCalc = ({
     }
   }, "X"), " = antal av de ", Y, " standarderna som ", /*#__PURE__*/React.createElement("em", null, "den enskilde revisorn"), " \xE4r kvalificerad att revidera", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
     style: {
-      color: C.accent,
+      color: "#7A4800",
       fontWeight: 600
     }
   }, "Om en revisor reviderar b\xE5da standarderna ensam \u2192 X = ", Y, ", Z = 1 \u2192 100%"), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
     style: {
-      color: C.muted
+      color: C.ink
     }
   }, "Exempel med 2 rev: Revisor 1 t\xE4cker b\xE5da (X=", Y, "), Revisor 2 t\xE4cker en (X=1) \u2192 ", Y === 2 ? "100×(1+0)/(2×1)=50%" : "se formel")), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2094,15 +2101,16 @@ const CombCompCalc = ({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
-      color: C.ink2,
+      fontSize: 11,
+      color: C.ink,
       minWidth: 72
     }
   }, "Revisor ", i + 1, ":"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
-      color: C.muted
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink
     }
   }, "X ="), /*#__PURE__*/React.createElement("input", {
     type: "number",
@@ -2124,7 +2132,7 @@ const CombCompCalc = ({
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: r.x === Y ? C.green : C.muted,
       fontWeight: r.x === Y ? 600 : "normal"
     }
@@ -2134,7 +2142,7 @@ const CombCompCalc = ({
       background: "transparent",
       border: "none",
       cursor: "pointer",
-      color: C.muted,
+      color: C.ink,
       fontFamily: MONO,
       fontSize: 11,
       padding: "0 2px",
@@ -2147,8 +2155,9 @@ const CombCompCalc = ({
       border: "1.5px dashed " + C.border,
       borderRadius: 4,
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       padding: "3px 10px",
       cursor: "pointer",
       marginBottom: 8,
@@ -2157,7 +2166,7 @@ const CombCompCalc = ({
   }, "+ L\xE4gg till revisor"), singleAuditorAllStds && /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: C.green,
       background: C.greenLt,
       border: "1px solid " + C.greenBd,
@@ -2176,8 +2185,9 @@ const CombCompCalc = ({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       marginBottom: 3
     }
   }, denom === 0 ? "Specialfall: en revisor täcker alla standarder" : `100 × ${sum} / (${Z} × ${Y - 1}) = `, /*#__PURE__*/React.createElement("strong", {
@@ -2186,12 +2196,12 @@ const CombCompCalc = ({
     }
   }, pct, "%"), pct !== nearest && /*#__PURE__*/React.createElement("span", {
     style: {
-      color: C.muted
+      color: C.ink
     }
   }, " \u2192 n\xE4rmaste dropdownval: ", /*#__PURE__*/React.createElement("strong", null, nearest, "%"))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 10,
+      fontSize: 11,
       fontWeight: 700,
       color: C.accent,
       marginBottom: 6
@@ -2199,8 +2209,9 @@ const CombCompCalc = ({
   }, "Combined competence: ", nearest, "%"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       lineHeight: 1.6,
       borderTop: "1px solid " + C.border,
       paddingTop: 6
@@ -2216,7 +2227,7 @@ const CombCompCalc = ({
       border: "none",
       borderRadius: 4,
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       fontWeight: 700,
       padding: "7px 0",
       cursor: "pointer",
@@ -2253,7 +2264,7 @@ const IntegrationCalc = ({
       border: "1.5px solid " + (open ? C.accent : C.border),
       color: open ? C.ink : C.ink2,
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       padding: "3px 10px",
       cursor: "pointer",
       borderRadius: 4,
@@ -2278,7 +2289,7 @@ const IntegrationCalc = ({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.ink,
       fontWeight: 700,
       marginBottom: 4
@@ -2286,8 +2297,9 @@ const IntegrationCalc = ({
   }, "Bed\xF6mning per IAF MD 11:2023 Annex 1 \u2014 integrationskriterier"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       marginBottom: 8,
       lineHeight: 1.6
     }
@@ -2297,7 +2309,7 @@ const IntegrationCalc = ({
     }
   }, " Helt"), " = fullt integrerat \xB7", /*#__PURE__*/React.createElement("strong", {
     style: {
-      color: C.gold
+      color: "#7A4800"
     }
   }, " Delvis"), " = delvis gemensamt \xB7", /*#__PURE__*/React.createElement("strong", null, " Nej"), " = separata system"), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2317,7 +2329,7 @@ const IntegrationCalc = ({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.ink,
       fontWeight: 600,
       marginBottom: 3
@@ -2325,8 +2337,8 @@ const IntegrationCalc = ({
   }, i + 1, ". ", label), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.muted,
+      fontSize: 11,
+      color: C.ink,
       marginBottom: 6,
       lineHeight: 1.5
     }
@@ -2346,7 +2358,7 @@ const IntegrationCalc = ({
       borderRadius: 4,
       cursor: "pointer",
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       fontWeight: f[key] === val ? 700 : 400,
       color: f[key] === val ? col : "#aaa",
       textAlign: "center",
@@ -2363,8 +2375,9 @@ const IntegrationCalc = ({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       marginBottom: 3
     }
   }, "Po\xE4ng: ", score, " av ", maxScore, " (", answered, " av 6 bed\xF6mda) = ", /*#__PURE__*/React.createElement("strong", {
@@ -2373,12 +2386,12 @@ const IntegrationCalc = ({
     }
   }, pct, "%"), nearest !== null && pct !== nearest && /*#__PURE__*/React.createElement("span", {
     style: {
-      color: C.muted
+      color: C.ink
     }
   }, " \u2192 n\xE4rmaste steg: ", /*#__PURE__*/React.createElement("strong", null, nearest, "%"))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 10,
+      fontSize: 11,
       fontWeight: 700,
       color: C.accent,
       marginBottom: 6
@@ -2386,8 +2399,9 @@ const IntegrationCalc = ({
   }, "F\xF6reslagen integrationsniv\xE5: ", nearest, "%"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       lineHeight: 1.6,
       borderTop: "1px solid " + C.border,
       paddingTop: 6,
@@ -2404,7 +2418,7 @@ const IntegrationCalc = ({
       border: "none",
       borderRadius: 4,
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       fontWeight: 700,
       padding: "7px 0",
       cursor: "pointer",
@@ -2414,8 +2428,9 @@ const IntegrationCalc = ({
   }, "Anv\xE4nd ", nearest, "% i kalkylen \u2192")), answered < 6 && /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       textAlign: "center",
       padding: "4px 0"
     }
@@ -2441,7 +2456,7 @@ const MigrationsGuide = ({
       border: "1.5px solid " + (open ? C.accent : C.border),
       borderRadius: 6,
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       fontWeight: 600,
       color: open ? C.ink : C.ink2,
       cursor: "pointer",
@@ -2460,7 +2475,7 @@ const MigrationsGuide = ({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.ink,
       fontWeight: 700,
       marginBottom: 4
@@ -2468,8 +2483,9 @@ const MigrationsGuide = ({
   }, "Mappning: Gammal Word-mall \u2192 Detta verktyg"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       marginBottom: 10,
       lineHeight: 1.7
     }
@@ -2494,8 +2510,8 @@ const MigrationsGuide = ({
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 8,
-        color: C.accent,
+        fontSize: 11,
+        color: "#101820",
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: "0.08em"
@@ -2503,8 +2519,8 @@ const MigrationsGuide = ({
     }, left), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 8,
-        color: C.accent,
+        fontSize: 11,
+        color: "#101820",
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: "0.08em"
@@ -2516,7 +2532,7 @@ const MigrationsGuide = ({
         background: C.goldLt,
         padding: "3px 8px",
         fontFamily: MONO,
-        fontSize: 8,
+        fontSize: 11,
         color: "#b87000",
         fontWeight: 700,
         borderTop: "1px solid " + C.goldBd
@@ -2534,13 +2550,13 @@ const MigrationsGuide = ({
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 8,
-        color: C.ink2
+        fontSize: 11,
+        color: C.ink
       }
     }, left), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 8,
+        fontSize: 11,
         color: C.accent,
         fontWeight: 600
       }
@@ -2553,7 +2569,7 @@ const MigrationsGuide = ({
       borderRadius: 4,
       padding: "6px 10px",
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: C.green,
       lineHeight: 1.7
     }
@@ -2870,6 +2886,100 @@ const TransferChecklist = () => {
     }
   }, "Kryssa i punkterna n\xE4r du bekr\xE4ftat dem med kunden."));
 };
+const MigrationsBanner = () => {
+  const [open, setOpen] = React.useState(false);
+  const rows = [
+    ["header", "I Word-mallen", "I kalkylatorn"],
+    ["", "Företagsnamn", "Kunduppgifter → Företagsnamn"],
+    ["", "Antal anställda", "FTE-kalkylhjälp → Heltid / Deltid / Säsong"],
+    ["section", "KVALITET", ""],
+    ["", "Komplexitet (Low/Medium/High)", "ISO 9001 → Riskkategori"],
+    ["", "Mognadsnivå (Low/Normal/High)", "Mognadsnivå §8(v)c"],
+    ["section", "MILJÖ", ""],
+    ["", "Komplexitet (Low/Limited/Medium)", "ISO 14001 → Miljökomplexitet"],
+    ["section", "ARBETSMILJÖ", ""],
+    ["", "Komplexitet (Low/Medium/High)", "ISO 45001 → OH&S-komplexitet"],
+    ["", "Risker (Low/Medium/High)", "ISO 45001 → OH&S-riskkategori"],
+    ["section", "IMS / KOMBINATION", ""],
+    ["", "Grad av integrering (%)", "IMS → Integrationsnivå"],
+    ["", "Revisorsteamets förmåga (%)", "IMS → Combined competence"],
+    ["", "Certifieringsplatser", "Platser → Antal fasta certifieringsplatser"],
+    ["section", "ÖVRIGT", ""],
+    ["", "Erfarenhet från tidigare revisioner", "Erfarenhet från tidigare revisioner"],
+    ["", "Scope / Verksamhetsbeskrivning", "Verksamhetsbeskrivning & Risk"],
+  ];
+  return /*#__PURE__*/React.createElement("div", {style: {marginBottom: 16}},
+    /*#__PURE__*/React.createElement("button", {
+      onClick: () => setOpen(o => !o),
+      style: {
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        background: open ? "#101820" : C.surface,
+        border: "1.5px solid " + (open ? "#101820" : C.border),
+        borderRadius: open ? "8px 8px 0 0" : 8,
+        padding: "11px 16px",
+        cursor: "pointer",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+        transition: "all .15s"
+      }
+    },
+      /*#__PURE__*/React.createElement("div", {style: {textAlign: "left"}},
+        /*#__PURE__*/React.createElement("div", {
+          style: {fontSize: 12, fontWeight: 700, color: open ? "#fff" : C.ink}
+        }, "Migrera från befintlig kalkyl"),
+        /*#__PURE__*/React.createElement("div", {
+          style: {fontSize: 11, color: open ? "rgba(255,255,255,0.7)" : C.ink, marginTop: 2}
+        }, "Mappningstabell från Word-mall till detta verktyg")
+      ),
+      /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 11, fontWeight: 700,
+          color: open ? "#fff" : C.ink,
+          background: open ? "rgba(255,163,0,0.2)" : C.goldLt,
+          border: "1px solid " + C.accent,
+          borderRadius: 4, padding: "4px 10px",
+          whiteSpace: "nowrap", flexShrink: 0
+        }
+      }, open ? "Stäng ↑" : "Visa mappning ↓")
+    ),
+    open && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "#fffdf5",
+        border: "1.5px solid #101820",
+        borderTop: "none",
+        borderRadius: "0 0 8px 8px",
+        padding: "14px 16px",
+        fontSize: 11
+      }
+    },
+      /*#__PURE__*/React.createElement("div", {
+        style: {color: C.ink, marginBottom: 10, lineHeight: 1.6}
+      }, "Har ni mandagsberäkningar i den gamla Word-mallen? Tabellen nedan visar var varje värde anges i kalkylatorn."),
+      /*#__PURE__*/React.createElement("table", {
+        style: {width: "100%", borderCollapse: "collapse", fontSize: 11}
+      },
+        /*#__PURE__*/React.createElement("tbody", null,
+          ...rows.map(([type, left, right], i) => {
+            if (type === "header") return /*#__PURE__*/React.createElement("tr", {key: i},
+              /*#__PURE__*/React.createElement("th", {style: {padding: "4px 8px", textAlign: "left", fontWeight: 700, color: C.ink, borderBottom: "2px solid " + C.border, fontSize: 10, letterSpacing: "0.05em"}}, left),
+              /*#__PURE__*/React.createElement("th", {style: {padding: "4px 8px", textAlign: "left", fontWeight: 700, color: C.ink, borderBottom: "2px solid " + C.border, fontSize: 10, letterSpacing: "0.05em"}}, right)
+            );
+            if (type === "section") return /*#__PURE__*/React.createElement("tr", {key: i},
+              /*#__PURE__*/React.createElement("td", {colSpan: 2, style: {padding: "8px 8px 3px", fontWeight: 700, fontSize: 10, letterSpacing: "0.08em", color: "#101820", textTransform: "uppercase", borderTop: "1px solid " + C.border}}, left)
+            );
+            return /*#__PURE__*/React.createElement("tr", {key: i, style: {background: i % 2 === 0 ? "#fffdf5" : "#fff"}},
+              /*#__PURE__*/React.createElement("td", {style: {padding: "5px 8px", color: C.ink, borderBottom: "1px solid " + C.border}}, left),
+              /*#__PURE__*/React.createElement("td", {style: {padding: "5px 8px", color: C.ink, fontWeight: 600, borderBottom: "1px solid " + C.border}}, right)
+            );
+          })
+        )
+      )
+    )
+  );
+};
+
 function App() {
   const [result, setResult] = useState(null);
   const [motiv, setMotiv] = useState("");
@@ -2879,6 +2989,7 @@ function App() {
   const [showSwedac, setShowSwedac] = useState(false);
   const [showProcess, setShowProcess] = useState(false);
   const [showSecurity, setShowSecurity] = useState(false);
+
   const [dayRate, setDayRate] = useState(DAY_RATE_DEFAULT);
   const DAY_RATE = dayRate;
   const [offertIdLocked, setOffertIdLocked] = useState(false);
@@ -3412,7 +3523,7 @@ function App() {
       key: s,
       style: {
         fontFamily: MONO,
-        fontSize: 10,
+        fontSize: 11,
         padding: "3px 10px",
         border: `1px solid ${C.greenBd}`,
         background: C.greenLt,
@@ -3421,7 +3532,7 @@ function App() {
     }, "\u2713 ISO ", s, " (befintligt)")), snap.ex27001 && /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: MONO,
-        fontSize: 10,
+        fontSize: 11,
         padding: "3px 10px",
         border: `1px solid ${C.purpleBd}`,
         background: C.purpleLt,
@@ -3433,21 +3544,21 @@ function App() {
         key: s,
         style: {
           fontFamily: MONO,
-          fontSize: 10,
+          fontSize: 11,
           padding: "3px 10px",
           border: `1px solid ${C.border2}`,
           background: C.s2,
-          color: C.muted
+          color: C.ink
         }
       }, "Ny: ", s);
     }), snap.s27001 && !snap.ex27001 && /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: MONO,
-        fontSize: 10,
+        fontSize: 11,
         padding: "3px 10px",
         border: `1px solid ${C.border2}`,
         background: C.s2,
-        color: C.muted
+        color: C.ink
       }
     }, "Ny: ISO 27001")), snap.riskDesc && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Sec, null, "Verksamhetsbeskrivning & Riskprofil"), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -3458,7 +3569,7 @@ function App() {
         fontSize: 12,
         lineHeight: 1.75,
         marginBottom: 16,
-        color: C.ink2,
+        color: C.ink,
         whiteSpace: "pre-wrap"
       }
     }, snap.riskDesc)), /*#__PURE__*/React.createElement(Sec, null, "Sammanfattning"), /*#__PURE__*/React.createElement(KpiRow, {
@@ -3477,7 +3588,7 @@ function App() {
       }]
     }), md5 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Sec, null, "Mandagsber\xE4kning \u2014 ", md5.stds.join(", "), /*#__PURE__*/React.createElement(RegTag, null, "IAF MD 5:2023"), md5.stds.length > 1 && /*#__PURE__*/React.createElement(RegTag, null, "IAF MD 11:2023"), md5.savedDays > 0 && /*#__PURE__*/React.createElement(Tag, null, `−${fmt(md5.savedDays)} d vs. okorrigerat`), md5.hasTransfer && /*#__PURE__*/React.createElement(Tag, {
       bg: C.goldLt,
-      color: C.gold,
+      color: "#7A4800",
       bd: C.goldBd
     }, "Transfer \xB7 IAF MD 2:2023")), /*#__PURE__*/React.createElement(Tbl, {
       heads: ["Post", "Underlag & regelverksstöd", "Dagar"],
@@ -3536,7 +3647,7 @@ function App() {
     }), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 9,
+        fontSize: 11,
         color: C.purple,
         background: C.purpleLt,
         border: `1px solid ${C.purpleBd}`,
@@ -3588,8 +3699,8 @@ function App() {
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
-          color: C.accent,
+          fontSize: 11,
+          color: "#101820",
           fontWeight: 700,
           marginBottom: 6,
           textTransform: "uppercase",
@@ -3598,8 +3709,9 @@ function App() {
       }, "Periodisk revision \u2014 \xC5r 1 & 2"), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 8,
-          color: C.muted,
+          fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
           marginBottom: 6,
           lineHeight: 1.7
         }
@@ -3614,13 +3726,13 @@ function App() {
           display: "flex",
           justifyContent: "space-between",
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           padding: "3px 0",
           borderBottom: `1px solid ${C.border}`
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
-          color: C.ink2
+          color: C.ink
         }
       }, "Initial audittid"), /*#__PURE__*/React.createElement("span", {
         style: {
@@ -3632,13 +3744,13 @@ function App() {
           display: "flex",
           justifyContent: "space-between",
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           padding: "3px 0",
           borderBottom: `1px solid ${C.border}`
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
-          color: C.ink2
+          color: C.ink
         }
       }, fmt(initDays), " \xF7 3"), /*#__PURE__*/React.createElement("span", {
         style: {
@@ -3649,13 +3761,13 @@ function App() {
           display: "flex",
           justifyContent: "space-between",
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           padding: "3px 0",
           borderBottom: `1px solid ${C.border}`
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
-          color: C.ink2
+          color: C.ink
         }
       }, "Avrundat till \xBD-dag"), /*#__PURE__*/React.createElement("span", {
         style: {
@@ -3664,8 +3776,8 @@ function App() {
       }, fmt(survCalc), " dag")), survFloor && /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 8,
-          color: C.gold,
+          fontSize: 11,
+          color: "#7A4800",
           fontStyle: "italic"
         }
       }, "Golv till\xE4mpat \u2014 minimum 1 dag"), /*#__PURE__*/React.createElement("div", {
@@ -3673,7 +3785,7 @@ function App() {
           display: "flex",
           justifyContent: "space-between",
           fontFamily: MONO,
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 700,
           padding: "4px 0",
           color: C.accent
@@ -3688,8 +3800,8 @@ function App() {
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
-          color: C.accent,
+          fontSize: 11,
+          color: "#101820",
           fontWeight: 700,
           marginBottom: 6,
           textTransform: "uppercase",
@@ -3698,8 +3810,9 @@ function App() {
       }, "Omcertifiering \u2014 \xC5r 3"), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 8,
-          color: C.muted,
+          fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
           marginBottom: 6,
           lineHeight: 1.7
         }
@@ -3714,13 +3827,13 @@ function App() {
           display: "flex",
           justifyContent: "space-between",
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           padding: "3px 0",
           borderBottom: `1px solid ${C.border}`
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
-          color: C.ink2
+          color: C.ink
         }
       }, "Initial audittid"), /*#__PURE__*/React.createElement("span", {
         style: {
@@ -3732,13 +3845,13 @@ function App() {
           display: "flex",
           justifyContent: "space-between",
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           padding: "3px 0",
           borderBottom: `1px solid ${C.border}`
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
-          color: C.ink2
+          color: C.ink
         }
       }, fmt(initDays), " \xD7 2/3"), /*#__PURE__*/React.createElement("span", {
         style: {
@@ -3749,13 +3862,13 @@ function App() {
           display: "flex",
           justifyContent: "space-between",
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           padding: "3px 0",
           borderBottom: `1px solid ${C.border}`
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
-          color: C.ink2
+          color: C.ink
         }
       }, "Avrundat till \xBD-dag"), /*#__PURE__*/React.createElement("span", {
         style: {
@@ -3764,8 +3877,8 @@ function App() {
       }, fmt(recertCalc), " dag")), recertFloor && /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 8,
-          color: C.gold,
+          fontSize: 11,
+          color: "#7A4800",
           fontStyle: "italic"
         }
       }, "Golv till\xE4mpat \u2014 minimum 1 dag"), /*#__PURE__*/React.createElement("div", {
@@ -3773,7 +3886,7 @@ function App() {
           display: "flex",
           justifyContent: "space-between",
           fontFamily: MONO,
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 700,
           padding: "4px 0",
           color: C.accent
@@ -3788,7 +3901,7 @@ function App() {
           justifyContent: "space-between",
           alignItems: "center",
           fontFamily: MONO,
-          fontSize: 9
+          fontSize: 11
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
@@ -3813,8 +3926,9 @@ function App() {
       }, /*#__PURE__*/React.createElement(Sec, null, "F\xF6reslagen revisionsplan"), startLabel && /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
-          color: C.muted,
+          fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
           marginBottom: 10
         }
       }, "Baserat p\xE5 \xF6nskad certifieringstidpunkt: ", /*#__PURE__*/React.createElement("strong", {
@@ -3835,7 +3949,7 @@ function App() {
           gap: 8,
           padding: "6px 12px",
           fontFamily: MONO,
-          fontSize: 8,
+          fontSize: 11,
           color: "rgba(255,255,255,0.6)",
           fontWeight: 600,
           textTransform: "uppercase",
@@ -3859,21 +3973,21 @@ function App() {
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           fontWeight: 700,
           color: hl ? C.accent : C.muted
         }
       }, yr), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
-          color: C.ink2,
+          fontSize: 11,
+          color: C.ink,
           lineHeight: 1.5
         }
       }, desc), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           fontWeight: 600,
           color: C.ink,
           textAlign: "right"
@@ -3881,8 +3995,9 @@ function App() {
       }, days), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 8,
-          color: C.muted,
+          fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
           lineHeight: 1.5
         }
       }, ref))), /*#__PURE__*/React.createElement("div", {
@@ -3898,19 +4013,19 @@ function App() {
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 8,
+          fontSize: 11,
           color: "rgba(255,255,255,0.5)"
         }
       }, "Totalt"), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 8,
+          fontSize: 11,
           color: "rgba(255,255,255,0.6)"
         }
       }, "3-\xE5rig certifieringscykel"), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           fontWeight: 700,
           color: C.accent,
           textAlign: "right"
@@ -3956,8 +4071,8 @@ function App() {
       }, "F\xF6reslagen revisionsplan \u2014 \xC5r 0\u20133", extStartLabel), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
-          color: C.ink2,
+          fontSize: 11,
+          color: C.ink,
           lineHeight: 1.8,
           marginBottom: 12
         }
@@ -3982,21 +4097,21 @@ function App() {
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 700,
           color: highlight ? C.accent : C.muted
         }
       }, yr), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
-          color: C.ink2,
+          fontSize: 11,
+          color: C.ink,
           lineHeight: 1.5
         }
       }, desc), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           fontWeight: 600,
           color: highlight ? C.accent : C.ink,
           textAlign: "right"
@@ -4004,8 +4119,9 @@ function App() {
       }, days || "—"), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
-          color: C.muted,
+          fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
           textAlign: "right"
         }
       }, kr || "—")))), extraDaysForNew && /*#__PURE__*/React.createElement("div", {
@@ -4017,8 +4133,8 @@ function App() {
           borderRadius: 4,
           padding: "7px 12px",
           fontFamily: MONO,
-          fontSize: 9,
-          color: C.ink2,
+          fontSize: 11,
+          color: C.ink,
           lineHeight: 1.7
         }
       }, /*#__PURE__*/React.createElement("strong", {
@@ -4060,14 +4176,14 @@ function App() {
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 8,
+          fontSize: 11,
           color: i === 2 ? "white" : C.muted,
           marginBottom: 2
         }
       }, lbl), sub && /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 8,
+          fontSize: 11,
           color: i === 2 ? "rgba(255,255,255,0.8)" : C.muted,
           marginBottom: 4
         }
@@ -4081,13 +4197,13 @@ function App() {
       }, days), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           color: i === 2 ? "rgba(255,255,255,0.9)" : C.muted
         }
       }, kr)))), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 8,
+          fontSize: 11,
           color: "#265c3a",
           lineHeight: 1.7
         }
@@ -4099,8 +4215,9 @@ function App() {
           borderRadius: 4,
           padding: "8px 12px",
           fontFamily: MONO,
-          fontSize: 8,
-          color: C.muted,
+          fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
           lineHeight: 1.8
         }
       }, "Revisionsplanen ovan \xE4r ett f\xF6rslag baserat p\xE5 er nuvarande certifieringscykel. Exakt tidpunkt f\xF6r varje revision fastst\xE4lls i dialog med er och ansvarig revisor efter accept av offert. SBSC f\xF6rbeh\xE5ller sig r\xE4tten att justera planeringen om f\xF6ruts\xE4ttningarna f\xF6r\xE4ndras v\xE4sentligt."));
@@ -4112,7 +4229,7 @@ function App() {
       style: {
         fontSize: 12,
         lineHeight: 1.9,
-        color: C.ink2,
+        color: C.ink,
         fontFamily: MONO
       }
     }, paras.map((p, i) => /*#__PURE__*/React.createElement("p", {
@@ -4130,7 +4247,7 @@ function App() {
           borderLeft: "3px solid " + C.accent,
           padding: "14px 16px",
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           pageBreakInside: "avoid"
         }
       }, /*#__PURE__*/React.createElement("div", {
@@ -4155,7 +4272,7 @@ function App() {
         }
       }, h, ":"), " ", /*#__PURE__*/React.createElement("span", {
         style: {
-          color: C.ink2,
+          color: C.ink,
           lineHeight: 1.7
         }
       }, t))), /*#__PURE__*/React.createElement("div", {
@@ -4163,7 +4280,7 @@ function App() {
           marginTop: 10,
           paddingTop: 8,
           borderTop: "1px solid " + C.goldBd,
-          color: C.muted
+          color: C.ink
         }
       }, /*#__PURE__*/React.createElement("strong", null, "Regelverksbas:"), " IAF MD 5:2023 (Issue 4, V3) \xB7 IAF MD 11:2023 (Issue 3) \xB7 IAF MD 1:2023 (Issue 3) \xB7 IAF MD 2:2023 (Issue 2, V2) \xB7 SS-EN ISO/IEC 27006-1:2024 \xB7 ISO/IEC 17021-1:2015 \xB7 SBSC ackrediteras av SWEDAC"));
     })(), /*#__PURE__*/React.createElement(DocFoot, {
@@ -4273,8 +4390,9 @@ function App() {
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 10,
-        color: C.muted,
+        fontSize: 11,
+        fontWeight: 600,
+      color: C.ink,
         marginBottom: 6,
         letterSpacing: "0.06em",
         textTransform: "uppercase"
@@ -4290,15 +4408,16 @@ function App() {
     }, snap.cName || "Kunden AB"), snap.cOrg && /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 10,
-        color: C.muted,
+        fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
         marginBottom: 10
       }
     }, "Org.nr ", snap.cOrg), snap.cContact && /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 10,
-        color: C.ink2,
+        fontSize: 11,
+        color: C.ink,
         marginBottom: 10
       }
     }, "Att: ", snap.cContact), /*#__PURE__*/React.createElement("div", {
@@ -4312,9 +4431,9 @@ function App() {
       key: i,
       style: {
         background: C.ink,
-        color: C.accent,
+        color: "#101820",
         fontFamily: MONO,
-        fontSize: 9,
+        fontSize: 11,
         fontWeight: 700,
         padding: "4px 12px",
         borderRadius: 20,
@@ -4323,9 +4442,9 @@ function App() {
     }, s)), /*#__PURE__*/React.createElement("span", {
       style: {
         background: C.s2,
-        color: C.ink2,
+        color: C.ink,
         fontFamily: MONO,
-        fontSize: 9,
+        fontSize: 11,
         padding: "4px 12px",
         borderRadius: 20,
         letterSpacing: "0.05em",
@@ -4337,62 +4456,63 @@ function App() {
         flexWrap: "wrap",
         gap: "4px 20px",
         fontFamily: MONO,
-        fontSize: 10,
-        color: C.muted,
+        fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
         borderTop: `1px solid ${C.border}`,
         paddingTop: 10
       }
     }, snap.cIndustry && /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", {
       style: {
-        color: C.muted
+        color: C.inkd
       }
     }, "Bransch: "), /*#__PURE__*/React.createElement("span", {
       style: {
-        color: C.ink2
+        color: C.ink
       }
     }, snap.cIndustry)), (() => {
       const fte = parseInt(snap.fteFulltime) || parseInt(snap.fte) || 0;
       const sites = parseInt(snap.sites) || 1;
       return /*#__PURE__*/React.createElement(React.Fragment, null, fte > 0 && /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", {
         style: {
-          color: C.muted
+          color: C.ink
         }
       }, "Anst\xE4llda inom scope: "), /*#__PURE__*/React.createElement("span", {
         style: {
-          color: C.ink2
+          color: C.ink
         }
       }, fte, " pers.")), sites > 1 && /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", {
         style: {
-          color: C.muted
+          color: C.inkd
         }
       }, "Certifieringsplatser: "), /*#__PURE__*/React.createElement("span", {
         style: {
-          color: C.ink2
+          color: C.ink
         }
       }, sites, " platser", snap.siteDetails && snap.siteDetails.filter(s => s.city).length > 0 ? " (" + snap.siteDetails.filter(s => s.city).map(s => s.city).join(", ") + ")" : " ")));
     })(), snap.cDesiredDate && snap.cDesiredDate.includes("-") && /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", {
       style: {
-        color: C.muted
+        color: C.ink
       }
     }, "\xD6nskad start: "), /*#__PURE__*/React.createElement("span", {
       style: {
-        color: C.ink2
+        color: C.ink
       }
     }, snap.cDesiredDate.split("-")[1], " ", snap.cDesiredDate.split("-")[0])), snap.certType === "transfer" && snap.transferCertNr && /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", {
       style: {
-        color: C.muted
+        color: C.inkd
       }
     }, "Certifikat-ID: "), /*#__PURE__*/React.createElement("span", {
       style: {
-        color: C.ink2
+        color: C.ink
       }
     }, snap.transferCertNr)), snap.certType === "transfer" && snap.transferExpiry && /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", {
       style: {
-        color: C.muted
+        color: C.inkd
       }
     }, "Giltigt t.o.m.: "), /*#__PURE__*/React.createElement("span", {
       style: {
-        color: C.ink2
+        color: C.ink
       }
     }, new Date(snap.transferExpiry).toLocaleDateString("sv-SE"))))), snap.certType === "extension" && (() => {
       const extStds = [snap.extHas9001 && "ISO 9001", snap.extHas14001 && "ISO 14001", snap.extHas45001 && "ISO 45001"].filter(Boolean);
@@ -4413,9 +4533,9 @@ function App() {
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           fontWeight: 700,
-          color: C.accent,
+          color: "#101820",
           textTransform: "uppercase",
           letterSpacing: "0.08em",
           marginBottom: 10
@@ -4437,15 +4557,17 @@ function App() {
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 8,
-          color: C.muted,
+          fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
           marginBottom: 3
         }
       }, lbl), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
-          color: C.ink2,
+          fontSize: 11,
+          fontWeight: 600,
+      color: C.ink,
           marginBottom: 4,
           lineHeight: 1.4
         }
@@ -4459,8 +4581,9 @@ function App() {
       }, days || kr)))), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 8,
-          color: C.muted,
+          fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
           marginTop: 8
         }
       }, "Steg 1+2 samordnas med er befintliga periodiska revision \u2014 ett bes\xF6k, inga extra resekostnader."));
@@ -4513,7 +4636,7 @@ function App() {
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 8,
+          fontSize: 11,
           color: i === 2 ? "white" : C.muted,
           marginBottom: 2,
           fontWeight: 600
@@ -4521,7 +4644,7 @@ function App() {
       }, lbl), sub && /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 8,
+          fontSize: 11,
           color: i === 2 ? "rgba(255,255,255,0.7)" : C.muted,
           marginBottom: 6
         }
@@ -4536,13 +4659,13 @@ function App() {
       }, days), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 10,
+          fontSize: 11,
           color: i === 2 ? "rgba(255,255,255,0.85)" : C.ink2
         }
       }, kr)))), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           color: "#265c3a",
           lineHeight: 1.8,
           marginBottom: 8
@@ -4554,8 +4677,8 @@ function App() {
           borderRadius: 4,
           padding: "7px 10px",
           fontFamily: MONO,
-          fontSize: 8,
-          color: C.ink2,
+          fontSize: 11,
+          color: C.ink,
           lineHeight: 1.7
         }
       }, "Revisionsplanen ovan \xE4r ett f\xF6rslag baserat p\xE5 er nuvarande certifieringscykel. Exakt tidpunkt fastst\xE4lls i dialog med er och ansvarig revisor efter accept av offert. SBSC f\xF6rbeh\xE5ller sig r\xE4tten att justera planeringen om f\xF6ruts\xE4ttningarna f\xF6r\xE4ndras v\xE4sentligt."));
@@ -4580,8 +4703,9 @@ function App() {
       }, /*#__PURE__*/React.createElement(Sec, null, "F\xF6rdel med kombinerad certifiering"), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
-          color: C.muted,
+          fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
           marginBottom: 14,
           lineHeight: 1.6
         }
@@ -4599,8 +4723,9 @@ function App() {
         return /*#__PURE__*/React.createElement("div", {
           style: {
             fontFamily: MONO,
-            fontSize: 9,
-            color: C.muted,
+            fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
             marginBottom: 10
           }
         }, "\xC5r 0 avser initial certifiering, planerad ", /*#__PURE__*/React.createElement("strong", {
@@ -4616,8 +4741,8 @@ function App() {
           borderRadius: 4,
           padding: "8px 12px",
           fontFamily: MONO,
-          fontSize: 9,
-          color: C.ink2,
+          fontSize: 11,
+          color: C.ink,
           lineHeight: 1.8,
           marginBottom: 12
         }
@@ -4640,7 +4765,7 @@ function App() {
           gridTemplateColumns: "60px 1fr 100px 140px",
           gap: 8,
           fontFamily: MONO,
-          fontSize: 8,
+          fontSize: 11,
           color: "rgba(255,255,255,0.6)",
           fontWeight: 600,
           textTransform: "uppercase",
@@ -4668,21 +4793,21 @@ function App() {
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 700,
           color: highlight ? C.accent : C.muted
         }
       }, "\xC5r ", yr), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
-          color: C.ink2,
+          fontSize: 11,
+          color: C.ink,
           lineHeight: 1.5
         }
       }, desc), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           fontWeight: 600,
           color: C.ink,
           textAlign: "right"
@@ -4725,14 +4850,14 @@ function App() {
         }, /*#__PURE__*/React.createElement("div", {
           style: {
             fontFamily: MONO,
-            fontSize: 9,
+            fontSize: 11,
             color: C.green,
             fontWeight: 700
           }
         }, i === 0 ? "Rabatt" : ""), /*#__PURE__*/React.createElement("div", {
           style: {
             fontFamily: MONO,
-            fontSize: 9,
+            fontSize: 11,
             color: C.green
           }
         }, label), /*#__PURE__*/React.createElement("div", null), /*#__PURE__*/React.createElement("div", {
@@ -4757,19 +4882,19 @@ function App() {
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           color: "rgba(255,255,255,0.5)"
         }
       }, "Totalt"), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           color: "rgba(255,255,255,0.7)"
         }
       }, "3-\xE5rig certifieringscykel \xB7 resor ing\xE5r"), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
+          fontSize: 11,
           fontWeight: 600,
           color: C.accent,
           textAlign: "right"
@@ -4785,8 +4910,9 @@ function App() {
       }, sek(prices.pTotal)))), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
-          fontSize: 9,
-          color: C.muted,
+          fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
           padding: "2px 4px",
           marginBottom: 8
         }
@@ -4830,7 +4956,7 @@ function App() {
       style: {
         fontFamily: MONO,
         fontSize: 11,
-        color: C.ink2,
+        color: C.ink,
         lineHeight: 1.9
       }
     }, snap.offerCondition)), /*#__PURE__*/React.createElement(Sec, null, "Vad ing\xE5r"), [[`Initial certifiering (${fmt(prices.totalInit)} auditdagar)`, "Steg 1: dokumentationsgranskning och beredskapsanalys. Steg 2: fullständig revision på plats. Inkluderar certifikatutfärdande och SBSC-registrering."], [`Periodisk revision år 1 & 2 (${fmt(prices.surv)} dagar/tillfälle)`, "Periodisk revision genomförs med ca 1/3 av initial audittid för att säkerställa fortsatt efterlevnad och aktiv certifikatstatus."], [`Omcertifiering år 3 (${fmt(prices.recert)} auditdagar)`, "Förnyad fullständig revision med minst 2/3 av initial audittid. Nytt certifikat utfärdas för ytterligare tre år."], ["Resor och övernattningar ingår", "Inga tillkommande resekostnader faktureras. Resor och övernattningar är inkluderade i priset."], ["SWEDAC-ackrediterad certifiering", "SBSC är ackrediterat av SWEDAC. Certifikaten är internationellt erkända via IAF MLA."]].map(([h, t], i) => /*#__PURE__*/React.createElement("div", {
@@ -4851,13 +4977,14 @@ function App() {
       }
     }, "\u2192"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, h), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
       style: {
-        color: C.ink2
+        color: C.ink
       }
     }, t)))), /*#__PURE__*/React.createElement(Sec, null, "Motivering av revisionstid"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         lineHeight: 1.9,
-        color: C.ink2
+        fontWeight: 700,
+      color: C.ink
       }
     }, customerParas.map((p, i) => /*#__PURE__*/React.createElement("p", {
       key: i,
@@ -4872,17 +4999,18 @@ function App() {
         borderLeft: `3px solid ${C.brand}`,
         padding: "12px 16px",
         fontFamily: MONO,
-        fontSize: 10,
-        color: C.ink2,
+        fontSize: 11,
+        color: C.ink,
         lineHeight: 1.9
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 9,
+        fontSize: 11,
         letterSpacing: "0.12em",
         textTransform: "uppercase",
-        color: C.muted,
+        fontWeight: 600,
+      color: C.ink,
         marginBottom: 6
       }
     }, "Viktigt att k\xE4nna till om denna offert"), (() => {
@@ -4909,8 +5037,8 @@ function App() {
         borderLeft: "3px solid " + C.accent,
         padding: "14px 16px",
         fontFamily: MONO,
-        fontSize: 10,
-        color: C.ink2,
+        fontSize: 11,
+        color: C.ink,
         lineHeight: 1.9
       }
     }, /*#__PURE__*/React.createElement("div", {
@@ -4946,8 +5074,8 @@ function App() {
         borderLeft: "3px solid " + C.green,
         padding: "14px 16px",
         fontFamily: MONO,
-        fontSize: 10,
-        color: C.ink2,
+        fontSize: 11,
+        color: C.ink,
         lineHeight: 1.9
       }
     }, /*#__PURE__*/React.createElement("div", {
@@ -4971,7 +5099,7 @@ function App() {
         background: C.green,
         color: "#fff",
         fontFamily: MONO,
-        fontSize: 9,
+        fontSize: 11,
         fontWeight: 700,
         padding: "1px 6px",
         flexShrink: 0,
@@ -4993,11 +5121,11 @@ function App() {
         gridTemplateColumns: "1fr 1fr",
         gap: 16,
         fontFamily: MONO,
-        fontSize: 10
+        fontSize: 11
       }
     }, snap.createdBy && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
-        color: C.muted,
+        color: C.ink,
         fontSize: 9,
         textTransform: "uppercase",
         letterSpacing: "0.08em",
@@ -5015,7 +5143,7 @@ function App() {
       }
     }, ds)), snap.approvedBy && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
-        color: C.muted,
+        color: C.ink,
         fontSize: 9,
         textTransform: "uppercase",
         letterSpacing: "0.08em",
@@ -5037,14 +5165,16 @@ function App() {
         paddingTop: 16,
         borderTop: `1px solid ${C.border}`,
         fontFamily: MONO,
-        fontSize: 10,
-        color: C.muted
+        fontSize: 11,
+      fontWeight: 600,
+      color: C.ink
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 9,
-        color: C.muted,
+        fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
         marginBottom: 16,
         lineHeight: 1.6
       }
@@ -5063,7 +5193,7 @@ function App() {
     }), /*#__PURE__*/React.createElement("div", {
       style: {
         fontWeight: 600,
-        color: C.ink2,
+        color: C.ink,
         marginBottom: 2
       }
     }, "Kundens underskrift"), /*#__PURE__*/React.createElement("div", null, "Namn (textat):\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0"), /*#__PURE__*/React.createElement("div", null, "Titel:\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0\xA0"), /*#__PURE__*/React.createElement("div", null, "Ort och datum:")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
@@ -5075,7 +5205,7 @@ function App() {
     }), /*#__PURE__*/React.createElement("div", {
       style: {
         fontWeight: 600,
-        color: C.ink2,
+        color: C.ink,
         marginBottom: 2
       }
     }, "F\xF6r SBSC"), /*#__PURE__*/React.createElement("div", {
@@ -5092,11 +5222,11 @@ function App() {
         gridTemplateColumns: "1fr 1fr",
         gap: 20,
         fontFamily: MONO,
-        fontSize: 10
+        fontSize: 11
       }
     }, snap.createdBy && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
-        color: C.muted,
+        color: C.ink,
         fontSize: 9,
         textTransform: "uppercase",
         letterSpacing: "0.1em",
@@ -5114,7 +5244,7 @@ function App() {
       }
     }, ds)), snap.approvedBy && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
-        color: C.muted,
+        color: C.ink,
         fontSize: 9,
         textTransform: "uppercase",
         letterSpacing: "0.1em",
@@ -5187,8 +5317,8 @@ function App() {
     }, "F\xF6rdel med kombinerad certifiering \u2014 ", snap.cName || "Kunden AB"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 9,
-        color: C.muted,
+        fontSize: 11,
+        color: C.ink,
         marginBottom: 24,
         letterSpacing: "0.08em",
         textTransform: "uppercase"
@@ -5216,8 +5346,8 @@ function App() {
     }, t.std), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 9,
-        color: C.muted,
+        fontSize: 11,
+        color: C.ink,
         textTransform: "uppercase",
         marginBottom: 12
       }
@@ -5231,8 +5361,9 @@ function App() {
     }, sek(t.total)), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 9,
-        color: C.muted,
+        fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
         margin: "3px 0 12px"
       }
     }, "Totalt 3 \xE5r exkl. moms"), [["Initial", sek(t.pInit)], ["Periodisk revision ×2", sek(t.pSurv * 2)], ["Omcertifiering", sek(t.pRecert)], ["Totalt", sek(t.total)]].map(([k, v], j) => /*#__PURE__*/React.createElement("div", {
@@ -5241,14 +5372,14 @@ function App() {
         display: "flex",
         justifyContent: "space-between",
         fontFamily: MONO,
-        fontSize: 10,
+        fontSize: 11,
         padding: "3px 0",
         borderBottom: j < 3 ? `1px solid ${C.border}` : undefined,
         fontWeight: j === 3 ? 500 : "normal"
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
-        color: C.muted
+        color: C.ink
       }
     }, k), /*#__PURE__*/React.createElement("span", null, v))))), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -5260,7 +5391,7 @@ function App() {
         background: C.accent,
         color: "#fff",
         fontFamily: MONO,
-        fontSize: 9,
+        fontSize: 11,
         padding: "2px 10px",
         marginBottom: 10,
         display: "inline-block"
@@ -5276,8 +5407,9 @@ function App() {
     }, allStds.join(" + ")), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 9,
-        color: C.muted,
+        fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
         marginBottom: 12
       }
     }, "Integrerat \xB7 IAF MD 11:2023 (max 20%)"), /*#__PURE__*/React.createElement("div", {
@@ -5290,8 +5422,9 @@ function App() {
     }, sek(prices.pTotal)), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 9,
-        color: C.muted,
+        fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
         margin: "3px 0 12px"
       }
     }, "Totalt 3 \xE5r exkl. moms"), [["Initial", sek(prices.pInit)], ["Periodisk revision ×2", sek(prices.pSurv * 2)], ["Omcertifiering", sek(prices.pRecert)], ["Totalt", sek(prices.pTotal)]].map(([k, v], j) => /*#__PURE__*/React.createElement("div", {
@@ -5300,14 +5433,14 @@ function App() {
         display: "flex",
         justifyContent: "space-between",
         fontFamily: MONO,
-        fontSize: 10,
+        fontSize: 11,
         padding: "3px 0",
         borderBottom: j < 3 ? `1px solid ${C.border}` : undefined,
         fontWeight: j === 3 ? 500 : "normal"
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
-        color: C.muted
+        color: C.ink
       }
     }, k), /*#__PURE__*/React.createElement("span", {
       style: {
@@ -5342,7 +5475,7 @@ function App() {
         border: `1px solid ${C.border}`,
         padding: "60px 40px",
         textAlign: "center",
-        color: C.muted,
+        color: C.ink,
         fontFamily: MONO,
         fontSize: 11
       }
@@ -5370,25 +5503,45 @@ function App() {
   const TabBtn = ({
     id,
     label,
+    sub = "",
     disabled = false
   }) => /*#__PURE__*/React.createElement("button", {
     onClick: () => !disabled && setActiveTab(id),
     style: {
       flex: 1,
-      padding: "11px 14px",
-      textAlign: "center",
-      fontSize: 10,
-      letterSpacing: "0.12em",
-      textTransform: "uppercase",
+      padding: "14px 18px",
+      textAlign: "left",
       cursor: disabled ? "default" : "pointer",
-      background: activeTab === id ? C.accent : C.surface,
-      color: activeTab === id ? "#fff" : disabled ? "#ccc" : C.muted,
+      background: activeTab === id ? "#101820" : "#fff",
+      color: activeTab === id ? "#fff" : disabled ? "#ccc" : "#6b5e52",
       border: "none",
       borderRight: `1px solid ${C.border}`,
-      fontFamily: MONO,
-      opacity: disabled ? 0.5 : 1
+      borderBottom: activeTab === id ? "none" : `2px solid ${C.border}`,
+      fontFamily: "'Segoe UI', system-ui, sans-serif",
+      opacity: disabled ? 0.45 : 1,
+      transition: "background .15s, color .15s",
+      display: "flex",
+      flexDirection: "column",
+      gap: 3
     }
-  }, label, disabled ? " —" : "");
+  },
+    /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 12,
+        fontWeight: 700,
+        letterSpacing: "-0.01em",
+        color: activeTab === id ? "#fff" : disabled ? "#ccc" : "#101820"
+      }
+    }, label),
+    sub && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        fontWeight: 400,
+        color: activeTab === id ? "rgba(255,255,255,0.65)" : "#9a8a7d",
+        letterSpacing: "0"
+      }
+    }, sub)
+  );
   function exportHTML() {
     const docId = activeTab === "work" ? "doc-work" : "doc-customer";
     const el = document.getElementById(docId);
@@ -5487,16 +5640,16 @@ ${exportedHTML}
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       letterSpacing: "0.12em",
       textTransform: "uppercase",
-      color: C.muted,
+      color: C.ink,
       flex: 1
     }
   }, "Mandagskalkyl \xB7 IAF MD 5:2023 \xB7 MD 11:2023 \xB7 MD 1:2023 \xB7 MD 2:2023 \xB7 ISO 27006-1:2024 Annex C"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: "rgba(255,255,255,0.3)",
       marginLeft: 16,
       flexShrink: 0
@@ -5515,26 +5668,23 @@ ${exportedHTML}
     style: {
       display: "flex",
       alignItems: "center",
-      gap: 6,
-      padding: "0 16px",
+      gap: 7,
+      padding: "0 20px",
       height: 46,
-      background: showGuide ? C.accent : "transparent",
-      color: showGuide ? C.ink : C.ink2,
+      background: showGuide ? "#101820" : "transparent",
+      color: showGuide ? "#fff" : "#6b5e52",
       border: "none",
       borderRight: "1px solid " + C.border,
       borderLeft: "1px solid " + C.border,
-      fontFamily: MONO,
-      fontSize: 9,
-      letterSpacing: "0.08em",
-      textTransform: "uppercase",
+      fontFamily: "'Segoe UI', system-ui, sans-serif",
+      fontSize: 12,
+      fontWeight: 600,
+      letterSpacing: "-0.01em",
       cursor: "pointer",
-      transition: "background .15s"
+      transition: "background .15s, color .15s",
+      whiteSpace: "nowrap"
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13
-    }
-  }, "📖"), /*#__PURE__*/React.createElement("span", null, "Anv\xE4ndarguide")), /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("span", null, "Anv\xE4ndarguide")), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setShowSwedac(s => !s);
       setShowGuide(false);
@@ -5543,25 +5693,22 @@ ${exportedHTML}
     style: {
       display: "flex",
       alignItems: "center",
-      gap: 6,
-      padding: "0 16px",
+      gap: 7,
+      padding: "0 20px",
       height: 46,
-      background: showSwedac ? C.accent : "transparent",
-      color: showSwedac ? C.ink : C.ink2,
+      background: showSwedac ? "#101820" : "transparent",
+      color: showSwedac ? "#fff" : "#6b5e52",
       border: "none",
       borderRight: "1px solid " + C.border,
-      fontFamily: MONO,
-      fontSize: 9,
-      letterSpacing: "0.08em",
-      textTransform: "uppercase",
+      fontFamily: "'Segoe UI', system-ui, sans-serif",
+      fontSize: 12,
+      fontWeight: 600,
+      letterSpacing: "-0.01em",
       cursor: "pointer",
-      transition: "background .15s"
+      transition: "background .15s, color .15s",
+      whiteSpace: "nowrap"
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13
-    }
-  }, "📋"), /*#__PURE__*/React.createElement("span", null, "Regelverkskarta")), /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("span", null, "Regelverkskarta")), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setShowProcess(s => !s);
       setShowGuide(false);
@@ -5570,25 +5717,22 @@ ${exportedHTML}
     style: {
       display: "flex",
       alignItems: "center",
-      gap: 6,
-      padding: "0 16px",
+      gap: 7,
+      padding: "0 20px",
       height: 46,
-      background: showProcess ? C.accent : "transparent",
-      color: showProcess ? C.ink : C.ink2,
+      background: showProcess ? "#101820" : "transparent",
+      color: showProcess ? "#fff" : "#6b5e52",
       border: "none",
       borderRight: "1px solid " + C.border,
-      fontFamily: MONO,
-      fontSize: 9,
-      letterSpacing: "0.08em",
-      textTransform: "uppercase",
+      fontFamily: "'Segoe UI', system-ui, sans-serif",
+      fontSize: 12,
+      fontWeight: 600,
+      letterSpacing: "-0.01em",
       cursor: "pointer",
-      transition: "background .15s"
+      transition: "background .15s, color .15s",
+      whiteSpace: "nowrap"
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13
-    }
-  }, "✓"), /*#__PURE__*/React.createElement("span", null, "Processbas")), /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("span", null, "Processbas")), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setShowSecurity(s => !s);
       setShowGuide(false);
@@ -5598,25 +5742,22 @@ ${exportedHTML}
     style: {
       display: "flex",
       alignItems: "center",
-      gap: 6,
-      padding: "0 16px",
+      gap: 7,
+      padding: "0 20px",
       height: 46,
-      background: showSecurity ? C.accent : "transparent",
-      color: showSecurity ? C.ink : C.ink2,
+      background: showSecurity ? "#101820" : "transparent",
+      color: showSecurity ? "#fff" : "#6b5e52",
       border: "none",
       borderRight: "1px solid " + C.border,
-      fontFamily: MONO,
-      fontSize: 9,
-      letterSpacing: "0.08em",
-      textTransform: "uppercase",
+      fontFamily: "'Segoe UI', system-ui, sans-serif",
+      fontSize: 12,
+      fontWeight: 600,
+      letterSpacing: "-0.01em",
       cursor: "pointer",
-      transition: "background .15s"
+      transition: "background .15s, color .15s",
+      whiteSpace: "nowrap"
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13
-    }
-  }, "🔒"), /*#__PURE__*/React.createElement("span", null, "Informationss\xE4kerhet")))), showGuide && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, "Informationss\xE4kerhet"))), showGuide && /*#__PURE__*/React.createElement("div", {
     style: {
       background: "#fffdf8",
       borderBottom: "3px solid " + C.accent,
@@ -5644,7 +5785,7 @@ ${exportedHTML}
   }, "Anv\xE4ndarguide \u2014 SBSC Mandagskalkyl"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 9,
-      color: C.muted,
+      color: C.ink,
       letterSpacing: "0.1em",
       textTransform: "uppercase"
     }
@@ -5659,9 +5800,9 @@ ${exportedHTML}
       background: "transparent",
       border: "1px solid " + C.border,
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       cursor: "pointer",
-      color: C.muted
+      color: C.ink
     }
   }, "Stäng ✕")), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -5689,7 +5830,7 @@ ${exportedHTML}
       background: C.brand,
       color: "#fff",
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       padding: "2px 7px",
       flexShrink: 0
     }
@@ -5750,7 +5891,7 @@ ${exportedHTML}
     }
   }, lbl), /*#__PURE__*/React.createElement("div", {
     style: {
-      color: C.ink2,
+      color: C.ink,
       lineHeight: 1.6,
       fontSize: 10
     }
@@ -5791,7 +5932,7 @@ ${exportedHTML}
   }, "Regelverkskarta \u2014 SBSC Mandagskalkyl"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 9,
-      color: C.muted,
+      color: C.ink,
       letterSpacing: "0.1em",
       textTransform: "uppercase"
     }
@@ -5805,9 +5946,9 @@ ${exportedHTML}
       background: "transparent",
       border: "1px solid " + C.border,
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       cursor: "pointer",
-      color: C.muted
+      color: C.ink
     }
   }, "Stäng ✕")), /*#__PURE__*/React.createElement("table", {
     style: {
@@ -5858,7 +5999,7 @@ ${exportedHTML}
     style: {
       padding: "7px 12px",
       borderBottom: "1px solid " + C.border,
-      color: C.ink2,
+      color: C.ink,
       lineHeight: 1.5
     }
   }, val))))), /*#__PURE__*/React.createElement("div", {
@@ -5871,7 +6012,8 @@ ${exportedHTML}
       fontSize: 10,
       lineHeight: 1.8
     }
-  }, /*#__PURE__*/React.createElement("strong", null, "Om metodval:"), " IAF MD 5:2023 \xA78 och ISO 27006-1:2024 C.3.5 specificerar principer \u2014 inte exakta dagstal. De numeriska delta-v\xE4rden som till\xE4mpas utg\xF6r SBSC:s dokumenterade metodval, granskade mot samtliga fyra IAF-dokument (MD 5, MD 11, MD 1, MD 2). Subtractive factors till\xE4mpas en g\xE5ng per kalkyl per \xA78(v) Note 1. Slutlig audittid fastst\xE4lls av ansvarig Lead Auditor per uppdrag i enlighet med ISO/IEC 17021-1:2015 \xA79.1.4. Fullst\xE4ndiga metodnoteringar och filialkvalifikationsbed\xF6mning per uppdrag visas i arbetsunderlaget \u2014 synliga f\xF6r SBSC, ej i kundofferten.")), showProcess && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("strong", null, "Om metodval:"), " IAF MD 5:2023 \xA78 och ISO 27006-1:2024 C.3.5 specificerar principer \u2014 inte exakta dagstal. De numeriska delta-v\xE4rden som till\xE4mpas utg\xF6r SBSC:s dokumenterade metodval, granskade mot samtliga fyra IAF-dokument (MD 5, MD 11, MD 1, MD 2). Subtractive factors till\xE4mpas en g\xE5ng per kalkyl per \xA78(v) Note 1. Slutlig audittid fastst\xE4lls av ansvarig Lead Auditor per uppdrag i enlighet med ISO/IEC 17021-1:2015 \xA79.1.4. Fullst\xE4ndiga metodnoteringar och filialkvalifikationsbed\xF6mning per uppdrag visas i arbetsunderlaget \u2014 synliga f\xF6r SBSC, ej i kundofferten."))
+  ), showProcess && /*#__PURE__*/React.createElement("div", {
     style: {
       background: "#fffdf8",
       borderBottom: "2px solid " + C.accent,
@@ -5899,7 +6041,7 @@ ${exportedHTML}
   }, "Processbas \u2014 Regelefterlevnad & Kvalitetss\xE4kring"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 9,
-      color: C.muted,
+      color: C.ink,
       letterSpacing: "0.1em",
       textTransform: "uppercase"
     }
@@ -5913,9 +6055,9 @@ ${exportedHTML}
       background: "transparent",
       border: "1px solid " + C.border,
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       cursor: "pointer",
-      color: C.muted
+      color: C.ink
     }
   }, "Stäng ✕")), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -6126,7 +6268,7 @@ ${exportedHTML}
     }
   }, /*#__PURE__*/React.createElement("strong", {
     style: {
-      color: C.accent
+      color: "#101820"
     }
   }, "Granskningsunderlag:"), " Kalkylatorn har granskats mot (1) SBSC:s rutin f\xF6r f\xF6rs\xE4ljningsprocess/mandagsber\xE4kning ur ledningssystemet, (2) befintlig Word-blankett f\xF6r ISO 9001/14001/45001, (3) Excel-mall f\xF6r ISO 27001 v2.0 (250110, kravk\xE4lla ISO 27006-1:2024). Granskning utf\xF6rd av Staffan, kund- och f\xF6rs\xE4ljningsansvarig SBSC. Version v1.1 \xB7 april 2026.", " ", /*#__PURE__*/React.createElement("strong", null, "\u2713"), " = implementerat och verifierat. ", /*#__PURE__*/React.createElement("strong", null, "\u25D0"), " = medvetet hanterat utanf\xF6r kalkylatorn eller med alternativ metod. Metodval f\xF6r justeringsfaktorer, Steg 1-andel och Annex D-till\xE4mpning \xE4r dokumenterade i arbetsunderlagets metodnoteringsblock per \xE4rende \u2014 se \xE4ven Regelverkskarta.")), showSecurity && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -6156,7 +6298,7 @@ ${exportedHTML}
   }, "Informationss\xE4kerhet \u2014 Varf\xF6r \xE4r kalkylatorn s\xE4ker att anv\xE4nda?"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 9,
-      color: C.muted,
+      color: C.ink,
       letterSpacing: "0.1em",
       textTransform: "uppercase"
     }
@@ -6167,9 +6309,9 @@ ${exportedHTML}
       background: "transparent",
       border: "1px solid " + C.border,
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       cursor: "pointer",
-      color: C.muted
+      color: C.ink
     }
   }, "Stäng ✕")), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -6353,7 +6495,7 @@ ${exportedHTML}
       overflowY: "auto",
       padding: "28px 26px 16px"
     }
-  }, /*#__PURE__*/React.createElement(SLbl, null, "Kunduppgifter"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(MigrationsBanner, null), /*#__PURE__*/React.createElement(SLbl, null, "Kunduppgifter"), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 9
     }
@@ -6422,7 +6564,7 @@ ${exportedHTML}
       flex: 1,
       background: "#f0f0f0",
       border: "1.5px solid " + C.border,
-      color: C.ink2,
+      color: C.ink,
       fontFamily: MONO,
       fontSize: 12,
       padding: "7px 9px",
@@ -6436,10 +6578,10 @@ ${exportedHTML}
       background: C.s2,
       border: "1px solid " + C.border,
       fontFamily: MONO,
-      fontSize: 10,
+      fontSize: 11,
       cursor: "pointer",
       borderRadius: 4,
-      color: C.muted
+      color: C.ink
     },
     title: "L\xE5s upp Offert-ID"
   }, "\u270E")) : /*#__PURE__*/React.createElement(Inp, {
@@ -6490,7 +6632,7 @@ ${exportedHTML}
   }, "Q4 (okt\u2013dec)"))), f.cDesiredDate && f.cDesiredDate.includes("-") && /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.teal,
       marginTop: 3
     }
@@ -6569,8 +6711,9 @@ ${exportedHTML}
   }, f.certType === val ? "▶ " : "", lbl), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       marginTop: 2
     }
   }, desc))))), f.certType === "transfer" && /*#__PURE__*/React.createElement("div", {
@@ -6583,8 +6726,8 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement(InfoNote, null, "IAF MD 2:2023 \xA72.3: Certifieringscykeln forts\xE4tter fr\xE5n utf\xE4rdande organ. Transferreduktionen (\u22120,5 dag per standard) baseras p\xE5 IAF MD 5:2023 \xA78(v)(d)+(e) och aktiveras automatiskt n\xE4r certifieringsorgan anges."), /*#__PURE__*/React.createElement(TransferChecklist, null), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
-      color: C.gold,
+      fontSize: 11,
+      color: "#7A4800",
       fontWeight: 600,
       letterSpacing: "0.08em",
       textTransform: "uppercase",
@@ -6620,12 +6763,12 @@ ${exportedHTML}
         color: "#3b5bdb",
         border: "1px solid #a5b4fc",
         fontFamily: MONO,
-        fontSize: 8,
+        fontSize: 11,
         padding: "1px 6px",
         borderRadius: 3
       }
     }, "\u2194 Transfer")),
-    color: C.gold
+    color: "#7A4800"
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 7
@@ -6669,15 +6812,15 @@ ${exportedHTML}
         borderRadius: 4,
         padding: "8px 12px",
         fontFamily: MONO,
-        fontSize: 9,
-        color: C.ink2,
+        fontSize: 11,
+        color: C.ink,
         lineHeight: 1.8,
         marginTop: 6
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontWeight: 700,
-        color: C.gold,
+        color: "#7A4800",
         marginBottom: 4
       }
     }, "Certifieringscykel \u2014 IAF MD 2:2023 \xA72.3"), /*#__PURE__*/React.createElement("div", null, "Befintlig cykel ", /*#__PURE__*/React.createElement("strong", null, "forts\xE4tter"), " fr\xE5n utf\xE4rdande organs ursprungliga tidplan. SBSC tar vid \u2014 detta \xE4r inte en nycertifiering."), expiry && /*#__PURE__*/React.createElement("div", {
@@ -6695,7 +6838,7 @@ ${exportedHTML}
       }
     }, "(", monthsLeft, " m\xE5n kvar)")), survDate && /*#__PURE__*/React.createElement("div", {
       style: {
-        color: C.muted
+        color: C.ink
       }
     }, "N\xE4sta periodiska revision (ca): ", /*#__PURE__*/React.createElement("strong", {
       style: {
@@ -6706,7 +6849,7 @@ ${exportedHTML}
       month: "long"
     }))), /*#__PURE__*/React.createElement("div", {
       style: {
-        color: C.muted
+        color: C.ink
       }
     }, "Omcertifiering (ca): ", /*#__PURE__*/React.createElement("strong", {
       style: {
@@ -6718,7 +6861,7 @@ ${exportedHTML}
     })))), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 5,
-        color: C.muted,
+        color: C.ink,
         fontSize: 8
       }
     }, "Gl\xF6m inte Checklista f\xF6r \xF6vertagande \u2014 sparas i certifierings\xE4rendet."));
@@ -6732,8 +6875,8 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement(InfoNote, null, "Ut\xF6kning = kunden l\xE4gger till en ny standard i sitt befintliga certifikat hos SBSC. Ange vilka standarder som redan \xE4r certifierade \u2014 dessa ger mognadsreduktion per IAF MD 5:2023 \xA78(v)(d). OBS: Recertifiering (\xE5r 3) \xE4r inte en certifieringstyp h\xE4r \u2014 den hanteras automatiskt i omcertifieringsber\xE4kningen."), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
-      color: C.gold,
+      fontSize: 11,
+      color: "#7A4800",
       fontWeight: 600,
       letterSpacing: "0.08em",
       textTransform: "uppercase",
@@ -6771,7 +6914,7 @@ ${exportedHTML}
         color: C.green,
         border: "1px solid " + C.greenBd,
         fontFamily: MONO,
-        fontSize: 8,
+        fontSize: 11,
         padding: "1px 6px",
         borderRadius: 3,
         marginLeft: 4
@@ -6801,7 +6944,7 @@ ${exportedHTML}
   }, "3+ \xE5r")), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: C.green,
       marginTop: 3
     }
@@ -6819,8 +6962,9 @@ ${exportedHTML}
   }, "Omcertifiering (\xE5r 3)")), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       marginTop: 3
     }
   }, (f[cycleKey] || "surv1") === "surv1" && "✓ Optimalt — Steg 1+2 kan kombineras med periodisk revision i år", (f[cycleKey] || "surv1") === "surv2" && "⚡ Möjligt — Steg 1 i år, Steg 2 med periodisk revision, omcertifiering synkas 2 år fram", (f[cycleKey] || "surv1") === "recert" && "⚠ Omcertifiering pågår — överväg att vänta och synka alla standarder direkt")))))), /*#__PURE__*/React.createElement("div", {
@@ -6830,14 +6974,14 @@ ${exportedHTML}
       borderLeft: "3px solid " + C.gold,
       padding: "7px 10px",
       fontFamily: MONO,
-      fontSize: 9,
-      color: C.ink2,
+      fontSize: 11,
+      color: C.ink,
       lineHeight: 1.7,
       marginTop: 8
     }
   }, /*#__PURE__*/React.createElement("strong", {
     style: {
-      color: C.gold
+      color: "#7A4800"
     }
   }, "Verifiering:"), " Kontrollera att angivna certifikat \xE4r aktiva i Certcore innan offerten skickas. Mognadsreduktionen \xE4r nu kopplad automatiskt \u2014 du beh\xF6ver inte fylla i ExBox separat."), /*#__PURE__*/React.createElement(MigrationsGuide, {
     extHas9001: f.extHas9001,
@@ -6908,8 +7052,8 @@ ${exportedHTML}
       borderRadius: 4,
       padding: "6px 10px",
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.ink2,
+      fontSize: 11,
+      color: C.ink,
       lineHeight: 1.7
     }
   }, /*#__PURE__*/React.createElement("strong", {
@@ -6924,8 +7068,8 @@ ${exportedHTML}
       borderRadius: 4,
       padding: "6px 10px",
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.ink2,
+      fontSize: 11,
+      color: C.ink,
       lineHeight: 1.7
     }
   }, /*#__PURE__*/React.createElement("strong", {
@@ -6947,8 +7091,8 @@ ${exportedHTML}
       borderRadius: 4,
       padding: "6px 10px",
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.ink2,
+      fontSize: 11,
+      color: C.ink,
       lineHeight: 1.7
     }
   }, /*#__PURE__*/React.createElement("strong", {
@@ -6963,8 +7107,8 @@ ${exportedHTML}
       borderRadius: 4,
       padding: "6px 10px",
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.ink2,
+      fontSize: 11,
+      color: C.ink,
       lineHeight: 1.7
     }
   }, /*#__PURE__*/React.createElement("strong", {
@@ -7003,7 +7147,7 @@ ${exportedHTML}
           color: C.green,
           border: "1px solid " + C.greenBd,
           fontFamily: MONO,
-          fontSize: 8,
+          fontSize: 11,
           padding: "1px 6px",
           borderRadius: 3
         }
@@ -7013,7 +7157,7 @@ ${exportedHTML}
           color: "#b87000",
           border: "1px solid " + C.goldBd,
           fontFamily: MONO,
-          fontSize: 8,
+          fontSize: 11,
           padding: "1px 6px",
           borderRadius: 3
         }
@@ -7023,7 +7167,7 @@ ${exportedHTML}
           color: "#3b5bdb",
           border: "1px solid #a5b4fc",
           fontFamily: MONO,
-          fontSize: 8,
+          fontSize: 11,
           padding: "1px 6px",
           borderRadius: 3
         }
@@ -7051,7 +7195,7 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.purple,
       fontWeight: 700,
       marginBottom: 8,
@@ -7064,7 +7208,7 @@ ${exportedHTML}
     label: /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: MONO,
-        fontSize: 9
+        fontSize: 11
       }
     }, "Genomf\xF6rs av ", /*#__PURE__*/React.createElement("strong", null, "SBSC:s dedikerade 27001-revisorer")),
     color: C.purple
@@ -7075,8 +7219,9 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
-      color: C.ink2,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       marginBottom: 5
     }
   }, "Genomf\xF6rs revisionen integrerat med \xF6vriga standarder?"), /*#__PURE__*/React.createElement("div", {
@@ -7099,7 +7244,7 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       fontWeight: 700,
       color: f.iso27001separate && val === "false" || !f.iso27001separate && val === "true" ? C.purple : C.ink2,
       marginBottom: 2
@@ -7107,8 +7252,9 @@ ${exportedHTML}
   }, f.iso27001separate && val === "false" || !f.iso27001separate && val === "true" ? "✓ " : "", lbl), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       lineHeight: 1.5
     }
   }, desc))))), f.iso27001separate && /*#__PURE__*/React.createElement("div", {
@@ -7119,8 +7265,8 @@ ${exportedHTML}
       borderRadius: 4,
       padding: "6px 10px",
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.ink2,
+      fontSize: 11,
+      color: C.ink,
       lineHeight: 1.7
     }
   }, /*#__PURE__*/React.createElement("strong", {
@@ -7135,7 +7281,7 @@ ${exportedHTML}
   }, " Offerten och fakturan g\xE4ller enbart ISO 27001."), /*#__PURE__*/React.createElement("span", {
     style: {
       display: "block",
-      color: C.muted,
+      color: C.ink,
       marginTop: 3
     }
   }, "IMS-reduktion per IAF MD 11:2023 till\xE4mpas inte \u2014 revisionen \xE4r inte integrerad.")), !f.iso27001separate && (f.s9001 || f.s14001 || f.s45001) && /*#__PURE__*/React.createElement("div", {
@@ -7146,13 +7292,13 @@ ${exportedHTML}
       borderRadius: 4,
       padding: "6px 10px",
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.ink2,
+      fontSize: 11,
+      color: C.ink,
       lineHeight: 1.7
     }
   }, /*#__PURE__*/React.createElement("strong", {
     style: {
-      color: C.gold
+      color: "#7A4800"
     }
   }, "\u26A0 Integrerad revision:"), " IMS-reduktion per IAF MD 11:2023 till\xE4mpas. Kr\xE4ver att revisionen genomf\xF6rs av ett team med kombinerad kompetens vid samma tillf\xE4lle.")), /*#__PURE__*/React.createElement(SLbl, null, "Certifieringsplatser \u2014 IAF MD 1:2023"), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7181,7 +7327,7 @@ ${exportedHTML}
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 9,
+        fontSize: 11,
         color: C.teal,
         fontWeight: 700,
         marginBottom: 6,
@@ -7200,17 +7346,17 @@ ${exportedHTML}
         justifyContent: "space-between",
         alignItems: "center",
         fontFamily: MONO,
-        fontSize: 9,
+        fontSize: 11,
         padding: "4px 0",
         borderBottom: "1px solid " + C.border
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
-        color: C.ink2
+        color: C.ink
       }
     }, "Initial & Omcertifiering \xA0", /*#__PURE__*/React.createElement("span", {
       style: {
-        color: C.muted
+        color: C.ink
       }
     }, "y = \u2308\u221A", x, "\u2309")), /*#__PURE__*/React.createElement("strong", {
       style: {
@@ -7222,17 +7368,17 @@ ${exportedHTML}
         justifyContent: "space-between",
         alignItems: "center",
         fontFamily: MONO,
-        fontSize: 9,
+        fontSize: 11,
         padding: "4px 0",
         borderBottom: "1px solid " + C.border
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: {
-        color: C.ink2
+        color: C.ink
       }
     }, "Periodisk revision \xA0", /*#__PURE__*/React.createElement("span", {
       style: {
-        color: C.muted
+        color: C.ink
       }
     }, "y = \u23080,6\xB7\u221A", x, "\u2309")), /*#__PURE__*/React.createElement("strong", {
       style: {
@@ -7241,8 +7387,9 @@ ${exportedHTML}
     }, "= ", surv.y, " av ", x, " platser/\xE5r")), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 8,
-        color: C.muted,
+        fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
         paddingTop: 4,
         lineHeight: 1.6
       }
@@ -7262,7 +7409,7 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.teal,
       fontWeight: 600,
       letterSpacing: "0.08em",
@@ -7272,8 +7419,9 @@ ${exportedHTML}
   }, "Filialkvalifikation f\xF6r sampling \u2014 IAF MD 1:2023 \xA76.1.1"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       marginBottom: 8,
       lineHeight: 1.6
     }
@@ -7305,7 +7453,7 @@ ${exportedHTML}
       gap: 3,
       cursor: "pointer",
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: f[key] === val ? C.teal : C.muted,
       whiteSpace: "nowrap"
     }
@@ -7321,8 +7469,8 @@ ${exportedHTML}
   }), val))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
-      color: C.ink2,
+      fontSize: 11,
+      color: C.ink,
       lineHeight: 1.5
     }
   }, question)))), (() => {
@@ -7344,7 +7492,7 @@ ${exportedHTML}
         background: bg,
         border: "1px solid " + bd,
         fontFamily: MONO,
-        fontSize: 9,
+        fontSize: 11,
         fontWeight: 600,
         color: col,
         display: "flex",
@@ -7580,7 +7728,7 @@ ${exportedHTML}
   }, "Befintliga certifikat hos annat organ ", /*#__PURE__*/React.createElement("span", {
     style: {
       fontWeight: 400,
-      color: C.muted
+      color: C.ink
     }
   }, "(valfritt \u2014 f\xF6r prior knowledge-reduktion)"))), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7605,7 +7753,7 @@ ${exportedHTML}
       borderRadius: 4,
       padding: "6px 10px",
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: C.green,
       lineHeight: 1.7
     }
@@ -7617,8 +7765,8 @@ ${exportedHTML}
       borderRadius: 4,
       padding: "7px 10px",
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.ink2,
+      fontSize: 11,
+      color: C.ink,
       lineHeight: 1.8,
       marginTop: 4
     }
@@ -7636,9 +7784,9 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
-      color: C.accent,
-      letterSpacing: "0.12em",
+      fontSize: 11,
+      color: "#101820",
+      letterSpacing: "0.08em",
       textTransform: "uppercase",
       marginBottom: 8
     }
@@ -7740,8 +7888,8 @@ ${exportedHTML}
       borderLeft: "3px solid " + C.accent,
       padding: "7px 10px",
       fontFamily: MONO,
-      fontSize: 9,
-      color: C.ink2,
+      fontSize: 11,
+      color: C.ink,
       lineHeight: 1.7
     }
   }, /*#__PURE__*/React.createElement("strong", {
@@ -7758,9 +7906,9 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
-      color: C.accent,
-      letterSpacing: "0.12em",
+      fontSize: 11,
+      color: "#101820",
+      letterSpacing: "0.08em",
       textTransform: "uppercase",
       marginBottom: 8
     }
@@ -7855,7 +8003,7 @@ ${exportedHTML}
   }, "Normal"), /*#__PURE__*/React.createElement("option", {
     value: "high"
   }, "H\xF6g \u2014 olyckshistorik / farliga \xE4mnen")))))), showImsPanel && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SLbl, {
-    color: C.gold
+    color: "#7A4800"
   }, "IMS-integration \u2014 IAF MD 11:2023 Annex 1 Figur 1"), /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.goldLt,
@@ -7949,8 +8097,8 @@ ${exportedHTML}
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
-      color: C.gold,
+      fontSize: 11,
+      color: "#7A4800",
       marginTop: 8
     }
   }, "Ber\xE4knad reduktion: ", /*#__PURE__*/React.createElement("strong", null, Math.round(md11ReductionFraction(parseInt(f.imsIntLevel) || 60, parseInt(f.imsCombPct) || 50) * 100), "%"), " av T"))), f.s27001 && /*#__PURE__*/React.createElement("div", {
@@ -7989,7 +8137,7 @@ ${exportedHTML}
   }), f.imsPersons && /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.purple,
       marginTop: 3
     }
@@ -8014,7 +8162,7 @@ ${exportedHTML}
   }), parseInt(f.imsIdenticalPct) > 0 && f.imsPersons && /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.purple,
       marginTop: 4,
       lineHeight: 1.6
@@ -8030,7 +8178,7 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.purple,
       fontWeight: 700,
       letterSpacing: "0.08em",
@@ -8040,8 +8188,9 @@ ${exportedHTML}
   }, "ISMS \u2014 Integration med befintligt ledningssystem"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       marginBottom: 8,
       lineHeight: 1.7
     }
@@ -8066,7 +8215,7 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       fontWeight: 700,
       color: f.imsIntegrationStatus === val ? C.purple : C.ink2,
       marginBottom: 2
@@ -8074,7 +8223,7 @@ ${exportedHTML}
   }, f.imsIntegrationStatus === val ? "✓ " : "", lbl), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: f.imsIntegrationStatus === val ? C.purple : C.muted,
       lineHeight: 1.5
     }
@@ -8085,7 +8234,7 @@ ${exportedHTML}
       borderRadius: 4,
       padding: "5px 9px",
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: C.green,
       lineHeight: 1.7
     }
@@ -8103,7 +8252,7 @@ ${exportedHTML}
       borderRadius: 4,
       padding: "5px 9px",
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: "#7a5c1e",
       lineHeight: 1.7
     }
@@ -8121,7 +8270,7 @@ ${exportedHTML}
       borderRadius: 4,
       padding: "5px 9px",
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: C.purple,
       lineHeight: 1.7
     }
@@ -8142,7 +8291,7 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.purple,
       letterSpacing: "0.12em",
       textTransform: "uppercase",
@@ -8199,7 +8348,7 @@ ${exportedHTML}
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.purple,
       marginTop: 4
     }
@@ -8213,7 +8362,7 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.purple,
       letterSpacing: "0.12em",
       textTransform: "uppercase",
@@ -8270,7 +8419,7 @@ ${exportedHTML}
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.purple,
       marginTop: 4
     }
@@ -8285,7 +8434,7 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.purple,
       fontWeight: 700,
       letterSpacing: "0.08em",
@@ -8309,7 +8458,7 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: C.purple,
       fontWeight: 700,
       marginBottom: 4,
@@ -8322,13 +8471,13 @@ ${exportedHTML}
       display: "flex",
       justifyContent: "space-between",
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       padding: "2px 0",
       borderBottom: `1px solid ${C.purpleBd}`
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      color: C.ink2
+      color: C.ink
     }
   }, lbl), /*#__PURE__*/React.createElement("span", {
     style: {
@@ -8340,7 +8489,7 @@ ${exportedHTML}
       display: "flex",
       justifyContent: "space-between",
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       marginTop: 5,
       fontWeight: 700
     }
@@ -8362,7 +8511,7 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: C.purple,
       fontWeight: 700,
       marginBottom: 4,
@@ -8375,13 +8524,13 @@ ${exportedHTML}
       display: "flex",
       justifyContent: "space-between",
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       padding: "2px 0",
       borderBottom: `1px solid ${C.purpleBd}`
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      color: C.ink2
+      color: C.ink
     }
   }, lbl), /*#__PURE__*/React.createElement("span", {
     style: {
@@ -8393,7 +8542,7 @@ ${exportedHTML}
       display: "flex",
       justifyContent: "space-between",
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       marginTop: 5,
       fontWeight: 700
     }
@@ -8415,14 +8564,15 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       marginBottom: 3
     }
   }, "D.2=", d2live, " (", d2live <= 4 ? "låg" : d2live <= 6 ? "medel" : "hög", ") + D.3=", d3live, " (", d3live <= 4 ? "låg" : d3live <= 6 ? "medel" : "hög", ") \u2192 Tabell D.4:"), annexDlive.pctMin === 0 && annexDlive.pctMax === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.muted,
       fontStyle: "italic"
     }
@@ -8436,9 +8586,9 @@ ${exportedHTML}
   }, "Justeringsintervall: ", (annexDlive.pctMin >= 0 ? "+" : "") + annexDlive.pctMin, "% till ", (annexDlive.pctMax >= 0 ? "+" : "") + annexDlive.pctMax, "%", /*#__PURE__*/React.createElement("span", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       fontWeight: 400,
-      color: C.ink2,
+      color: C.ink,
       marginLeft: 8
     }
   }, "\u2192 Till\xE4mpar: ", /*#__PURE__*/React.createElement("strong", null, (annexDlive.chosenPct >= 0 ? "+" : "") + annexDlive.chosenPct, "%"), " (", f.imsD4choice === "conservative" ? "konservativ" : f.imsD4choice === "extended" ? "utökad" : "normal", ")")))), parseInt(f.imsPersons) > 0 && /*#__PURE__*/React.createElement("div", {
@@ -8452,7 +8602,7 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.purple,
       letterSpacing: "0.12em",
       textTransform: "uppercase",
@@ -8477,9 +8627,9 @@ ${exportedHTML}
       padding: "8px 10px",
       marginBottom: 10,
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       lineHeight: 1.8,
-      color: C.ink2
+      color: C.ink
     }
   }, /*#__PURE__*/React.createElement("strong", {
     style: {
@@ -8521,7 +8671,7 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       fontWeight: 700,
       color: f.imsD4choice === val ? col : C.ink2,
       marginBottom: 2
@@ -8529,7 +8679,7 @@ ${exportedHTML}
   }, f.imsD4choice === val ? "✓ " : "", lbl), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
+      fontSize: 11,
       color: f.imsD4choice === val ? col : C.muted,
       lineHeight: 1.5
     }
@@ -8565,7 +8715,7 @@ ${exportedHTML}
       borderRadius: 4,
       padding: "7px 10px",
       fontFamily: MONO,
-      fontSize: 9
+      fontSize: 11
     }
   }, annexDlive.pctMin === 0 && annexDlive.pctMax === 0 ? /*#__PURE__*/React.createElement("span", {
     style: {
@@ -8578,7 +8728,7 @@ ${exportedHTML}
     }
   }, "Bastal ", fmt(baseLive), " dag \xD7 (1 ", (annexDlive.chosenPct >= 0 ? "+" : "") + annexDlive.chosenPct, "%) = ", /*#__PURE__*/React.createElement("strong", null, fmt(r2(baseLive * annexDlive.factor)), " dag"), /*#__PURE__*/React.createElement("span", {
     style: {
-      color: C.ink2,
+      color: C.ink,
       fontWeight: 400,
       marginLeft: 6
     }
@@ -8595,8 +8745,8 @@ ${exportedHTML}
       padding: "7px 10px",
       marginBottom: 8,
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.ink2,
+      fontSize: 11,
+      color: C.ink,
       lineHeight: 1.8
     }
   }, /*#__PURE__*/React.createElement("strong", {
@@ -8611,7 +8761,7 @@ ${exportedHTML}
   }, "\u26A0 \xD6verlappningsrisk:"), " D.2 \"Mognad\" och C.3.5(c) \"Mognad\" bed\xF6mer delvis samma sak. V\xE4lj ", /*#__PURE__*/React.createElement("strong", null, "H\xF6g"), " i C.3.5(c) enbart om D.2-bed\xF6mningen inte fullt ut f\xE5ngat ISMS-mognaden \u2014 annars dubbelr\xE4knas reduktionen."), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.purple,
       letterSpacing: "0.12em",
       textTransform: "uppercase",
@@ -8665,8 +8815,9 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 8,
-      color: C.muted,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
       marginBottom: 4,
       lineHeight: 1.6
     }
@@ -8724,7 +8875,7 @@ ${exportedHTML}
       background: f.stage1Pct === val ? C.goldLt : C.bg,
       cursor: "pointer",
       fontFamily: MONO,
-      fontSize: 10,
+      fontSize: 11,
       fontWeight: f.stage1Pct === val ? 600 : 400,
       color: f.stage1Pct === val ? C.ink : C.ink2,
       textAlign: "center",
@@ -8733,7 +8884,7 @@ ${exportedHTML}
   }, lbl))), f.stage1Pct === "33" && /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.teal,
       marginTop: 3
     }
@@ -8748,7 +8899,7 @@ ${exportedHTML}
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.ink,
       fontWeight: 600,
       marginBottom: 6
@@ -8756,16 +8907,17 @@ ${exportedHTML}
   }, "\uD83D\uDCA1 Prispsykologisk rekommendation"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
-      color: C.ink2,
+      fontSize: 11,
+      color: C.ink,
       lineHeight: 1.8
     }
   }, "Ge rabatt ", /*#__PURE__*/React.createElement("strong", null, "framtill"), " (initial) \u2014 det s\xE4nker intr\xE4deshindret och har st\xF6rst upplevt v\xE4rde (ankringseffekten). Beh\xE5ll fullpris p\xE5 periodisk revision och omcertifiering \u2014 kunden \xE4r redan \"inne\" och priset \xE4r sekund\xE4rt. Rabatt p\xE5 hela paketet signalerar desperation; selektiv rabatt signalerar v\xE4rde.")), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 6,
       fontFamily: MONO,
-      fontSize: 9,
-      color: C.muted
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink
     }
   }, "S\xE4tt 0 om ingen rabatt f\xF6r den fasen."), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8797,13 +8949,14 @@ ${exportedHTML}
   }), /*#__PURE__*/React.createElement("span", {
     style: {
       fontFamily: MONO,
-      fontSize: 10,
-      color: C.muted
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink
     }
   }, "%"), parseFloat(f[key]) > 0 && /*#__PURE__*/React.createElement("span", {
     style: {
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       color: C.green
     }
   }, "\u2212", f[key], "%"))))), result && (parseFloat(f.rabattInit) || parseFloat(f.rabattSteg1) || parseFloat(f.rabattSteg2) || parseFloat(f.rabattSurv1) || parseFloat(f.rabattSurv2) || parseFloat(f.rabattRecert)) > 0 && (() => {
@@ -8813,7 +8966,7 @@ ${exportedHTML}
     return /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 9,
+        fontSize: 11,
         color: C.green,
         marginBottom: 9,
         padding: "6px 10px",
@@ -8846,7 +8999,7 @@ ${exportedHTML}
   }), parseFloat(f.rabatt) > 0 && result && /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
-      fontSize: 10,
+      fontSize: 11,
       color: C.green
     }
   }, "\u2212", sek(Math.round(getPrices(result, f.rabatt, {}).rabattBeloppTotal)), " p\xE5 totalt pris"))), (() => {
@@ -8906,7 +9059,7 @@ ${exportedHTML}
         background: "white",
         border: "1px solid #e8d88a",
         fontFamily: MONO,
-        fontSize: 9,
+        fontSize: 11,
         cursor: "pointer",
         borderRadius: 4,
         color: "#7a5c1e"
@@ -8914,7 +9067,7 @@ ${exportedHTML}
     }, "\u21BA \xC5terst\xE4ll")), dayRate !== DAY_RATE_DEFAULT && /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 9,
+        fontSize: 11,
         color: "#BF0D3E",
         marginTop: 3,
         fontWeight: 600
@@ -8972,7 +9125,7 @@ ${exportedHTML}
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
-        fontSize: 8,
+        fontSize: 11,
         letterSpacing: "0.1em",
         textTransform: "uppercase",
         color: C.accent,
@@ -8985,7 +9138,7 @@ ${exportedHTML}
         gridTemplateColumns: "1fr auto",
         gap: "2px 10px",
         fontFamily: MONO,
-        fontSize: 9
+        fontSize: 11
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -9042,10 +9195,10 @@ ${exportedHTML}
     style: {
       padding: "7px 0",
       background: C.surface,
-      color: C.ink2,
+      color: C.ink,
       border: "1.5px solid " + C.border,
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       letterSpacing: "0.07em",
       textTransform: "uppercase",
       cursor: "pointer",
@@ -9056,10 +9209,10 @@ ${exportedHTML}
     style: {
       padding: "7px 0",
       background: C.surface,
-      color: C.ink2,
+      color: C.ink,
       border: "1.5px solid " + C.border,
       fontFamily: MONO,
-      fontSize: 9,
+      fontSize: 11,
       letterSpacing: "0.07em",
       textTransform: "uppercase",
       cursor: "pointer",
@@ -9121,7 +9274,7 @@ ${exportedHTML}
       fontSize: 7,
       cursor: "pointer",
       borderRadius: 3,
-      color: C.ink2
+      color: C.ink
     }
   }, "+", lbl)), f.offerCondition && /*#__PURE__*/React.createElement("button", {
     onClick: () => set("offerCondition", ""),
@@ -9146,7 +9299,7 @@ ${exportedHTML}
       border: `1px solid ${C.border}`,
       color: C.ink,
       fontFamily: MONO,
-      fontSize: 10,
+      fontSize: 11,
       padding: "5px 7px",
       outline: "none",
       borderRadius: 4,
@@ -9182,7 +9335,7 @@ ${exportedHTML}
       border: `1px dashed ${C.border2}`,
       padding: "80px 40px",
       textAlign: "center",
-      color: C.muted,
+      color: C.ink,
       lineHeight: 2.4,
       fontSize: 11
     }
@@ -9206,19 +9359,24 @@ ${exportedHTML}
     style: {
       display: "flex",
       border: `1px solid ${C.border}`,
+      borderRadius: "8px 8px 0 0",
+      overflow: "hidden",
       marginBottom: 20
     }
   }, /*#__PURE__*/React.createElement(TabBtn, {
     id: "work",
-    label: "Arbetsunderlag"
+    label: "Mandagsberäkning",
+    sub: "Intern beräkning och mandagsspecifikation"
   }), /*#__PURE__*/React.createElement(TabBtn, {
     id: "customer",
-    label: "Kundoffert"
+    label: "Kundoffert",
+    sub: "Offertunderlag med motiveringstext"
   }), (() => {
     const totalStds = (result?.md5?.stds?.length || 0) + (result?.iso27001 ? 1 : 0);
     return /*#__PURE__*/React.createElement(TabBtn, {
       id: "compare",
-      label: "F\xF6rdel med kombinerad certifiering",
+      label: "Kombinerad certifiering",
+      sub: totalStds < 2 ? "Kräver minst två certifieringar" : "Fördelsberäkning och jämförelse",
       disabled: totalStds < 2
     });
   })()), /*#__PURE__*/React.createElement("div", {
@@ -9258,7 +9416,7 @@ ${exportedHTML}
       color: "#fff",
       border: "none",
       fontFamily: MONO,
-      fontSize: 10,
+      fontSize: 11,
       letterSpacing: "0.1em",
       textTransform: "uppercase",
       cursor: "pointer"
@@ -9288,7 +9446,7 @@ ${exportedHTML}
       color: "#fff",
       border: "none",
       fontFamily: MONO,
-      fontSize: 10,
+      fontSize: 11,
       letterSpacing: "0.1em",
       textTransform: "uppercase",
       cursor: "pointer"
@@ -9344,7 +9502,7 @@ ${exportedHTML}
       color: "#fff",
       border: "none",
       fontFamily: MONO,
-      fontSize: 10,
+      fontSize: 11,
       letterSpacing: "0.1em",
       textTransform: "uppercase",
       cursor: "pointer"
@@ -9361,8 +9519,215 @@ ${exportedHTML}
     }
   }, "En HTML-fil laddas ner till din dator.", /*#__PURE__*/React.createElement("br", null), "\xD6ppna filen i webbl\xE4saren \u2192 tryck ", /*#__PURE__*/React.createElement("strong", null, "Ctrl+P"), " (Win) / ", /*#__PURE__*/React.createElement("strong", null, "\u2318+P"), " (Mac) \u2192 v\xE4lj ", /*#__PURE__*/React.createElement("strong", null, "Spara som PDF"), "."))))));
 }
+const StartPage = ({ onEnter }) => {
+  return React.createElement("div", {
+    style: {
+      minHeight: "100vh",
+      background: "#f3ede4",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      fontFamily: "'Segoe UI', system-ui, -apple-system, Arial, sans-serif",
+      padding: "40px 20px"
+    }
+  },
+    // Logo
+    React.createElement("img", {
+      src: "data:image/jpeg;base64," + LOGO_B64,
+      alt: "SBSC",
+      style: { width: 120, marginBottom: 32 }
+    }),
+    // Rubrik
+    React.createElement("h1", {
+      style: {
+        fontSize: 28,
+        fontWeight: 800,
+        color: "#101820",
+        letterSpacing: "-0.02em",
+        marginBottom: 6,
+        textAlign: "center"
+      }
+    }, "Mandagskalkylator"),
+    // Underrubrik
+    React.createElement("div", {
+      style: {
+        fontSize: 11,
+        fontWeight: 700,
+        color: "#FFA300",
+        letterSpacing: "0.14em",
+        textTransform: "uppercase",
+        marginBottom: 40
+      }
+    }, "Internt beräkningsverktyg · SBSC"),
+    // Primära funktionskort
+    React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "repeat(3, 1fr)",
+        gap: 14,
+        maxWidth: 720,
+        width: "100%",
+        marginBottom: 14
+      }
+    },
+      ...[
+        { title: "Mandagsberäkning", desc: "Beräknar revisionsdagar per certifieringstyp och fas — initial certifiering, periodisk revision och omcertifiering." },
+        { title: "Offertunderlag", desc: "Genererar rabatter per fas och producerar ett strukturerat offertunderlag redo att presentera för kunden." },
+        { title: "Motiveringstext", desc: "Skapar en kundanpassad motiveringstext som förklarar beräkningens normgrund och anpassningar." }
+      ].map(({ title, desc }) =>
+        React.createElement("div", {
+          key: title,
+          style: {
+            background: "#fff",
+            borderRadius: 10,
+            padding: "22px 22px 22px 26px",
+            borderLeft: "3px solid #FFA300",
+            boxShadow: "0 2px 8px rgba(16,24,32,0.08), 0 6px 20px rgba(16,24,32,0.06)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 8
+          }
+        },
+          React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: "#101820", letterSpacing: "-0.01em" } }, title),
+          React.createElement("div", { style: { fontSize: 12, color: "#4a3c30", lineHeight: 1.7 } }, desc)
+        )
+      )
+    ),
+    // Sekundära egenskapspiller
+    React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "repeat(3, 1fr)",
+        gap: 10,
+        maxWidth: 720,
+        width: "100%",
+        marginBottom: 44
+      }
+    },
+      ...[
+        { label: "Inbyggda räkneexempel", sub: "Normhänvisning per fält" },
+        { label: "Användarguide", sub: "Steg-för-steg i verktyget" },
+        { label: "Spara och ladda", sub: "Återanvänd kundprofiler" }
+      ].map(({ label, sub }) =>
+        React.createElement("div", {
+          key: label,
+          style: {
+            background: "#e2d8ce",
+            borderRadius: 8,
+            padding: "13px 16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 3
+          }
+        },
+          React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: "#101820" } }, label),
+          React.createElement("div", { style: { fontSize: 11, color: "#6a5848" } }, sub)
+        )
+      )
+    ),
+    // Disclaimer
+    // Normgrund
+    React.createElement("div", {
+      style: {
+        maxWidth: 720,
+        width: "100%",
+        marginBottom: 36,
+        borderTop: "1px solid #ddd8d0",
+        paddingTop: 20
+      }
+    },
+      React.createElement("div", {
+        style: {
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: "0.13em",
+          textTransform: "uppercase",
+          color: "#5a4030",
+          marginBottom: 12,
+          textAlign: "left"
+        }
+      }, "Normgrund"),
+      React.createElement("div", {
+        style: { display: "flex", flexWrap: "wrap", gap: 8 }
+      },
+        ...[
+          "IAF MD 1:2023",
+          "IAF MD 2:2023",
+          "IAF MD 5:2023",
+          "IAF MD 11:2023",
+          "ISO/IEC 17021-1:2015",
+          "SS-EN ISO/IEC 27006-1:2024"
+        ].map(norm =>
+          React.createElement("span", {
+            key: norm,
+            style: {
+              fontSize: 11,
+              fontWeight: 600,
+              color: "#4a4039",
+              background: "#ddd5c8",
+              borderRadius: 4,
+              padding: "5px 11px",
+              letterSpacing: "0.01em"
+            }
+          }, norm)
+        )
+      )
+    ),
+    // CTA-knapp
+    React.createElement("button", {
+      onClick: onEnter,
+      style: {
+        background: "#101820",
+        color: "#fff",
+        border: "none",
+        borderRadius: 6,
+        padding: "14px 40px",
+        fontSize: 14,
+        fontWeight: 700,
+        letterSpacing: "0.04em",
+        cursor: "pointer",
+        fontFamily: "inherit",
+        transition: "background .15s"
+      },
+      onMouseEnter: e => e.target.style.background = "#FFA300",
+      onMouseLeave: e => e.target.style.background = "#101820"
+    }, "Öppna kalkylatorn →"),
+    // Footer
+    React.createElement("div", {
+      style: {
+        position: "fixed",
+        bottom: 0, left: 0, right: 0,
+        background: "#101820",
+        padding: "10px 24px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8
+      }
+    },
+      React.createElement("span", {
+        style: {
+          fontSize: 11,
+          fontWeight: 800,
+          color: "#FFA300",
+          letterSpacing: "0.15em",
+          textTransform: "uppercase"
+        }
+      }, "SÄKRARE. TRYGGARE. CERTIFIERAD.")
+    )
+  );
+};
+
 const domRoot = ReactDOM.createRoot(document.getElementById("root"));
-domRoot.render(React.createElement(App));
+domRoot.render(React.createElement(AppShell));
+
+function AppShell() {
+  const [appView, setAppView] = useState("start");
+  return appView === "start"
+    ? React.createElement(StartPage, { onEnter: () => setAppView("app") })
+    : React.createElement(App);
+}
 </script>
 </body>
 </html>
