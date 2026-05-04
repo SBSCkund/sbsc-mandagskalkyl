@@ -9431,20 +9431,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
       fontSize: 11,
       color: C.green
     }
-  }, "\u2212", sek(Math.round(getPrices(result, f.rabatt, {}).rabattBeloppTotal)), " p\xE5 totalt pris"))), (() => {
-    const [showRate, setShowRate] = React.useState(false);
-    React.useEffect(() => {
-      const h = e => {
-        if (e.ctrlKey && e.shiftKey && e.key === "P") {
-          e.preventDefault();
-          setShowRate(v => !v);
-        }
-      };
-      window.addEventListener("keydown", h);
-      return () => window.removeEventListener("keydown", h);
-    }, []);
-    if (!showRate) return null;
-    return /*#__PURE__*/React.createElement("div", {
+  }, "\u2212", sek(Math.round(getPrices(result, f.rabatt, {}).rabattBeloppTotal)), " p\xE5 totalt pris"))), (() => { return /*#__PURE__*/React.createElement("div", {
       style: {
         marginBottom: 9,
         background: "#fffbeb",
@@ -9453,7 +9440,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
         padding: "8px 10px"
       }
     }, /*#__PURE__*/React.createElement(Lbl, {
-      tip: "Dold \u2014 Ctrl+Shift+P f\xF6r att st\xE4nga. Uppdateras vid prisjustering."
+      tip: "Dagskostnad sparas i webbl\xE4saren (localStorage) \u2014 aldrig i k\xe4llkod."
     }, "Dagsrate (kr/dag exkl. moms)"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
