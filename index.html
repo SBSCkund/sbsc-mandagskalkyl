@@ -5117,164 +5117,67 @@ function App() {
         style: {
           color: C.purple
         }
-      }, "ISO 27001 \u2014 Revisionsplanering:"), " ISO 27001-revisionen genomf\xF6rs av SBSC:s dedikerade 27001-revisorer och bokas separat. Tidpunkt fastst\xE4lls i dialog med ansvarig revisor.", snap.iso27001separate && (snap.s9001 || snap.s14001 || snap.s45001) && /*#__PURE__*/React.createElement("span", null, " ", /*#__PURE__*/React.createElement("strong", null, "Denna offert avser enbart ISO 27001."), " \xD6vriga certifieringar regleras i separat \xF6verenskommelse.")), /*#__PURE__*/React.createElement("div", {
-        style: {
-          border: `1.5px solid ${C.border}`,
-          borderRadius: 6,
-          overflow: "hidden",
-          marginBottom: 10
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          background: C.ink,
-          padding: "8px 16px",
-          display: "grid",
-          gridTemplateColumns: "60px 1fr 100px 140px",
-          gap: 8,
-          fontFamily: MONO,
-          fontSize: 11,
-          color: "rgba(255,255,255,0.6)",
-          fontWeight: 600,
-          textTransform: "uppercase",
-          letterSpacing: "0.06em"
-        }
-      }, /*#__PURE__*/React.createElement("div", null, "\xC5r"), /*#__PURE__*/React.createElement("div", null, "Revision"), /*#__PURE__*/React.createElement("div", {
-        style: {
-          textAlign: "right"
-        }
-      }, "Dagar"), /*#__PURE__*/React.createElement("div", {
-        style: {
-          textAlign: "right"
-        }
-      }, "Kostnad exkl. moms")), [["0", "Initial certifiering — Steg 1 + Steg 2", fmt(prices.totalInit), sek(prices.pInit), true], ["1", "Periodisk revision (ca 1/3 av initial audittid)", fmt(prices.surv), sek(prices.pSurv), false], ["2", "Periodisk revision (ca 1/3 av initial audittid)", fmt(prices.surv), sek(prices.pSurv), false], ["3", "Omcertifiering — förnyad fullständig revision (minst 2/3 av initial)", fmt(prices.recert), sek(prices.pRecert), false]].map(([yr, desc, days, kr, highlight], i) => /*#__PURE__*/React.createElement("div", {
-        key: i,
-        style: {
-          display: "grid",
-          gridTemplateColumns: "60px 1fr 100px 140px",
-          gap: 8,
-          background: highlight ? C.goldLt : i % 2 === 0 ? "white" : C.s2,
-          padding: "10px 16px",
-          borderTop: "1px solid " + C.border,
-          alignItems: "center"
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontFamily: MONO,
-          fontSize: 11,
-          fontWeight: 700,
-          color: highlight ? C.accent : C.muted
-        }
-      }, "\xC5r ", yr), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontFamily: MONO,
-          fontSize: 11,
-          color: C.ink,
-          lineHeight: 1.5
-        }
-      }, desc), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontFamily: MONO,
-          fontSize: 11,
-          fontWeight: 600,
-          color: C.ink,
-          textAlign: "right"
-        }
-      }, days), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontFamily: SERIF,
-          fontSize: 11,
-          fontWeight: 700,
-          color: highlight ? C.accent : C.ink,
-          textAlign: "right"
-        }
-      }, kr))), prices.rabattBeloppTotal > 0 && (() => {
-        // Bygg specificerade rabattrader — en per aktiv rabatt
-        const rabattRader = [];
-        if (prices.usePerFas) {
-          if (prices.useStegRabatt) {
-            if (prices.rSt1 > 0) rabattRader.push([`Kampanjpris Steg 1 −${prices.rSt1}%`, prices.pSteg1 - prices.pSteg1After]);
-            if (prices.rSt2 > 0) rabattRader.push([`Kampanjpris Steg 2 −${prices.rSt2}%`, prices.pSteg2 - prices.pSteg2After]);
-          } else {
-            if (prices.rI > 0) rabattRader.push([`Kampanjpris initial certifiering −${prices.rI}%`, prices.pInit - prices.pInitAfter]);
-          }
-          if (prices.rS1 > 0) rabattRader.push([`Kampanjpris periodisk revision år 1 −${prices.rS1}%`, prices.pSurv - prices.pSurv1After]);
-          if (prices.rS2 > 0) rabattRader.push([`Kampanjpris periodisk revision år 2 −${prices.rS2}%`, prices.pSurv - prices.pSurv2After]);
-          if (prices.rR > 0) rabattRader.push([`Kampanjpris omcertifiering −${prices.rR}%`, prices.pRecert - prices.pRecertAfter]);
-        } else if (prices.rabatt > 0) {
-          rabattRader.push([`${prices.rabatt}% rabatt på hela certifieringspaketet`, prices.rabattBeloppTotal]);
-        }
-        return rabattRader.map(([label, belopp], i) => /*#__PURE__*/React.createElement("div", {
-          key: i,
-          style: {
-            display: "grid",
-            gridTemplateColumns: "60px 1fr 100px 140px",
-            gap: 8,
-            background: "#edf7ed",
-            padding: "7px 16px",
-            borderTop: "1px solid " + C.greenBd,
-            alignItems: "center"
-          }
-        }, /*#__PURE__*/React.createElement("div", {
-          style: {
-            fontFamily: MONO,
-            fontSize: 11,
-            color: C.green,
-            fontWeight: 700
-          }
-        }, i === 0 ? "Rabatt" : ""), /*#__PURE__*/React.createElement("div", {
-          style: {
-            fontFamily: MONO,
-            fontSize: 11,
-            color: C.green
-          }
-        }, label), /*#__PURE__*/React.createElement("div", null), /*#__PURE__*/React.createElement("div", {
-          style: {
-            fontFamily: SERIF,
-            fontSize: 11,
-            fontWeight: 700,
-            color: C.green,
-            textAlign: "right"
-          }
-        }, "\u2212", sek(belopp))));
-      })(), /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: "grid",
-          gridTemplateColumns: "60px 1fr 100px 140px",
-          gap: 8,
-          background: C.ink,
-          padding: "10px 16px",
-          borderTop: "2px solid " + C.brand,
-          alignItems: "center"
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontFamily: MONO,
-          fontSize: 11,
-          color: "rgba(255,255,255,0.5)"
-        }
-      }, "Totalt"), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontFamily: MONO,
-          fontSize: 11,
-          color: "rgba(255,255,255,0.7)"
-        }
-      }, "3-\xE5rig certifieringscykel \xB7 resor ing\xE5r"), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontFamily: MONO,
-          fontSize: 11,
-          fontWeight: 600,
-          color: C.accent,
-          textAlign: "right"
-        }
-      }, fmt(prices.totalInit + prices.surv * 2 + prices.recert), " dag"), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontFamily: SERIF,
-          fontSize: 14,
-          fontWeight: 700,
-          color: C.accent,
-          textAlign: "right"
-        }
-      }, sek(prices.pTotal)))), /*#__PURE__*/React.createElement("div", {
+      }, "ISO 27001 \u2014 Revisionsplanering:"), " ISO 27001-revisionen genomf\xF6rs av SBSC:s dedikerade 27001-revisorer och bokas separat. Tidpunkt fastst\xE4lls i dialog med ansvarig revisor.", snap.iso27001separate && (snap.s9001 || snap.s14001 || snap.s45001) && /*#__PURE__*/React.createElement("span", null, " ", /*#__PURE__*/React.createElement("strong", null, "Denna offert avser enbart ISO 27001."), " \xD6vriga certifieringar regleras i separat \xF6verenskommelse.")), ((() => {
+      const hasRabatt = prices.rabattBeloppTotal > 0;
+      const cols = hasRabatt ? "60px 1fr 80px 130px 130px" : "60px 1fr 100px 140px";
+
+      const hdrRow = /*#__PURE__*/React.createElement("div", {
+        style:{display:"grid",gridTemplateColumns:cols,gap:8,background:C.ink,padding:"8px 16px",alignItems:"center"}
+      }, ...(hasRabatt
+        ? ["\xC5r","Revision","Dagar","Ord. pris","Ert pris"]
+        : ["\xC5r","Revision","Dagar","Kostnad exkl. moms"]
+      ).map((h,i) => /*#__PURE__*/React.createElement("div",{key:i,style:{fontFamily:MONO,fontSize:9,fontWeight:700,color:C.accent,textAlign:i>=3?"right":"left",letterSpacing:"0.08em",textTransform:"uppercase"}},h)));
+
+      function mkRow(yr,desc,days,ord,ert,pct,hl,sub){
+        const bg = sub?"#fafafa":hl?C.goldLt:C.surface;
+        const showD = hasRabatt&&pct>0;
+        const cells = [
+          /*#__PURE__*/React.createElement("div",{style:{fontFamily:MONO,fontSize:sub?10:11,fontWeight:700,color:hl?C.accent:C.muted}},yr?"\xC5r "+yr:""),
+          /*#__PURE__*/React.createElement("div",{style:{fontFamily:MONO,fontSize:sub?10:11,color:sub?C.muted:C.ink,lineHeight:1.5,fontStyle:sub?"italic":"normal"}},desc),
+          /*#__PURE__*/React.createElement("div",{style:{fontFamily:MONO,fontSize:11,fontWeight:600,color:C.ink,textAlign:"right"}},days||""),
+          /*#__PURE__*/React.createElement("div",{style:{fontFamily:SERIF,fontSize:11,textAlign:"right",color:hasRabatt?(showD?C.muted:C.ink):(hl?C.accent:C.ink),textDecoration:showD?"line-through":"none",fontWeight:hasRabatt?400:700}},ord)
+        ];
+        if(hasRabatt) cells.push(/*#__PURE__*/React.createElement("div",{style:{fontFamily:SERIF,fontSize:11,fontWeight:700,textAlign:"right",color:showD?C.green:(hl?C.accent:C.ink)}},
+          showD?/*#__PURE__*/React.createElement(React.Fragment,null,/*#__PURE__*/React.createElement("span",{style:{fontSize:9,color:C.green,marginRight:4}},"\u2212"+pct+"%"),ert):ert));
+        return /*#__PURE__*/React.createElement("div",{style:{display:"grid",gridTemplateColumns:cols,gap:8,background:bg,padding:sub?"6px 16px 6px 32px":"10px 16px",borderTop:"1px solid "+C.border,alignItems:"center"}},...cells);
+      }
+
+      const rows=[];
+      if(hasRabatt&&prices.useStegRabatt){
+        rows.push(mkRow("0","Initial certifiering \u2014 Steg 1 + Steg 2",fmt(prices.totalInit),sek(prices.pInit),sek(prices.pInitAfter),0,true,false));
+        rows.push(mkRow("","Steg 1 \u2014 dokumentationsgranskning och beredskapsanalys","",sek(prices.pSteg1),sek(prices.pSteg1After),prices.rSt1,false,true));
+        rows.push(mkRow("","Steg 2 \u2014 fullst\xE4ndig revision p\xE5 plats","",sek(prices.pSteg2),sek(prices.pSteg2After),prices.rSt2,false,true));
+      } else {
+        rows.push(mkRow("0","Initial certifiering \u2014 Steg 1 + Steg 2",fmt(prices.totalInit),sek(prices.pInit),sek(prices.pInitAfter),hasRabatt?prices.rI:0,true,false));
+      }
+      rows.push(mkRow("1","Periodisk revision (ca 1/3 av initial audittid)",fmt(prices.surv),sek(prices.pSurv),sek(prices.pSurv1After),prices.rS1||0,false,false));
+      rows.push(mkRow("2","Periodisk revision (ca 1/3 av initial audittid)",fmt(prices.surv),sek(prices.pSurv),sek(prices.pSurv2After),prices.rS2||0,false,false));
+      rows.push(mkRow("3","Omcertifiering \u2014 f\xF6rnyad fullst\xE4ndig revision (minst 2/3 av initial)",fmt(prices.recert),sek(prices.pRecert),sek(prices.pRecertAfter),prices.rR||0,false,false));
+
+      const pOrd = prices.pInit+prices.pSurv*2+prices.pRecert;
+      const totDays = prices.totalInit+prices.surv*2+prices.recert;
+
+      const totalBar = hasRabatt
+        ? /*#__PURE__*/React.createElement("div",{style:{borderTop:"2px solid "+C.brand,background:C.ink,padding:"14px 16px"}},
+            /*#__PURE__*/React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}},
+              /*#__PURE__*/React.createElement("div",{style:{fontFamily:MONO,fontSize:11,color:"rgba(255,255,255,0.5)"}},"Ordinarie totalpris (3-\xE5rig certifieringscykel)"),
+              /*#__PURE__*/React.createElement("div",{style:{fontFamily:SERIF,fontSize:12,color:"rgba(255,255,255,0.5)",textDecoration:"line-through"}},sek(pOrd))),
+            /*#__PURE__*/React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}},
+              /*#__PURE__*/React.createElement("div",{style:{fontFamily:MONO,fontSize:11,color:C.green}},"Er kampanjrabatt"),
+              /*#__PURE__*/React.createElement("div",{style:{fontFamily:SERIF,fontSize:12,fontWeight:700,color:C.green}},"\u2212",sek(prices.rabattBeloppTotal))),
+            /*#__PURE__*/React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:"1px solid rgba(255,255,255,0.15)",paddingTop:8}},
+              /*#__PURE__*/React.createElement("div",{style:{fontFamily:MONO,fontSize:11,color:C.accent}},"Ert pris exkl. moms \xB7 ",fmt(totDays)," dag"),
+              /*#__PURE__*/React.createElement("div",{style:{fontFamily:SERIF,fontSize:16,fontWeight:700,color:C.accent}},sek(prices.pTotal))))
+        : /*#__PURE__*/React.createElement("div",{style:{display:"grid",gridTemplateColumns:cols,gap:8,background:C.ink,padding:"10px 16px",borderTop:"2px solid "+C.brand,alignItems:"center"}},
+            /*#__PURE__*/React.createElement("div",{style:{fontFamily:MONO,fontSize:11,color:"rgba(255,255,255,0.5)"}},"Totalt"),
+            /*#__PURE__*/React.createElement("div",{style:{fontFamily:MONO,fontSize:11,color:"rgba(255,255,255,0.7)"}},"3-\xE5rig certifieringscykel"),
+            /*#__PURE__*/React.createElement("div",{style:{fontFamily:MONO,fontSize:11,fontWeight:600,color:C.accent,textAlign:"right"}},fmt(totDays)," dag"),
+            /*#__PURE__*/React.createElement("div",{style:{fontFamily:SERIF,fontSize:14,fontWeight:700,color:C.accent,textAlign:"right"}},sek(prices.pTotal)));
+
+      return /*#__PURE__*/React.createElement("div",{
+        style:{border:`1.5px solid ${C.border}`,borderRadius:6,overflow:"hidden",marginBottom:10}
+      }, hdrRow, ...rows, totalBar);
+    })()), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
           fontSize: 11,
