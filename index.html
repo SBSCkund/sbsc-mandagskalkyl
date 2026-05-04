@@ -3474,6 +3474,7 @@ function App() {
     // motivering vid Utökad
     // C.7 — scopeutökning
     imsScopeExt: "none",
+    imsSteg1Distans: "no",  // Steg 1 på distans
     // Befintligt 27001-certifikat
     ex27001: false,
     ex27001y: "3",
@@ -5145,7 +5146,7 @@ function App() {
         style: {
           textAlign: "right"
         }
-      }, "Kostnad exkl. moms")), [["0", "Initial certifiering — Steg 1 + Steg 2 (resor ingår)", fmt(prices.totalInit), sek(prices.pInit), true], ["1", "Periodisk revision (ca 1/3 av initial · resor ingår)", fmt(prices.surv), sek(prices.pSurv), false], ["2", "Periodisk revision (ca 1/3 av initial · resor ingår)", fmt(prices.surv), sek(prices.pSurv), false], ["3", "Omcertifiering — förnyad fullständig revision (minst 2/3 av initial · resor ingår)", fmt(prices.recert), sek(prices.pRecert), false]].map(([yr, desc, days, kr, highlight], i) => /*#__PURE__*/React.createElement("div", {
+      }, "Kostnad exkl. moms")), [["0", "Initial certifiering — Steg 1 + Steg 2", fmt(prices.totalInit), sek(prices.pInit), true], ["1", "Periodisk revision (ca 1/3 av initial audittid)", fmt(prices.surv), sek(prices.pSurv), false], ["2", "Periodisk revision (ca 1/3 av initial audittid)", fmt(prices.surv), sek(prices.pSurv), false], ["3", "Omcertifiering — förnyad fullständig revision (minst 2/3 av initial)", fmt(prices.recert), sek(prices.pRecert), false]].map(([yr, desc, days, kr, highlight], i) => /*#__PURE__*/React.createElement("div", {
         key: i,
         style: {
           display: "grid",
@@ -5282,9 +5283,7 @@ function App() {
           padding: "2px 4px",
           marginBottom: 8
         }
-      }, "Priset inkluderar resor och \xF6vernattningar, certifikat och SBSC-registrering. Moms tillkommer.", snap.dayRate && parseInt(snap.dayRate) > 999 && /*#__PURE__*/React.createElement("span", {
-        style: { color: C.muted, marginLeft: 6, fontSize: 10 }
-      }, "Dagsrate: ", parseInt(snap.dayRate).toLocaleString("sv-SE"), " kr/dag.")));
+      }, "Priset \xE4r fast och allt-inkluderat: revision (planering, genomf\xF6rande och rapportskrivning), resor, \xF6vernattningar, certifikat och SBSC-registrering. Inga tillkommande kostnader. Moms tillkommer."));
     })(), snap.offerCondition && /*#__PURE__*/React.createElement("div", {
       style: {
         marginBottom: 20,
@@ -5321,7 +5320,21 @@ function App() {
         color: C.ink,
         lineHeight: 1.9
       }
-    }, snap.offerCondition)), /*#__PURE__*/React.createElement(Sec, null, "Vad ing\xE5r"), [[`Initial certifiering (${fmt(prices.totalInit)} auditdagar)`, "Steg 1: dokumentationsgranskning och beredskapsanalys. Steg 2: fullständig revision på plats. Inkluderar certifikatutfärdande och SBSC-registrering."], [`Periodisk revision år 1 & 2 (${fmt(prices.surv)} dagar/tillfälle)`, "Periodisk revision genomförs med ca 1/3 av initial audittid för att säkerställa fortsatt efterlevnad och aktiv certifikatstatus."], [`Omcertifiering år 3 (${fmt(prices.recert)} auditdagar)`, "Förnyad fullständig revision med minst 2/3 av initial audittid. Nytt certifikat utfärdas för ytterligare tre år."], ["Resor och övernattningar ingår", "Inga tillkommande resekostnader faktureras. Resor och övernattningar är inkluderade i priset."], ["SWEDAC-ackrediterad certifiering", "SBSC är ackrediterat av SWEDAC. Certifikaten är internationellt erkända via IAF MLA."]].map(([h, t], i) => /*#__PURE__*/React.createElement("div", {
+    }, snap.offerCondition)), /*#__PURE__*/React.createElement(Sec, null, "Vad ing\xE5r"), (() => {
+      const s1d = md5 ? md5.stage1 : (iso27001 ? iso27001.stage1 : 0);
+      const s2d = md5 ? md5.stage2 : (iso27001 ? iso27001.stage2 : 0);
+      const is27001only = !md5 && !!iso27001;
+      // IAF MD 5 §4.5 + ISO 27006-1:2024 C.3.2: Steg 1 på distans gäller alla standarder
+      const distans = snap.imsSteg1Distans === "yes";
+      const initText = `Revisionen genomf\xF6rs i tv\xE5 steg: Steg 1 (${fmt(s1d)} dag) \u2014 dokumentationsgranskning och beredskapsanalys${distans ? " p\xE5 distans via digitalt m\xF6te" : ""}. Steg 2 (${fmt(s2d)} dag) \u2014 fullst\xE4ndig revision p\xE5 plats.`;
+      const items = [
+        [`Initial certifiering (${fmt(prices.totalInit)} revisionsdagar)`, initText],
+        ...(distans ? [["Steg 1 genomf\xF6rs p\xE5 distans", "Dokumentgranskning och beredskapsanalys via digitalt m\xF6te \u2014 ingen resa till er anl\xE4ggning f\xF6r Steg 1."]] : []),
+        [`Periodisk revision \xE5r 1 & 2 (${fmt(prices.surv)} revisionsdagar/tillf\xE4lle)`, "Uppf\xF6ljande revision som s\xE4kerst\xE4ller att certifieringen h\xE5lls aktiv och att er verksamhet forts\xE4tt uppfyller standardens krav."],
+        [`Omcertifiering \xE5r 3 (${fmt(prices.recert)} revisionsdagar)`, "F\xF6rnyad certifiering vart tredje \xE5r. Nytt certifikat utf\xE4rdas f\xF6r ytterligare tre \xE5r."],
+        ["SWEDAC-ackrediterad certifiering", "SBSC \xE4r ackrediterat av SWEDAC. Certifikaten \xE4r internationellt erk\xE4nda i \xF6ver 90 l\xE4nder via IAF MLA."]
+      ];
+      return items.map(([h, t], i) => /*#__PURE__*/React.createElement("div", {
       key: i,
       style: {
         display: "flex",
@@ -5341,7 +5354,7 @@ function App() {
       style: {
         color: C.ink
       }
-    }, t)))), /*#__PURE__*/React.createElement(Sec, null, "Motivering av revisionstid"), /*#__PURE__*/React.createElement("div", {
+    }, t)))); })(), /*#__PURE__*/React.createElement(Sec, null, "Motivering av revisionstid"), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         lineHeight: 1.9,
@@ -9262,6 +9275,20 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
   }, "Kombinerat med surveillance/omcertifiering (+0,5 dag per C.7 \xA72)"), /*#__PURE__*/React.createElement("option", {
     value: "separate"
   }, "Separat audit (+1,0 dag per C.7 \xA72)")))), /*#__PURE__*/React.createElement("div", {
+    style: { marginBottom: 9, background: "white", padding: "8px 10px",
+             border: `1px solid ${C.purpleBd}`, borderRadius: 4 }
+  },
+  /*#__PURE__*/React.createElement(Lbl, {
+    tip: "Steg 1 (dokumentgranskning och beredskapsanalys) kan genomf\u00f6ras p\u00e5 distans via digitalt m\u00f6te f\u00f6r alla certifieringstyper. P\u00e5verkar inte antalet revisionsdagar men framg\u00e5r i offerten. Per IAF MD 5:2023 \u00a74.5 och ISO 27006-1:2024 C.3.2."
+  }, "Steg 1 p\u00e5 distans?"),
+  /*#__PURE__*/React.createElement(Sel, {
+    value: f.imsSteg1Distans,
+    onChange: v => set("imsSteg1Distans", v)
+  },
+    /*#__PURE__*/React.createElement("option", { value: "no" }, "Nej \u2014 Steg 1 p\u00e5 plats"),
+    /*#__PURE__*/React.createElement("option", { value: "yes" }, "Ja \u2014 Steg 1 p\u00e5 distans (digitalt m\u00f6te, ingen resa)")
+  )
+), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 9
     }
