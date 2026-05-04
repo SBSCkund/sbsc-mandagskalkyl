@@ -1226,7 +1226,7 @@ function buildCustomerMotiv(f, md5, iso27001, integration) {
   if (iso27001) regRefs.push("ISO/IEC 27006-1:2024 (specifika krav för certifiering av informationssäkerhet)");
   if (parseInt(f.sites) > 1) regRefs.push("IAF MD 1:2023 (revision av organisationer med flera verksamhetsplatser)");
   if (f.certType === "transfer") regRefs.push("IAF MD 2:2023 (överföring av certifiering mellan certifieringsorgan)");
-  parts.push(`Revisionstiden är beräknad i enlighet med ${regRefs.join(", ")}. SBSC är ackrediterat av SWEDAC, vilket innebär att våra certifieringar är internationellt erkända och uppfyller kraven inom ramen för IAF:s multilaterala erkännandeordning (MLA). Samtliga priser inkluderar resor och övernattningar — inga tillkommande kostnader tillkommer.`);
+  parts.push(`Revisionstiden är beräknad i enlighet med ${regRefs.join(", ")}. SBSC är ackrediterat av SWEDAC, vilket innebär att våra certifieringar är internationellt erkända och uppfyller kraven inom ramen för IAF:s multilaterala erkännandeordning (MLA). Samtliga priser inkluderar resor och övernattningar. Inga tillkommande kostnader, utom årlig prisjustering (KPI). Förändringar i scope eller verksamhetsförutsättningar medför ny beräkning och offert.`);
   return parts.join("\n\n");
 }
 
@@ -5186,7 +5186,7 @@ function App() {
           padding: "2px 4px",
           marginBottom: 8
         }
-      }, "Priset \xE4r fast och allt-inkluderat: revision (planering, genomf\xF6rande och rapportskrivning), resor, \xF6vernattningar, certifikat och SBSC-registrering. Inga tillkommande kostnader. Moms tillkommer."));
+      }, "Priset är allt-inkluderat: revision (planering, genomförande och rapportskrivning), resor, övernattningar, certifikat och SBSC-registrering. Inga tillkommande kostnader, utom årlig prisjustering (KPI). Förändringar i scope eller verksamhetsförutsättningar medför ny beräkning och offert. Moms tillkommer."));
     })(), snap.offerCondition && /*#__PURE__*/React.createElement("div", {
       style: {
         marginBottom: 20,
