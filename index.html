@@ -9777,7 +9777,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
           const data = JSON.parse(ev.target.result);
           if (window.confirm("Ladda sparad kalkyl? Nuvarande formulärdata skrivs över.")) {
             // Slå ihop med defaultState så att nya fält (v1.2+) får sina defaultvärden
-            setF(prev => ({ ...prev, ...data }));
+            setF({ ...DEFAULT_STATE, ...data });
             setResult(null);
             setMotiv("");
             setOffertIdLocked(false);
@@ -10175,4 +10175,146 @@ const domRoot = ReactDOM.createRoot(document.getElementById("root"));
 domRoot.render(React.createElement(AppShell));
 </script>
 </body>
-</html>
+</html
+const DEFAULT_STATE = {
+    cName: "",
+    cStreet: "",
+    cZip: "",
+    cCity: "",
+    cIndustry: "",
+    cContact: "",
+    cOrg: "",
+    cDesiredDate: "",
+    riskDesc: "",
+    qmsComment: "",
+    emsComment: "",
+    ohsComment: "",
+    prevRevComment: "",
+    offertId: genId(),
+    validTo: defaultValidTo(),
+    certType: "new",
+    // "new" | "transfer" | "extension"
+    siteDetails: [],
+    // [{city:"", fte:"", hq:false}]
+    sitesQ1: "",
+    sitesQ2: "",
+    sitesQ3: "",
+    sitesQ4: "",
+    sitesQ5: "",
+    sitesQ6: "",
+    sitesQ7: "",
+    transferOrg: "",
+    transferCertNr: "",
+    transferExpiry: "",
+    transferHas9001: false,
+    transferHas14001: false,
+    transferHas45001: false,
+    transferHas27001: false,
+    sites: "1",
+    tempSites: "no",
+    tempSiteDesc: "",
+    s9001: false,
+    s14001: false,
+    s45001: false,
+    fte: "",
+    fteFulltime: "",
+    ftePart: "",
+    ftePartHours: "4",
+    fteSeasonal: "",
+    fteContractors: "",
+    qmsRisk: "low",
+    emsComplexity: "limited",
+    ohsComplexity: "low",
+    complexity: "low",
+    shifts: "no",
+    automation: "low",
+    regulatory: "low",
+    ohsRisk: "low",
+    maturity: "medium",
+    similar: "no",
+    similarFtePct: "30",
+    notDesignResp: "no",
+    verySmallSite: "no",
+    outsourcing: "no",
+    offsite: "yes",
+    multilang: "no",
+    imsIntLevel: "60",
+    imsCombPct: "50",
+    imsInt1: "",
+    imsInt2: "",
+    imsInt3: "",
+    imsInt4: "",
+    imsInt5: "",
+    imsInt6: "",
+    imsInt7: "",
+    // integrationskriterier Helt/Delvis/Nej
+    extHas9001: false,
+    ext9001y: "3",
+    ext9001cycle: "surv1",
+    extHas14001: false,
+    ext14001y: "3",
+    ext14001cycle: "surv1",
+    extHas45001: false,
+    ext45001y: "3",
+    ext45001cycle: "surv1",
+    extHas27001: false,
+    ext27001y: "3",
+    ext27001cycle: "surv1",
+    ex9001: false,
+    ex9001y: "3",
+    ex9001cb: "",
+    ex14001: false,
+    ex14001y: "3",
+    ex14001cb: "",
+    ex45001: false,
+    ex45001y: "3",
+    ex45001cb: "",
+    // ISO 27001 — 27006-1:2024
+    s27001: false,
+    ext27001reviewer: true,
+    // externa 27001-revisorer (default true när s27001 är valt)
+    iso27001separate: true,
+    // 27001 genomförs separat (ej integrerat med övriga standarder)
+    imsIntegrationStatus: "",
+    // "integrated" | "standalone" | "partial"
+    imsPersons: "",
+    // C.3.4 — identiska aktiviteter
+    imsIdenticalPct: "0",
+    // Annex D.2 — Verksamhet och organisation
+    imsD2biz: "2",
+    imsD2proc: "2",
+    imsD2mgmt: "2",
+    // Annex D.3 — IT-miljö
+    imsD3infra: "2",
+    imsD3outsource: "2",
+    imsD3dev: "1",
+    // C.3.5 — ytterligare faktorer
+    imsSoaMaturity: "medium",
+    imsRegulatory: "low",
+    imsLowChange: "no",
+    imsD4choice: "normal",
+    // "conservative" | "normal" | "extended"
+    imsD4reason: "",
+    // motivering vid Utökad
+    // C.7 — scopeutökning
+    imsScopeExt: "none",
+    imsSteg1Distans: "no",  // Steg 1 på distans
+    // Befintligt 27001-certifikat
+    ex27001: false,
+    ex27001y: "3",
+    ex27001cb: "",
+    extraNotes: "",
+    offerCondition: "",
+    createdBy: "",
+    approvedBy: "",
+    rabatt: "0",
+    // procentrabatt, 0 = ingen rabatt
+    stage1Pct: "25",
+    // Steg 1-andel: 25% eller 33%
+    rabattInit: "0",
+    rabattSurv1: "0",
+    rabattSurv2: "0",
+    rabattRecert: "0" // per-fas rabatt
+  };
+
+const App = >
