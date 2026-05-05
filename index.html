@@ -329,6 +329,8 @@ const { useState, useEffect } = React;
 
 // Dagskostnad konfigureras av handläggaren — sparas i webbläsarens localStorage (aldrig i källkod)
 const SBSC_RATE_KEY = "sbsc_dagskostnad";
+const SBSC_REV_KEY  = "sbsc_revisorkostnad";
+const SBSC_TRAVEL_KEY = "sbsc_resekostnad";
 const DAY_RATE_DEFAULT = 0;
 const SERIF = "'Open Sans', sans-serif";
 const MONO = "'Open Sans', sans-serif";
@@ -1040,6 +1042,15 @@ function calcMD11Integration(md5, iso27001, f) {
 function buildMotiv(f, md5, iso27001, integration) {
   const parts = [];
   const allStds = [...(md5?.stds || []), f.s27001 ? "ISO 27001" : null].filter(Boolean);
+  // ── Teknisk ingress för handläggaren ──────────────────────────────────
+  const _cName = f.cName || "Kunden";
+  const _stds = allStds.join(" + ");
+  const _certLabel = f.certType === "surv" ? "Periodisk revision" : f.certType === "recert" ? "Omcertifiering" : f.certType === "transfer" ? "Transfer" : "Initial certifiering";
+  const _addr = [f.cStreet, [f.cZip, f.cCity].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+  const _org = f.cOrg ? ` (org.nr ${f.cOrg})` : "";
+  parts.push(`TEKNISK BEDÖMNING — ${_cName}${_org} | ${_stds} | ${_certLabel}\n` +
+    `Adress: ${_addr || "—"} | Handläggare: ${f.createdBy || "—"} | Datum: ${new Date().toLocaleDateString("sv-SE")}\n` +
+    `Obs: Denna bedömning är SBSC:s interna underlag per IAF MD 5:2023 §4.3. Delas ej externt i detta format.`);
   // Certifieringstyp — formulering per IAF MD 2:2023
   const certTypeLabel = f.certType === "transfer" ? `transfer från ${f.transferOrg || "annat certifieringsorgan"} per IAF MD 2:2023 — certifieringscykeln fortsätter` : f.certType === "extension" ? "utökning av befintligt certifieringsscope" : f.ex27001 || Object.keys(md5?.existing || {}).length > 0 ? "utökning av befintlig certifiering" : "initial certifiering";
   parts.push(`SBSC har beräknat revisionstiden för ${f.cName || "kunden"} avseende ${certTypeLabel} mot ${allStds.join(", ")} i enlighet med tillämpliga regelverkskrav.`);
@@ -1151,82 +1162,99 @@ function buildMotiv(f, md5, iso27001, integration) {
   return parts.join("\n\n");
 }
 
-// ── KUNDVÄNLIG MOTIVERINGSTEXT ──
+// ── KUNDVÄNLIG MOTIVERINGSTEXT (omformulerad från buildMotiv) ──
 function buildCustomerMotiv(f, md5, iso27001, integration) {
   const parts = [];
   const allStds = [...(md5?.stds || []), f.s27001 ? "ISO 27001" : null].filter(Boolean);
+  const stdText = allStds.length === 1 ? allStds[0]
+    : allStds.slice(0, -1).join(", ") + " och " + allStds[allStds.length - 1];
+  const cName = f.cName || "er organisation";
 
-  // Inledning — certifieringstyp
-  const certLabel = f.certType === "transfer" ? `flytta er befintliga certifiering från ${f.transferOrg || "ert nuvarande certifieringsorgan"} till SBSC` : f.certType === "extension" ? "utöka er befintliga certifiering" : "genomföra er certifiering";
-  const stdText = allStds.length === 1 ? allStds[0] : allStds.slice(0, -1).join(", ") + " och " + allStds[allStds.length - 1];
-  parts.push(`SBSC har beräknat den tid som krävs för att ${certLabel} mot ${stdText}. Beräkningen är individuellt anpassad till ${f.cName || "er organisation"} utifrån verksamhetens storlek, komplexitet och förutsättningar — och bygger på internationellt fastställda krav för ackrediterade certifieringsorgan.`);
+  // ── Inledning ──────────────────────────────────────────────────────────
+  const certLabel = f.certType === "transfer"
+    ? `flytta er befintliga certifiering från ${f.transferOrg || "ert nuvarande certifieringsorgan"} till SBSC`
+    : f.certType === "surv" ? "genomföra periodisk revision för"
+    : f.certType === "recert" ? "genomföra omcertifiering av"
+    : "inleda certifiering av";
+  parts.push(
+    `Det här är vår bedömning av ${cName} och det ledningssystem vi ska certifiera. ` +
+    `Om något inte stämmer — hör av er innan ni signerar, så justerar vi.`
+  );
 
-  // Verksamhet och storlek
+  // ── Faktaruta: Ni och er verksamhet ───────────────────────────────────
+  const factLines = [];
   if (md5) {
     const fc = md5.fteCalc;
-    // Säker FTE-läsning — använd fc.total om tillgängligt, annars md5.fte, annars snap.fte
-    const fte = fc && fc.total > 0 ? fc.total : md5.fte > 0 ? md5.fte : parseInt(f.fte) || parseInt(f.fteFulltime) || 0;
-    const fteText = fc && fc.total > 0 && (fc.part > 0 || fc.seasonal > 0 || fc.contractors > 0) ? `Ni har ${fc.full} heltidsanställda${fc.part > 0 ? ", " + fc.part + " deltidsanställda (≈" + fc.partEq + " heltidsekvivalenter)" : ""}${fc.seasonal > 0 ? ", " + fc.seasonal + " säsongsanställda" : ""}${fc.contractors > 0 ? ", " + fc.contractors + " inhyrda" : ""} — sammantaget ${fc.total} heltidstjänster inom certifieringens omfattning.` : fte > 0 ? `Certifieringen omfattar ${fte} medarbetare inom er organisation.` : "";
-
-    // Mognad
-    const maturityText = f.maturity === "high" ? "Ert ledningssystem är väletablerat med lång revisionshistorik, vilket möjliggör en mer fokuserad och effektiv revision." : f.maturity === "low" ? "Eftersom ledningssystemet är relativt nytt planerar vi för en grundligare genomgång för att säkerställa att alla delar är på plats." : "Ert ledningssystem är etablerat och ger goda förutsättningar för en välstrukturerad revision.";
-
-    // Komplexitet och fält
-    const complexText = f.complexity === "high" ? "Verksamheten innefattar en hög grad av processkomplexitet, vilket innebär att revisionen behöver täcka ett brett område." : f.complexity === "low" ? "Era processer är tydliga och standardiserade, vilket möjliggör en välstrukturerad och fokuserad revision." : "";
-    const offsiteText = f.offsite === "yes" ? "Eftersom en stor del av verksamheten bedrivs ute hos kunder planeras revisionen för att täcka både kontor och fältarbete." : "";
-    const shiftsText = f.shifts === "yes" ? "Verksamheten bedrivs i skift, vilket beaktas vid planering av revisionsdagar." : "";
-    const descParts = [fteText, maturityText, complexText, offsiteText, shiftsText].filter(Boolean);
-    if (descParts.length > 0) parts.push(descParts.join(" "));
+    const fte = fc && fc.total > 0 ? fc.total : md5.fte > 0 ? md5.fte : parseInt(f.fte) || 0;
+    const fteDetail = fc && fc.total > 0 && (fc.part > 0 || fc.seasonal > 0 || fc.contractors > 0)
+      ? ` (${[fc.full > 0 ? fc.full + " heltid" : null, fc.part > 0 ? fc.part + " deltid" : null, fc.seasonal > 0 ? fc.seasonal + " säsong" : null, fc.contractors > 0 ? fc.contractors + " inhyrda" : null].filter(Boolean).join(", ")} = ${fte} omräknat till heltid)`
+      : "";
+    factLines.push(`Antal medarbetare: ${fte}${fteDetail}`);
+    if (f.scope) factLines.push(`Verksamhet: ${f.scope}`);
+    const cAddr = [f.cStreet, [f.cZip, f.cCity].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+    if (cAddr) factLines.push(`Certifieringsplats: ${cAddr}`);
+    const matLabel = f.maturity === "high" ? "Väletablerat och välbeprövat — ni har revisionshistorik som visar ett fungerande system."
+      : f.maturity === "medium" ? "Etablerat — ert ledningssystem är på plats men relativt nytt."
+      : "Under uppbyggnad — vi har beaktat att systemet är i ett tidigt skede.";
+    factLines.push(`Ledningssystemets mognad: ${matLabel}`);
+    if (f.complexity === "high") factLines.push("Verksamhetskomplexitet: Hög — ni har många unika processer som alla behöver granskas.");
+    if (f.offsite === "yes") factLines.push("Fältpersonal: En stor del av er personal arbetar ute hos kunder — revisionen planeras med hänsyn till det.");
+    if (f.shifts === "yes") factLines.push("Skiftarbete: Beaktat i revisionsplaneringen.");
+    if (f.automation === "high") factLines.push("Automatisering: Hög — maskinella processer granskas primärt via systemkontroll.");
+    if (f.regulatory === "high") factLines.push("Regulatoriskt: Hög belastning (t.ex. säkerhetsskyddslagen, NIS2) — beaktat i beräkningen.");
+    if (f.notDesignResp === "yes" && f.s9001) factLines.push("Designansvar: Ni tillverkar/levererar efter kundens specifikation — ej designansvariga för produkten.");
+    if (f.verySmallSite === "yes") factLines.push("Anläggning: Liten anläggning relativt personalstyrkan — beaktat i beräkningen.");
   }
-
-  // ISO 27001
   if (iso27001) {
-    const mognadText = f.imsD2mgmt === "1" ? "Ert ledningssystem för informationssäkerhet är moget och välimplementerat." : f.imsD2mgmt === "3" ? "Ledningssystemet för informationssäkerhet är under uppbyggnad, vilket kräver en mer grundlig genomgång." : "Ledningssystemet för informationssäkerhet befinner sig i ett normalt implementeringsstadium.";
-    const itText = f.imsD3infra === "3" ? "Er IT-miljö är komplex, med höga krav på tillgänglighet och säkerhetssegregering." : f.imsD3infra === "1" ? "Er IT-miljö är standardiserad, vilket underlättar en fokuserad granskning." : "";
-    parts.push(`Informationssäkerhetscertifieringen (ISO 27001) kräver en analys av er IT-miljö och hur ni hanterar informationstillgångar. ${mognadText}${itText ? " " + itText : ""}`);
+    const persons = iso27001.persons || iso27001.totalPersons;
+    factLines.push(`Informationssäkerhet: ${persons} personer inom ISMS-scope.`);
+    const d4bizLabel = iso27001.annexD?.bizCat === "high" ? "hög" : iso27001.annexD?.bizCat === "low" ? "låg" : "medel";
+    const d4itLabel = iso27001.annexD?.itCat === "high" ? "hög" : iso27001.annexD?.itCat === "low" ? "låg" : "medel";
+    factLines.push(`Verksamhetskomplexitet (ISMS): ${d4bizLabel} — IT-miljökomplexitet: ${d4itLabel}.`);
+    const smLabel = f.imsSoaMaturity === "high" ? "Välmognat ISMS med komplett SoA — beaktat positivt." : f.imsSoaMaturity === "low" ? "ISMS under uppbyggnad — beaktat i beräkningen." : "Etablerat ISMS.";
+    factLines.push(`ISMS-mognad: ${smLabel}`);
   }
-
-  // Kombinerad certifiering
-  if (integration) {
-    // IAF MD 11 — 7 kriterier per Annex 1 (krit. 7 tillagt v1.2)
-    const intCritKeys = ["imsInt1", "imsInt2", "imsInt3", "imsInt4", "imsInt5", "imsInt6", "imsInt7"];
-    const helts = intCritKeys.filter(k => f[k] === "helt").length;
-    const delvis = intCritKeys.filter(k => f[k] === "delvis").length;
-    const intDesc = helts + delvis > 0 ? ` Ert ledningssystem bedöms vara ${helts >= 5 ? "till stor del fullt integrerat" : helts + delvis >= 4 ? "högt integrerat" : "delvis integrerat"} — ${helts} av 6 kriterier är fullt gemensamma och ${delvis} är delvis gemensamma.` : "";
-    parts.push(`Eftersom ni certifierar er mot ${stdText} genomförs revisionen som en samordnad process. Gemensamma delar av ledningssystemet granskas tillsammans, vilket minskar den totala tidsåtgången och störningarna i er verksamhet.${intDesc}`);
-  }
-
-  // Platser
   if (parseInt(f.sites) > 1) {
     const sdet = (f.siteDetails || []).filter(d => d && d.city);
-    const siteList = sdet.length > 0 ? ` — ${sdet.map(d => `${d.city}${d.hq ? " (huvudkontor)" : ""}`).join(", ")}` : ` (${f.sites} platser)`;
-    parts.push(`Er verksamhet bedrivs på flera platser${siteList}. Revisionen planeras enligt etablerad metodik för flerplatsorganisationer, där ett representativt urval av platser granskas för att säkerställa att ledningssystemet fungerar i hela organisationen.`);
+    const siteStr = sdet.length > 0 ? sdet.map(d => `${d.city}${d.hq ? " (centralfunktion)" : ""}`).join(", ") : `${f.sites} platser`;
+    factLines.push(`Certifieringsplatser: ${siteStr} — stickprovsmetodik per IAF MD 1:2023.`);
   }
+  if (f.certType === "transfer" && f.transferOrg) {
+    factLines.push(`Certifieringshistorik: Befintlig certifiering från ${f.transferOrg} — er certifieringscykel fortsätter utan avbrott.`);
+  }
+  if (factLines.length > 0) parts.push("NI OCH ER VERKSAMHET\n" + factLines.map(l => "\u2022 " + l).join("\n"));
 
-  // Steg 1 och Steg 2
+  // ── Steg 1 och Steg 2 ─────────────────────────────────────────────────
   if (md5 || iso27001) {
     const s1 = md5 ? md5.stage1 : iso27001?.stage1 || 0;
     const s2 = md5 ? md5.stage2 : iso27001?.stage2 || 0;
-    parts.push(`Certifieringsrevisionen genomförs i två steg. Steg 1 (${fmt(s1)} dag) innebär en inledande dokumentations- och beredskapsgenomgång, där vi kontrollerar att ert ledningssystem är redo för den fullständiga revisionen. Steg 2 (${fmt(s2)} dag) är den fullständiga revisionen på plats, där vi granskar hur ledningssystemet tillämpas i praktiken.`);
+    const distans = f.imsSteg1Distans === "yes";
+    const s1distText = distans ? " (genomförs på distans via digitalt möte — ingen resa till er anläggning)" : "";
+    parts.push(
+      "REVISIONSPLAN\n" +
+      "\u2022 Steg 1 (" + fmt(s1) + " dag)" + s1distText + ": Vi granskar ert ledningssystem och dokumentation och bekräftar att ni är redo för Steg 2.\n" +
+      "\u2022 Steg 2 (" + fmt(s2) + " dag): Fullständig revision på plats."
+    );
   }
 
-  // Transfer
-  if (f.certType === "transfer" && f.transferOrg) {
-    parts.push(`Eftersom certifieringen överförs från ${f.transferOrg} fortsätter er certifieringscykel utan avbrott. Ni behöver inte genomgå en helt ny certifieringsprocess — vi tar vid där ni är och säkerställer en smidig övergång till SBSC.`);
-  }
+  // ── Regelverksgrund + strategisk mening ───────────────────────────────
+  const regRefs = [];
+  if (md5) regRefs.push("IAF MD 5:2023");
+  if (md5 && allStds.filter(s => s !== "ISO 27001").length > 1) regRefs.push("IAF MD 11:2023");
+  if (iso27001) regRefs.push("ISO/IEC 27006-1:2024");
+  if (parseInt(f.sites) > 1) regRefs.push("IAF MD 1:2023");
+  if (f.certType === "transfer") regRefs.push("IAF MD 2:2023");
 
-  // Erfarenhet och kommentarer
-  if (f.prevRevComment) parts.push(`Erfarenheter från er revisionshistorik: ${f.prevRevComment}`);
+  parts.push(
+    "REVISIONSTIDEN \xC4R ETT REGULATORISKT MINIMUM\n" +
+    "Antalet revisionsdagar är beräknat enligt " + regRefs.join(" och ") + " \u2014 de internationellt bindande krav " +
+    "som gäller alla ackrediterade certifieringsorgan. Mandagarna är ett regulatoriskt minimum: ett ackrediterat " +
+    "certifieringsorgan kan inte erbjuda väsentligt färre dagar för en organisation av er storlek och komplexitet " +
+    "utan att riskera sin ackreditering. SBSC är ackrediterat av SWEDAC och våra certifikat är erkända i " +
+    "över 90 länder via IAF MLA."
+  );
   if (f.extraNotes) parts.push(f.extraNotes);
 
-  // Regelverksgrund — på kundvänligt sätt
-  const regRefs = [];
-  if (md5) regRefs.push("IAF MD 5:2023 (internationell standard för beräkning av revisionstid för ledningssystem)");
-  if (md5 && allStds.filter(s => s !== "ISO 27001").length > 1) regRefs.push("IAF MD 11:2023 (reducering vid kombinerade revisioner)");
-  if (iso27001) regRefs.push("ISO/IEC 27006-1:2024 (specifika krav för certifiering av informationssäkerhet)");
-  if (parseInt(f.sites) > 1) regRefs.push("IAF MD 1:2023 (revision av organisationer med flera verksamhetsplatser)");
-  if (f.certType === "transfer") regRefs.push("IAF MD 2:2023 (överföring av certifiering mellan certifieringsorgan)");
-  parts.push(`Revisionstiden är beräknad i enlighet med ${regRefs.join(", ")}. SBSC är ackrediterat av SWEDAC, vilket innebär att våra certifieringar är internationellt erkända och uppfyller kraven inom ramen för IAF:s multilaterala erkännandeordning (MLA). Samtliga priser inkluderar resor och övernattningar. Inga tillkommande kostnader, utom årlig prisjustering (KPI). Förändringar i scope eller verksamhetsförutsättningar medför ny beräkning och offert.`);
   return parts.join("\n\n");
 }
 
@@ -3341,6 +3369,11 @@ function App() {
   const [showSecurity, setShowSecurity] = useState(false);
 
   // Läs sparad dagskostnad från localStorage (skrivs aldrig till GitHub-källkod)
+  const [revCost, setRevCost] = useState(() => { try { const s = localStorage.getItem(SBSC_REV_KEY); return s && parseInt(s) > 0 ? parseInt(s) : 0; } catch(e) { return 0; } });
+  const [travelCost, setTravelCost] = useState(() => { try { const s = localStorage.getItem(SBSC_TRAVEL_KEY); return s && parseInt(s) > 0 ? parseInt(s) : 0; } catch(e) { return 0; } });
+  useEffect(() => { if (revCost > 0) { try { localStorage.setItem(SBSC_REV_KEY, String(revCost)); } catch(e) {} } }, [revCost]);
+  useEffect(() => { if (travelCost > 0) { try { localStorage.setItem(SBSC_TRAVEL_KEY, String(travelCost)); } catch(e) {} } }, [travelCost]);
+  // Läs sparad dagskostnad från localStorage (skrivs aldrig till GitHub-källkod)
   const [dayRate, setDayRate] = useState(() => {
     try {
       const saved = localStorage.getItem(SBSC_RATE_KEY);
@@ -3357,6 +3390,9 @@ function App() {
   const [offertIdLocked, setOffertIdLocked] = useState(false);
   const [f, setF] = useState({
     cName: "",
+    cStreet: "",
+    cZip: "",
+    cCity: "",
     cIndustry: "",
     cContact: "",
     cOrg: "",
@@ -3869,7 +3905,7 @@ function App() {
         subtitle: subtitleParts.join(" · ")
       });
     })(), /*#__PURE__*/React.createElement(InfoBand, {
-      rows: [["Organisation", snap.cName], snap.cOrg && ["Org.nr", snap.cOrg], ["Bransch", snap.cIndustry], md5 && ["Effektivt FTE", fteDesc], iso27001 && ["ISMS-scope", `${iso27001.totalPersons} pers.${iso27001.c34.reduction > 0 ? " (C.3.4: reducerat till " + iso27001.persons + " pers.)" : ""}`], ["Certifiering", allStds.join(", ")], ["Platser", (() => {
+      rows: [["Organisation", snap.cName], snap.cOrg && ["Org.nr", snap.cOrg], (snap.cStreet || snap.cCity) && ["Adress", [snap.cStreet, [snap.cZip, snap.cCity].filter(Boolean).join(" ")].filter(Boolean).join(", ")], ["Bransch", snap.cIndustry], md5 && ["Effektivt FTE", fteDesc], iso27001 && ["ISMS-scope", `${iso27001.totalPersons} pers.${iso27001.c34.reduction > 0 ? " (C.3.4: reducerat till " + iso27001.persons + " pers.)" : ""}`], ["Certifiering", allStds.join(", ")], ["Platser", (() => {
         const n = parseInt(snap.sites) || 1;
         const details = (snap.siteDetails || []).filter(d => d && d.city);
         const hq = details.find(d => d.hq);
@@ -4780,7 +4816,11 @@ function App() {
       color: C.ink,
         marginBottom: 10
       }
-    }, "Org.nr ", snap.cOrg), snap.cContact && /*#__PURE__*/React.createElement("div", {
+    }, "Org.nr ", snap.cOrg),
+    (snap.cStreet || snap.cCity) && /*#__PURE__*/React.createElement("div", {
+      style: { fontFamily: MONO, fontSize: 11, color: C.muted, marginBottom: 4 }
+    }, [snap.cStreet, [snap.cZip, snap.cCity].filter(Boolean).join(" ")].filter(Boolean).join(", ")),
+    snap.cContact && /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
         fontSize: 11,
@@ -5120,6 +5160,20 @@ function App() {
       }, "ISO 27001 \u2014 Revisionsplanering:"), " ISO 27001-revisionen genomf\xF6rs av SBSC:s dedikerade 27001-revisorer och bokas separat. Tidpunkt fastst\xE4lls i dialog med ansvarig revisor.", snap.iso27001separate && (snap.s9001 || snap.s14001 || snap.s45001) && /*#__PURE__*/React.createElement("span", null, " ", /*#__PURE__*/React.createElement("strong", null, "Denna offert avser enbart ISO 27001."), " \xD6vriga certifieringar regleras i separat \xF6verenskommelse.")), ((() => {
       const hasRabatt = prices.rabattBeloppTotal > 0;
       const cols = hasRabatt ? "60px 1fr 80px 130px 130px" : "60px 1fr 100px 140px";
+      // Varning om dagspris ej angivet
+      if (!dayRate || parseInt(dayRate) < 1000) return /*#__PURE__*/React.createElement("div", {
+        style: { background: "#fff3cd", border: "2px solid #ffa300", borderRadius: 8,
+          padding: "16px 20px", margin: "8px 0", fontFamily: MONO, fontSize: 11 }
+      },
+        /*#__PURE__*/React.createElement("div", {
+          style: { fontWeight: 800, color: "#101820", marginBottom: 6, fontSize: 12 }
+        }, "\u26a0 Dagskostnad saknas"),
+        /*#__PURE__*/React.createElement("div", { style: { color: "#101820", lineHeight: 1.7 } },
+          "Ange dagskostnad (kr/dag) i f\xe4ltet till v\xe4nster f\xf6r att generera prisuppgifter i offerten. ",
+          /*#__PURE__*/React.createElement("strong", null, "Offerten kan inte skickas utan pris.")
+        )
+      );
+
 
       const hdrRow = /*#__PURE__*/React.createElement("div", {
         style:{display:"grid",gridTemplateColumns:cols,gap:8,background:C.ink,padding:"8px 16px",alignItems:"center"}
@@ -6337,7 +6391,7 @@ ${exportedHTML}
       color: C.accent,
       marginBottom: 4
     }
-  }, "Processbas \u2014 Regelefterlevnad & Kvalitetss\xE4kring"), /*#__PURE__*/React.createElement("div", {
+  }, "Processbas \u2014 Regelefterlevnad & Kvalitetss\xe4kring \u00b7 v1.4"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 9,
       color: C.ink,
@@ -6640,7 +6694,7 @@ ${exportedHTML}
       fontSize: 10,
       lineHeight: 1.8
     }
-  }, "Kalkylatorn \xE4r en lokal HTML-fil som k\xF6rs helt i webbl\xE4saren. Det finns ingen server, ingen databas och inga n\xE4tverksanrop som skickar kunddata n\xE5gonstans. Allt behandlas lokalt \u2014 precis som ett Word-dokument."))), /*#__PURE__*/React.createElement("div", {
+  }, "Kalkylatorn \xE4r en lokal HTML-fil som k\xF6rs helt i webbl\xE4saren. Det finns ingen server, ingen databas och inga n\xE4tverksanrop som skickar kunddata n\xE5gonstans. Allt behandlas lokalt \u2014 precis som ett Word-dokument. Dagskostnaden sparas separat i webbl\xe4sarens localStorage — aldrig i k\xe4llkod eller p\xe5 server — och l\xe4ses automatiskt vid n\xe4sta anv\xe4ndning i samma webbl\xe4sare."))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
@@ -6811,6 +6865,26 @@ ${exportedHTML}
     onChange: v => set("cOrg", v),
     placeholder: "556199-0143"
   })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 9
+    }
+  }, /*#__PURE__*/React.createElement(Lbl, {
+    tip: "Gatuadress till certifieringsplatsen. Visas i arbetsunderlag och offert, och anv\xE4nds av revisorn f\xF6r bes\xF6ksplanering per IAF MD 1:2023 \u00a77.1.1."
+  }, "Gatuadress"), /*#__PURE__*/React.createElement(Inp, {
+    value: f.cStreet,
+    onChange: v => set("cStreet", v),
+    placeholder: "Storgatan 1"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: { display: "grid", gridTemplateColumns: "100px 1fr", gap: 8, marginBottom: 9 }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Postnummer"), /*#__PURE__*/React.createElement(Inp, {
+    value: f.cZip,
+    onChange: v => set("cZip", v),
+    placeholder: "111 22"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Ort"), /*#__PURE__*/React.createElement(Inp, {
+    value: f.cCity,
+    onChange: v => set("cCity", v),
+    placeholder: "Stockholm"
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 9
     }
@@ -7022,7 +7096,7 @@ ${exportedHTML}
       padding: "10px 12px",
       marginBottom: 9
     }
-  }, /*#__PURE__*/React.createElement(InfoNote, null, "IAF MD 2:2023 \xA72.3: Certifieringscykeln forts\xE4tter fr\xE5n utf\xE4rdande organ. Transferreduktionen (\u22120,5 dag per standard) baseras p\xE5 IAF MD 5:2023 \xA78(v)(d)+(e) och aktiveras automatiskt n\xE4r certifieringsorgan anges."), /*#__PURE__*/React.createElement(TransferChecklist, null), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(InfoNote, null, "IAF MD 2:2023 \xA72.3: Certifieringscykeln forts\xE4tter fr\xE5n utf\xE4rdande organ. Transferreduktionen (\u22120,5 dag per standard) baseras p\xe5 IAF MD 5:2023 \xa78(v)(d)+(e) och aktiveras automatiskt n\xe4r certifieringsorgan anges. \n\nNya i v1.4: \xa78(v)a — ej designansvarig f\xf6r produkt/tj\xe4nst (QMS only, \u22120,5 dag). \xa78(v)b — liten anl\xe4ggning relativt personalstyrkan (\u22120,5 dag)."), /*#__PURE__*/React.createElement(TransferChecklist, null), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
       fontSize: 11,
@@ -9405,8 +9479,142 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
     })),
     dayRate > 999 && /*#__PURE__*/React.createElement("div", {
       style: { fontFamily: MONO, fontSize: 11, color: "#265c3a", marginTop: 3, fontWeight: 600 }
-    }, "\u2713 Sparas automatiskt i webbl\xE4saren"));
-  })()), /*#__PURE__*/React.createElement("div", {
+    }, "\u2713 Sparas automatiskt i webbl\xE4saren")),
+
+  // ── TB-kalkyl (intern) ──────────────────────────────────────────────
+  /*#__PURE__*/React.createElement("div", {
+    style: { borderTop: "1.5px solid " + C.border, paddingTop: 12, marginTop: 8 }
+  },
+    /*#__PURE__*/React.createElement("div", {
+      style: { fontFamily: MONO, fontSize: 9, fontWeight: 700, color: C.muted,
+               letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }
+    }, "T\xe4ckningsbidragskalkyl \u2014 intern uppskattning"),
+    /*#__PURE__*/React.createElement("div", {
+      style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }
+    },
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement(Lbl, { tip: "Schablon f\xf6r intern revisorskostnad per revisionsdag (l\xf6n + soc avg). Sparas i webbl\xe4saren." }, "Revisorskostnad (kr/dag)"),
+        /*#__PURE__*/React.createElement(Inp, { value: revCost || "", onChange: v => setRevCost(v === "" ? 0 : parseInt(v) || 0), placeholder: "kr/dag" })
+      ),
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement(Lbl, { tip: "Genomsnittlig resekostnad per revisionsbes\xf6k (transport + boende). Sparas i webbl\xe4saren." }, "Resekostnad (kr/bes\xf6k)"),
+        /*#__PURE__*/React.createElement(Inp, { value: travelCost || "", onChange: v => setTravelCost(v === "" ? 0 : parseInt(v) || 0), placeholder: "kr/bes\xf6k" })
+      )
+    ),
+    (revCost > 0 || travelCost > 0) && (() => {
+      const hasMD5tb = f.s9001 || f.s14001 || f.s45001;
+      const has27001tb = f.s27001 && parseInt(f.imsPersons) > 0;
+      if (!hasMD5tb && !has27001tb) return /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: C.muted, fontStyle: "italic" } }, "V\xe4lj standard f\xf6r att se TB.");
+      let tbInit = 0, tbSurv = 0, tbRecert = 0;
+      try {
+        if (hasMD5tb) { const m = calcMD5(f); if (m) { tbInit += m.totalInit; tbSurv = Math.max(tbSurv, m.surv); tbRecert = Math.max(tbRecert, m.recert); } }
+        if (has27001tb) { const iv = calc27006(f); if (iv) { tbInit += iv.totalInit; tbSurv = Math.max(tbSurv, iv.surv); tbRecert = Math.max(tbRecert, iv.recert); } }
+      } catch(e) {}
+      const visits = 4; // init(1) + surv1(1) + surv2(1) + recert(1)
+      const totalDays = r2(tbInit + tbSurv * 2 + tbRecert);
+      const DR = parseInt(dayRate) || 0;
+      const intakt = r2(totalDays * DR);
+      const revK = r2(totalDays * (revCost || 0));
+      const resK = (travelCost || 0) * visits;
+      const dirK = r2(revK + resK);
+      const tb = r2(intakt - dirK);
+      const tbPct = intakt > 0 ? Math.round(tb / intakt * 100) : 0;
+      const tbColor = tbPct >= 50 ? "#265c3a" : tbPct >= 30 ? "#7a5c1e" : "#BF0D3E";
+      const tbBg = tbPct >= 50 ? "#e8f5ee" : tbPct >= 30 ? "#fff8ed" : "#fff0f0";
+      const tbBorder = tbPct >= 50 ? "#b2ddc0" : tbPct >= 30 ? C.goldBd : "#f5b8c4";
+      const row = (lbl, val, bold, col) => /*#__PURE__*/React.createElement("div", {
+        style: { display: "flex", justifyContent: "space-between", padding: "4px 0",
+                 borderBottom: "1px solid " + C.border, fontFamily: MONO, fontSize: 10 }
+      }, /*#__PURE__*/React.createElement("span", { style: { color: C.muted } }, lbl),
+         /*#__PURE__*/React.createElement("span", { style: { fontWeight: bold ? 700 : 400, color: col || C.ink } }, val));
+      return /*#__PURE__*/React.createElement("div", {
+        style: { background: tbBg, border: "1px solid " + tbBorder, borderRadius: 6, padding: "10px 12px" }
+      },
+        row("Int\xe4kt 3 \xe5r (" + totalDays + " dag \xd7 " + sek(DR) + ")", sek(intakt), false, C.ink),
+        row("Revisorskostnad (" + totalDays + " dag \xd7 " + sek(revCost || 0) + ")", "\u2212" + sek(revK), false, "#BF0D3E"),
+        row("Resekostnad (" + visits + " bes\xf6k \xd7 " + sek(travelCost || 0) + ")", "\u2212" + sek(resK), false, "#BF0D3E"),
+        /*#__PURE__*/React.createElement("div", {
+          style: { display: "flex", justifyContent: "space-between", alignItems: "center",
+                   paddingTop: 6, marginTop: 2, fontFamily: MONO }
+        },
+          /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: C.ink } }, "T\xe4ckningsbidrag"),
+          /*#__PURE__*/React.createElement("span", { style: { fontSize: 14, fontWeight: 800, color: tbColor } }, sek(tb), " (", tbPct, "%)")
+        ),
+        tbPct < 30 && DR > 0 && /*#__PURE__*/React.createElement("div", {
+          style: { fontSize: 9, color: "#BF0D3E", marginTop: 5, fontStyle: "italic" }
+        }, "\u26a0 L\xe5gt TB \u2014 kontrollera antaganden.")
+      );
+    })()
+  )
+  }),
+
+  // ── TB-kalkyl: separat sibling-div ────────────────────────────
+  /*#__PURE__*/React.createElement("div", {
+    style: { borderTop: "1.5px solid " + C.border, padding: "12px 16px", background: C.surface }
+  },
+    /*#__PURE__*/React.createElement("div", {
+      style: { fontFamily: MONO, fontSize: 9, fontWeight: 700, color: C.muted,
+               letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }
+    }, "T\xe4ckningsbidragskalkyl \u2014 intern uppskattning"),
+    /*#__PURE__*/React.createElement("div", {
+      style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }
+    },
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement(Lbl, { tip: "Schablon intern revisorskostnad per dag (l\xf6n + soc avg). Sparas i webbl\xe4saren." }, "Revisorskostnad (kr/dag)"),
+        /*#__PURE__*/React.createElement(Inp, { value: revCost || "", onChange: v => setRevCost(v === "" ? 0 : parseInt(v) || 0), placeholder: "kr/dag" })
+      ),
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement(Lbl, { tip: "Genomsnittlig resekostnad per revisionsbes\xf6k (transport + boende). Sparas i webbl\xe4saren." }, "Resekostnad (kr/bes\xf6k)"),
+        /*#__PURE__*/React.createElement(Inp, { value: travelCost || "", onChange: v => setTravelCost(v === "" ? 0 : parseInt(v) || 0), placeholder: "kr/bes\xf6k" })
+      )
+    ),
+    (revCost > 0 || travelCost > 0) && (() => {
+      const hasMD5tb = f.s9001 || f.s14001 || f.s45001;
+      const has27001tb = f.s27001 && parseInt(f.imsPersons) > 0;
+      if (!hasMD5tb && !has27001tb) return /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: C.muted, fontStyle: "italic" } }, "V\xe4lj standard f\xf6r att se TB.");
+      let tbInit = 0, tbSurv = 0, tbRecert = 0;
+      try {
+        if (hasMD5tb) { const m = calcMD5(f); if (m) { tbInit += m.totalInit; tbSurv = Math.max(tbSurv, m.surv); tbRecert = Math.max(tbRecert, m.recert); } }
+        if (has27001tb) { const iv = calc27006(f); if (iv) { tbInit += iv.totalInit; tbSurv = Math.max(tbSurv, iv.surv); tbRecert = Math.max(tbRecert, iv.recert); } }
+      } catch(e) {}
+      const visits = 4;
+      const totalDays = r2(tbInit + tbSurv * 2 + tbRecert);
+      const DR = parseInt(dayRate) || 0;
+      const intakt = r2(totalDays * DR);
+      const revK = r2(totalDays * (revCost || 0));
+      const resK = (travelCost || 0) * visits;
+      const dirK = r2(revK + resK);
+      const tb = r2(intakt - dirK);
+      const tbPct = intakt > 0 ? Math.round(tb / intakt * 100) : 0;
+      const tbColor = tbPct >= 50 ? "#265c3a" : tbPct >= 30 ? "#7a5c1e" : "#BF0D3E";
+      const tbBg = tbPct >= 50 ? "#e8f5ee" : tbPct >= 30 ? "#fff8ed" : "#fff0f0";
+      const tbBd = tbPct >= 50 ? "#b2ddc0" : tbPct >= 30 ? C.goldBd : "#f5b8c4";
+      const row = (lbl, val, bold, col) => /*#__PURE__*/React.createElement("div", {
+        style: { display: "flex", justifyContent: "space-between", padding: "4px 0",
+                 borderBottom: "1px solid " + C.border, fontFamily: MONO, fontSize: 10 }
+      }, /*#__PURE__*/React.createElement("span", { style: { color: C.muted } }, lbl),
+         /*#__PURE__*/React.createElement("span", { style: { fontWeight: bold ? 700 : 400, color: col || C.ink } }, val));
+      return /*#__PURE__*/React.createElement("div", {
+        style: { background: tbBg, border: "1px solid " + tbBd, borderRadius: 6, padding: "10px 12px" }
+      },
+        row("Int\xe4kt 3 \xe5r (" + totalDays + " dag \xd7 " + sek(DR) + ")", sek(intakt), false, C.ink),
+        row("Revisorskostnad (" + totalDays + " dag \xd7 " + sek(revCost || 0) + ")", "\u2212" + sek(revK), false, "#BF0D3E"),
+        row("Resekostnad (" + visits + " bes\xf6k \xd7 " + sek(travelCost || 0) + ")", "\u2212" + sek(resK), false, "#BF0D3E"),
+        /*#__PURE__*/React.createElement("div", {
+          style: { display: "flex", justifyContent: "space-between", alignItems: "center",
+                   paddingTop: 6, marginTop: 2, fontFamily: MONO }
+        },
+          /*#__PURE__*/React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: C.ink } }, "T\xe4ckningsbidrag"),
+          /*#__PURE__*/React.createElement("span", { style: { fontSize: 14, fontWeight: 800, color: tbColor } }, sek(tb), " (", tbPct, "%)")
+        ),
+        tbPct < 30 && DR > 0 && /*#__PURE__*/React.createElement("div", {
+          style: { fontSize: 9, color: "#BF0D3E", marginTop: 5, fontStyle: "italic" }
+        }, "\u26a0 L\xe5gt TB \u2014 kontrollera antaganden.")
+      );
+    })()
+  )),
+
+  /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.bg,
       borderTop: "2px solid " + C.accent,
@@ -9568,7 +9776,8 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
         try {
           const data = JSON.parse(ev.target.result);
           if (window.confirm("Ladda sparad kalkyl? Nuvarande formulärdata skrivs över.")) {
-            setF(data);
+            // Slå ihop med defaultState så att nya fält (v1.2+) får sina defaultvärden
+            setF(prev => ({ ...prev, ...data }));
             setResult(null);
             setMotiv("");
             setOffertIdLocked(false);
@@ -9909,7 +10118,7 @@ const StartPage = ({ onEnter }) => {
       // Underrubrik
       React.createElement("div", {
         style: { fontSize: 14, color: "#6B6C74", marginBottom: 36, lineHeight: 1.6, maxWidth: 540 }
-      }, "Beräkna revisionsdagar, generera offertunderlag och motiveringstext för ISO 9001, 14001 och 45001 — i enlighet med IAF MD 1, 2, 5 och 11."),
+      }, "Beräkna revisionsdagar, generera offertunderlag och motiveringstext för ISO 9001, 14001, 45001 och ISO 27001 — i enlighet med IAF MD 1, 2, 5 och 11."),
 
       // Informationsruta
       React.createElement("div", {
@@ -9918,14 +10127,14 @@ const StartPage = ({ onEnter }) => {
           fontSize: 12, color: "#101820", lineHeight: 1.75 }
       },
         React.createElement("strong", null, "Internt verktyg — endast för SBSC-personal."),
-        " Mandagarna beräknas per IAF MD 5:2023 med inbyggt additivt justeringssystem och 30%-golv. Priser baseras på aktuell dagskostnad och är inte synliga externt."
+        " Mandagarna beräknas per IAF MD 5:2023 (ISO 9001/14001/45001), ISO/IEC 27006-1:2024 (ISO 27001) och IAF MD 1/2/11:2023. Beräkningarna inkluderar 30%-golv per §3.9 och IMS-reduktion per IAF MD 11. Priser baseras på angiven dagskostnad och visas aldrig i källkod."
       ),
 
       // Funktionskort
       React.createElement("div", {
         style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 36 }
       },
-        card("Mandagsberäkning", "Beräknar revisionsdagar per certifieringstyp och fas — initial certifiering, periodisk revision och omcertifiering."),
+        card("Mandagsberäkning", "ISO 9001, 14001, 45001 och ISO 27001. Beräknar revisionsdagar per certifieringstyp och fas med regelverksstöd i IAF MD 5:2023 och ISO/IEC 27006-1:2024."),
         card("Offertunderlag", "Genererar rabatter per fas och producerar ett strukturerat offertunderlag redo att presentera för kunden."),
         card("Motiveringstext", "Skapar en kundanpassad motiveringstext som förklarar beräkningens normgrund och anpassningar.")
       ),
