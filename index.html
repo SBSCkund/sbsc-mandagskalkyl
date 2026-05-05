@@ -9969,16 +9969,22 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
       const docId = activeTab === "work" ? "doc-work" : "doc-customer";
       const el = document.getElementById(docId);
       if (!el) return;
-      // Lägg till tillfällig print-stil som döljer allt utom dokumentet
+      // Klona dokumentet till en utskriftscontainer direkt under body
+      const clone = el.cloneNode(true);
+      clone.id = "sbsc-print-clone";
+      clone.style.cssText = "display:block!important;position:static!important;";
+      document.body.appendChild(clone);
       const style = document.createElement("style");
       style.id = "sbsc-print-override";
-      style.textContent = `@media print{body>*{display:none!important}#${docId}{display:block!important}@page{margin:12mm;size:A4}}`;
+      style.textContent = "@media print{body>*:not(#sbsc-print-clone){display:none!important}#sbsc-print-clone{display:block!important}@page{margin:12mm;size:A4}}";
       document.head.appendChild(style);
       window.print();
-      // Ta bort stilen efter utskrift
+      // Städa upp efter utskrift
       setTimeout(() => {
         const s = document.getElementById("sbsc-print-override");
+        const c = document.getElementById("sbsc-print-clone");
         if (s) s.remove();
+        if (c) c.remove();
       }, 1000);
     },
     style: {
