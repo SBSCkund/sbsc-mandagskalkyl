@@ -9751,7 +9751,11 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `SBSC-kalkyl-${(f.cName || "kund").replace(/[^a-zA-Z0-9åäöÅÄÖ]/g, "-")}-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = "SBSC-kalkyl-" + (f.cName || "kund")
+        .replace(/[åä]/gi, "a").replace(/[ö]/gi, "o")
+        .replace(/[^a-zA-Z0-9]/g, "-")
+        .replace(/-+/g, "-").replace(/^-|-$/g, "")
+        + "-" + new Date().toISOString().slice(0, 10) + ".json";
       document.body.appendChild(a);
       a.click();
       setTimeout(() => {
@@ -9814,10 +9818,14 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
             e.target.value = "";
           }
         } catch (err) {
-          alert("Kunde inte läsa filen: " + err.message + ". Kontrollera att det är en giltig JSON-fil från SBSC-kalkylatorn eller SBSC-kundenkäten.");
+          console.error("Import-fel:", err);
+          alert("Kunde inte läsa filen.\n\nFelmeddelande: " + err.message + "\n\nKontrollera att det är en giltig .json-fil sparad från SBSC-kalkylatorn.");
         }
       };
-      reader.readAsText(file);
+      reader.onerror = function() {
+        alert("Kunde inte l\xe4sa filen \u2014 kontrollera att filen inte \xe4r skadad.");
+      };
+      reader.readAsText(file, "UTF-8");
     }
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
