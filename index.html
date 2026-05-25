@@ -605,14 +605,18 @@ function calcEffectiveFte(f) {
   const part = parseInt(f.ftePart) || 0;
   const partHours = parseFloat(f.ftePartHours) || 4;
   const seasonal = parseInt(f.fteSeasonal) || 0;
+  const seasonalMonths = Math.min(Math.max(parseFloat(f.fteSeasonalMonths) || 6, 1), 12);
+  const seasonalEq = r2(seasonal * (seasonalMonths / 12)); // IAF MD 5 §2.3.1: proportionellt
   const contractors = parseInt(f.fteContractors) || 0;
   const partEq = r2(part * (partHours / 8));
-  const total = r2(full + partEq + seasonal + contractors);
+  const total = r2(full + partEq + seasonalEq + contractors);
   return {
     full,
     part,
     partEq,
     seasonal,
+    seasonalMonths,
+    seasonalEq,
     contractors,
     total
   };
@@ -1060,7 +1064,7 @@ function buildMotiv(f, md5, iso27001, integration) {
       const parts = [];
       if (fc.full > 0) parts.push(`${fc.full} heltidsanställda`);
       if (fc.part > 0) parts.push(`${fc.part} deltidsanställda (${f.ftePartHours || 4}h/dag × 1/8 = ${fc.partEq} heltidsekvivalenter per §2.3.3)`);
-      if (fc.seasonal > 0) parts.push(`${fc.seasonal} säsongsanställda per §2.3.1`);
+      if (fc.seasonalEq > 0) parts.push(`${fc.seasonal} säsongsanställda × ${fc.seasonalMonths} mån/år = ${fc.seasonalEq} FTE per §2.3.1`);
       if (fc.contractors > 0) parts.push(`${fc.contractors} inhyrda inom scope per §1.9`);
       return parts.join(" + ") + " = " + fc.total + " effektiva FTE";
     })() : `${md5.fte} FTE`;
@@ -1187,7 +1191,7 @@ function buildCustomerMotiv(f, md5, iso27001, integration) {
     const fc = md5.fteCalc;
     const fte = fc && fc.total > 0 ? fc.total : md5.fte > 0 ? md5.fte : parseInt(f.fte) || 0;
     const fteDetail = fc && fc.total > 0 && (fc.part > 0 || fc.seasonal > 0 || fc.contractors > 0)
-      ? ` (${[fc.full > 0 ? fc.full + " heltid" : null, fc.part > 0 ? fc.part + " deltid" : null, fc.seasonal > 0 ? fc.seasonal + " säsong" : null, fc.contractors > 0 ? fc.contractors + " inhyrda" : null].filter(Boolean).join(", ")} = ${fte} omräknat till heltid)`
+      ? ` (${[fc.full > 0 ? fc.full + " heltid" : null, fc.part > 0 ? fc.part + " deltid" : null, fc.seasonalEq > 0 ? fc.seasonal + " säsong (" + fc.seasonalMonths + " mån = " + fc.seasonalEq + " FTE)" : null, fc.contractors > 0 ? fc.contractors + " inhyrda" : null].filter(Boolean).join(", ")} = ${fte} omräknat till heltid)`
       : "";
     factLines.push(`Antal medarbetare: ${fte}${fteDetail}`);
     if (f.scope) factLines.push(`Verksamhet: ${f.scope}`);
@@ -2004,7 +2008,7 @@ const FteHelper = ({
 }) => {
   const [open, setOpen] = useState(false);
   const calc = calcEffectiveFte(f);
-  const hasDetail = calc.part > 0 || calc.seasonal > 0 || calc.contractors > 0;
+  const hasDetail = calc.part > 0 || calc.seasonalEq > 0 || calc.contractors > 0;
   return /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 9
@@ -2074,13 +2078,34 @@ const FteHelper = ({
     value: f.ftePartHours,
     onChange: v => set("ftePartHours", v),
     placeholder: "4"
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "S\xE4song / topps\xE4song"), /*#__PURE__*/React.createElement(Inp, {
-    type: "number",
-    min: "0",
+  })), /*#__PURE__*/React.createElement("div", null,
+  /*#__PURE__*/React.createElement(Lbl, {
+    tip: "IAF MD 5:2023 \u00a72.3.1: S\xe4songsanst\xe4llda r\xe4knas proportionellt \u2014 antal \xd7 (m\xe5nader/12)."
+  }, "S\xe4song / topps\xe4song"),
+  /*#__PURE__*/React.createElement(Inp, {
+    type: "number", min: "0",
     value: f.fteSeasonal,
     onChange: v => set("fteSeasonal", v),
     placeholder: "0"
-  })), /*#__PURE__*/React.createElement("div", {
+  }),
+  parseInt(f.fteSeasonal) > 0 && /*#__PURE__*/React.createElement("div", {
+    style: { marginTop: 5 }
+  },
+    /*#__PURE__*/React.createElement(Lbl, null, "Antal m\xe5nader/\xe5r"),
+    /*#__PURE__*/React.createElement("select", {
+      value: f.fteSeasonalMonths || "6",
+      onChange: function(e) { set("fteSeasonalMonths", e.target.value); },
+      style: { width: "100%", padding: "5px 8px", border: "1px solid " + C.border,
+               borderRadius: 4, fontSize: 11, fontFamily: MONO }
+    },
+      ["1","2","3","4","5","6","7","8","9","10","11"].map(function(m) {
+        var pct = Math.round(parseInt(m)/12*100);
+        return /*#__PURE__*/React.createElement("option", { key: m, value: m },
+          m + " m\xe5n (" + pct + "%)");
+      })
+    )
+  )
+), /*#__PURE__*/React.createElement("div", {
     style: {
       gridColumn: "1/-1"
     }
@@ -2173,7 +2198,7 @@ const FteHelper = ({
     style: {
       color: C.ink
     }
-  }, calc.seasonal, " FTE")), calc.contractors > 0 && /*#__PURE__*/React.createElement("div", {
+  }, calc.seasonalEq, " FTE (", calc.seasonal, " pers × ", calc.seasonalMonths, " mån)")), calc.contractors > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "space-between",
@@ -2211,7 +2236,7 @@ const FteHelper = ({
       color: C.teal,
       fontWeight: 700
     }
-  }, calc.full, calc.partEq > 0 ? ` + ${calc.partEq}` : "", calc.seasonal > 0 ? ` + ${calc.seasonal}` : "", calc.contractors > 0 ? ` + ${calc.contractors}` : "", " ="), /*#__PURE__*/React.createElement("strong", {
+  }, calc.full, calc.partEq > 0 ? ` + ${calc.partEq}` : "", calc.seasonalEq > 0 ? ` + ${calc.seasonalEq}` : "", calc.contractors > 0 ? ` + ${calc.contractors}` : "", " ="), /*#__PURE__*/React.createElement("strong", {
     style: {
       color: C.teal,
       fontSize: 12
@@ -3433,6 +3458,7 @@ function App() {
     ftePart: "",
     ftePartHours: "4",
     fteSeasonal: "",
+    fteSeasonalMonths: "6",  // Hur många månader säsongsanställda arbetar
     fteContractors: "",
     qmsRisk: "low",
     emsComplexity: "limited",
@@ -9764,7 +9790,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
     }
   }, "\u2191 Ladda kalkyl", /*#__PURE__*/React.createElement("input", {
     type: "file",
-    accept: ".json",
+    accept: ".json,application/json",
     style: {
       display: "none"
     },
@@ -9777,14 +9803,18 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
           const data = JSON.parse(ev.target.result);
           if (window.confirm("Ladda sparad kalkyl? Nuvarande formulärdata skrivs över.")) {
             // Slå ihop med defaultState så att nya fält (v1.2+) får sina defaultvärden
-            setF({ ...DEFAULT_STATE, ...data });
+            const merged = { ...DEFAULT_STATE, ...data };
+            // Generera nytt offertId om filen är från kundenkäten (saknar offertId)
+            if (!data.offertId) merged.offertId = genId();
+            if (!data.validTo) merged.validTo = defaultValidTo();
+            setF(merged);
             setResult(null);
             setMotiv("");
             setOffertIdLocked(false);
             e.target.value = "";
           }
         } catch (err) {
-          alert("Kunde inte läsa filen — kontrollera att det är en giltig SBSC-kalkyl (.json).");
+          alert("Kunde inte läsa filen: " + err.message + ". Kontrollera att det är en giltig JSON-fil från SBSC-kalkylatorn eller SBSC-kundenkäten.");
         }
       };
       reader.readAsText(file);
@@ -10227,6 +10257,7 @@ const DEFAULT_STATE = {
     ftePart: "",
     ftePartHours: "4",
     fteSeasonal: "",
+    fteSeasonalMonths: "6",  // Hur många månader säsongsanställda arbetar
     fteContractors: "",
     qmsRisk: "low",
     emsComplexity: "limited",
