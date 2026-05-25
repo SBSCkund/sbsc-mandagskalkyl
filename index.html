@@ -9744,7 +9744,8 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
-      const data = JSON.stringify(f, null, 2);
+      const exportData = { ...f, _version: "1.4", _exported: new Date().toISOString().slice(0,10) };
+      const data = JSON.stringify(exportData, null, 2);
       const blob = new Blob([data], {
         type: "application/json"
       });
@@ -9804,9 +9805,11 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
       const reader = new FileReader();
       reader.onload = ev => {
         try {
-          const data = JSON.parse(ev.target.result);
-          if (window.confirm("Ladda sparad kalkyl? Nuvarande formulärdata skrivs över.")) {
-            // Slå ihop med defaultState så att nya fält (v1.2+) får sina defaultvärden
+          const rawData = JSON.parse(ev.target.result);
+          const data = migrateImport(rawData);
+          const versionInfo = rawData._version ? " (v" + rawData._version + ")" : " (äldre format)";
+          if (window.confirm("Ladda sparad kalkyl" + versionInfo + "? Nuvarande formulärdata skrivs över.")) {
+            // Slå ihop med DEFAULT_STATE — nya fält får defaultvärden, migrate() hanterar namnbyten
             const merged = { ...DEFAULT_STATE, ...data };
             // Generera nytt offertId om filen är från kundenkäten (saknar offertId)
             if (!data.offertId) merged.offertId = genId();
@@ -10220,6 +10223,39 @@ domRoot.render(React.createElement(AppShell));
 </script>
 </body>
 </html
+// ══════════════════════════════════════════
+// MIGRATIONSLOGIK — bakåtkompatibilitet
+// Appliceras alltid vid JSON-import
+// ══════════════════════════════════════════
+function migrateImport(data) {
+  const v = data._version || "1.1"; // Ingen version = antag v1.1
+
+  // v1.1 → v1.2: fteSeasonalMonths saknades (säsong räknades som heltid)
+  // Ingen fältbyte — fteSeasonalMonths läggs till av DEFAULT_STATE-merge
+
+  // v1.1 → v1.2: notDesignResp och verySmallSite saknades
+  // Ingen fältbyte — hanteras av DEFAULT_STATE-merge
+
+  // v1.1 → v1.2: imsInt7 saknades
+  // Ingen fältbyte — hanteras av DEFAULT_STATE-merge
+
+  // v1.3 → v1.4: dagspriset flyttades till localStorage
+  // Ingen fältbyte — dayRate var aldrig i JSON
+
+  // MALL FÖR FRAMTIDA MIGRERING:
+  // if (parseFloat(v) < X.Y) {
+  //   if (data.gammaltFältnamn !== undefined && data.nyttFältnamn === undefined) {
+  //     data.nyttFältnamn = data.gammaltFältnamn;
+  //     delete data.gammaltFältnamn;
+  //   }
+  // }
+
+  // Rensa interna nycklar från kundenkäten
+  delete data._source;
+
+  return data;
+}
+
 const DEFAULT_STATE = {
     cName: "",
     cStreet: "",
