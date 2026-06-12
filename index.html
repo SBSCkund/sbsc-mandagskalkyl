@@ -1243,6 +1243,10 @@ function buildCustomerMotiv(f, md5, iso27001, integration) {
       ? ` (${[fc.full > 0 ? fc.full + " heltid" : null, fc.part > 0 ? fc.part + " deltid" : null, fc.seasonalEq > 0 ? fc.seasonal + " säsong (högsäsong)" : null, fc.contractors > 0 ? fc.contractors + " inhyrda" : null].filter(Boolean).join(", ")} = ${fte} omräknat till heltid)`
       : "";
     factLines.push(`Antal medarbetare: ${fte}${fteDetail}`);
+    if (md5?.similarFteInfo) {
+      const si = md5.similarFteInfo;
+      factLines.push(`FTE-justering per \xA72.3.4: Verksamheten \xE4r en ${si.verksamhet.toLowerCase()} d\xE4r en h\xF6g andel av personalen utf\xF6r likartade/repetitiva aktiviteter. Enligt IAF MD 5:2023 \xA72.3.4 och SBSC:s fastst\xE4llda rutiner reduceras ber\xE4kningsunderlaget med 30\xA0%: ${si.originalFte}\xA0FTE \u2192 ${si.reducedFte}\xA0pers. Tabelluppslaget baseras p\xE5 ${si.reducedFte}\xA0pers.`);
+    }
     if (f.scope) factLines.push(`Verksamhet: ${f.scope}`);
     const cAddr = [f.cStreet, [f.cZip, f.cCity].filter(Boolean).join(" ")].filter(Boolean).join(", ");
     if (cAddr) factLines.push(`Certifieringsplats: ${cAddr}`);
@@ -3941,8 +3945,16 @@ function App() {
       return base;
     })();
     const paras = motiv.split(/\n+/).filter(p => p.trim());
-    const md5Rows = md5 ? [...md5.perStdAdj.map(d => ({
-      cells: [`Basdagar — ${d.std}`, `${snap.fte} FTE → ${fteRange(md5.fte)}, Tabell ${d.tbl}`, fmt(d.base)],
+    const md5Rows = md5 ? [...(md5.similarFteInfo ? [{
+      cells: [
+        "FTE-reduktion \u2193 \u2014 " + md5.similarFteInfo.verksamhet,
+        "IAF MD 5:2023 \xA72.3.4 \u2014 " + md5.similarFteInfo.verksamhet + ": 30\xA0% av personalstyrkan utf\xF6r likartade/repetitiva aktiviteter. Reduktionen till\xE4mpas f\xF6re tabelluppslag per SBSC:s fastst\xE4llda rutiner. FTE " + md5.similarFteInfo.originalFte + " \u2192 " + md5.similarFteInfo.reducedFte + "\xA0pers.",
+        "\u221230\xA0%"
+      ],
+      _red: true,
+      _tot: false
+    }] : []), ...md5.perStdAdj.map(d => ({
+      cells: [`Basdagar — ${d.std}`, `${md5.fte} FTE → ${fteRange(md5.fte)}, Tabell ${d.tbl}`, fmt(d.base)],
       _red: false,
       _tot: false
     })), ...md5.adj.map(r => ({
