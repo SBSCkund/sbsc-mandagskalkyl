@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>SBSC Mandagskalkyl v1.1</title>
+<title>SBSC Mandagskalkyl v1.7</title>
 <script>/* React 18.2.0 UMD – inlined, inga externa beroenden */
 /**
  * @license React
@@ -315,11 +315,43 @@ body { background: #f3ede4; font-family: 'Segoe UI', system-ui, -apple-system, A
 input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { opacity: 1; }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #c4b09a; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #c9c9d1; border-radius: 3px; }
 
 input:focus, select:focus, textarea:focus { outline: none; border-color: #FFA300 !important; box-shadow: 0 0 0 3px rgba(255,163,0,0.15) !important; }
-input:hover:not(:focus), select:hover:not(:focus) { border-color: #c4b09a; }
+input:hover:not(:focus), select:hover:not(:focus) { border-color: #b8b8c2; }
 button:active { transform: scale(0.98); }
+* { transition: border-color .15s ease, box-shadow .15s ease; }
+button { transition: background .18s ease, color .18s ease, transform .12s ease, box-shadow .18s ease; }
+button:hover { transform: translateY(-1px); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes floatSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(255,163,0,0.35); } 70% { box-shadow: 0 0 0 14px rgba(255,163,0,0); } 100% { box-shadow: 0 0 0 0 rgba(255,163,0,0); } }
+.fade-up { animation: fadeUp .45s ease both; }
+.secb { display: grid; grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows .45s cubic-bezier(.32,.72,0,1), opacity .35s ease .08s; }
+.secb.folded { grid-template-rows: 0fr; opacity: 0; pointer-events: none; transition: grid-template-rows .4s cubic-bezier(.32,.72,0,1), opacity .22s ease; }
+.seci { overflow: hidden; min-height: 0; }
+.slbl { transition: background .18s ease; border-radius: 8px 8px 0 0; }
+.slbl:hover { background: rgba(0,0,0,0.035); }
+.stag-1 { animation-delay: .08s; } .stag-2 { animation-delay: .16s; } .stag-3 { animation-delay: .26s; } .stag-4 { animation-delay: .38s; }
+.lift { transition: transform .22s cubic-bezier(.32,.72,0,1), box-shadow .22s ease; }
+.lift:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(16,24,32,0.12); }
+.tabfade { animation: fadeUp .35s ease both; }
+
+/* ── Luftigt formulärskinn (demo) ── */
+input[type="text"], input[type="number"], input[type="date"], select, textarea {
+  font-size: 13px !important;
+  padding: 10px 13px !important;
+  border-radius: 10px !important;
+  border: 1.5px solid #e2e2e8 !important;
+  background: #fff !important;
+  line-height: 1.45 !important;
+}
+input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, select:focus, textarea:focus {
+  border-color: #FFA300 !important;
+}
+input::placeholder, textarea::placeholder { color: #aeaeb6 !important; }
+
+.jumpbtn:hover { background: #FFA300 !important; border-color: #FFA300 !important; color: #101820 !important; }
 </style>
 </head>
 <body>
@@ -333,34 +365,36 @@ const SBSC_REV_KEY  = "sbsc_revisorkostnad";
 const SBSC_TRAVEL_KEY = "sbsc_resekostnad";
 const DAY_RATE_DEFAULT = 0;
 const SERIF = "'Open Sans', sans-serif";
-const MONO = "'Open Sans', sans-serif";
+const SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI Variable', 'Segoe UI', system-ui, Roboto, 'Open Sans', sans-serif";
+const MONO = SANS; // UI-text: modern sans. NUM nedan för talkolumner.
+const NUM = "'SF Mono', 'Cascadia Code', 'Segoe UI Mono', Consolas, monospace";
 const C = {
-  bg: "#f3ede4",
+  bg: "#f5f5f7",
   surface: "#ffffff",
-  s2: "#f7f3ec",
-  border: "#ddd0c0",
-  border2: "#b8a08a",
-  ink: "#101820",
-  ink2: "#101820",
-  muted: "#6e5c4e",
-  label: "#101820",
+  s2: "#fafafa",
+  border: "#e6e6eb",
+  border2: "#c9c9d1",
+  ink: "#1d1d1f",
+  ink2: "#1d1d1f",
+  muted: "#6e6e76",
+  label: "#1d1d1f",
   accent: "#FFA300",
   accent2: "#E08C00",
-  shadow: "0 2px 8px rgba(16,24,32,0.07)",
-  shadowMd: "0 4px 20px rgba(16,24,32,0.11)",
-  shadowLg: "0 8px 32px rgba(16,24,32,0.14)",
-  r: "10px",
-  rSm: "6px",
-  rLg: "14px",
-  gold: "#7A4800",
-  goldLt: "#FFF3DC",
+  shadow: "0 1px 2px rgba(16,24,32,0.04), 0 4px 12px rgba(16,24,32,0.06)",
+  shadowMd: "0 2px 4px rgba(16,24,32,0.05), 0 8px 28px rgba(16,24,32,0.10)",
+  shadowLg: "0 4px 8px rgba(16,24,32,0.06), 0 16px 48px rgba(16,24,32,0.14)",
+  r: "12px",
+  rSm: "8px",
+  rLg: "18px",
+  gold: "#8a5a00",
+  goldLt: "#FFF8EB",
   goldBd: "#FFA300",
-  green: "#2E7D4F",
-  greenLt: "#E8F5EE",
-  greenBd: "#7BC47B",
-  purple: "#5C3D8F",
-  purpleLt: "#F0EBF9",
-  purpleBd: "#A07DD0",
+  green: "#1f7a3d",
+  greenLt: "#f0faf3",
+  greenBd: "#a9dcb8",
+  purple: "#3a3a44",
+  purpleLt: "#f2f2f7",
+  purpleBd: "#d2d2da",
   teal: "#1A6B6B",
   tealLt: "#E6F4F4",
   tealBd: "#5BB8B8",
@@ -1293,40 +1327,45 @@ const Lbl = ({
   tip
 }) => /*#__PURE__*/React.createElement("div", {
   style: {
-    fontSize: 9,
-    letterSpacing: "0.15em",
-    textTransform: "uppercase",
-    color: C.ink,
-    marginBottom: tip ? 2 : 3,
-    fontFamily: MONO
+    fontSize: 11.5,
+    fontWeight: 600,
+    letterSpacing: "0.02em",
+    color: "#4a4036",
+    marginBottom: tip ? 3 : 5,
+    fontFamily: SANS
   }
 }, children, tip && /*#__PURE__*/React.createElement("div", {
   style: {
-    fontSize: 9,
+    fontSize: 10.5,
     letterSpacing: "normal",
     textTransform: "none",
     color: C.muted,
     opacity: .85,
-    marginTop: 1,
-    lineHeight: 1.5,
+    marginTop: 2,
+    lineHeight: 1.55,
     fontWeight: "normal"
   }
 }, tip));
 const SLbl = ({
   children,
-  color = C.accent
+  color = C.accent,
+  folded = false,
+  onToggle = null
 }) => /*#__PURE__*/React.createElement("div", {
   className: "slbl",
+  onClick: onToggle || undefined,
   style: {
-    fontSize: 9,
-    letterSpacing: "0.18em",
+    cursor: onToggle ? "pointer" : "default",
+    userSelect: "none",
+    fontSize: 12.5,
+    letterSpacing: "0.05em",
     textTransform: "uppercase",
-    color,
-    fontWeight: 600,
-    margin: "20px 0 10px",
-    paddingBottom: 5,
-    borderBottom: `2px solid ${color === "#FFA300" || color === C.accent ? C.accent : color}`,
-    fontFamily: MONO,
+    color: C.ink,
+    fontWeight: 700,
+    fontFamily: SANS,
+    margin: "30px 0 14px",
+    paddingBottom: 9,
+    borderBottom: `1px solid ${C.border}`,
     display: "flex",
     alignItems: "center",
     gap: 7
@@ -1340,7 +1379,15 @@ const SLbl = ({
     borderRadius: 2,
     flexShrink: 0
   }
-}), children);
+}), children, onToggle && /*#__PURE__*/React.createElement("span", {
+  style: {
+    marginLeft: "auto",
+    fontSize: 12,
+    opacity: 0.55,
+    transform: folded ? "rotate(-90deg)" : "rotate(0deg)",
+    transition: "transform .2s ease"
+  }
+}, "\u25BE"));
 const Inp = ({
   value,
   onChange,
@@ -1722,12 +1769,12 @@ const DocTop = ({
   }
 })), /*#__PURE__*/React.createElement("div", {
   style: {
-    fontFamily: SERIF,
-    fontSize: 20,
+    fontFamily: SANS,
+    fontSize: 24,
     fontWeight: 700,
-    color: C.accent,
+    color: C.ink,
     marginBottom: 4,
-    letterSpacing: "-0.01em"
+    letterSpacing: "-0.025em"
   }
 }, title), /*#__PURE__*/React.createElement("div", {
   style: {
@@ -1746,13 +1793,14 @@ const Sec = ({
   purple = false
 }) => /*#__PURE__*/React.createElement("div", {
   style: {
-    fontFamily: MONO,
-    fontSize: 11,
-    letterSpacing: "0.15em",
+    fontFamily: SANS,
+    fontSize: 11.5,
+    fontWeight: 700,
+    letterSpacing: "0.08em",
     textTransform: "uppercase",
-    color: purple ? C.purple : C.ink,
-    paddingBottom: 7,
-    borderBottom: `2px solid ${purple ? C.purpleBd : C.accent}`,
+    color: C.ink,
+    paddingBottom: 8,
+    borderBottom: `1px solid ${C.border}`,
     margin: "28px 0 14px",
     display: "flex",
     alignItems: "center",
@@ -1834,17 +1882,17 @@ const Tbl = ({
 }, h)))), /*#__PURE__*/React.createElement("tbody", null, rows.map((row, ri) => /*#__PURE__*/React.createElement("tr", {
   key: ri,
   style: {
-    background: row._tot ? purple ? C.purple : C.accent : row._red ? purple ? C.purpleLt : C.greenLt : row._add ? "#fff8e8" : ri % 2 === 1 ? C.s2 : C.surface
+    background: row._tot ? C.ink : ri % 2 === 1 ? C.s2 : C.surface
   }
 }, row.cells.map((c, ci) => /*#__PURE__*/React.createElement("td", {
   key: ci,
   style: {
     padding: "7px 10px",
     borderBottom: `1px solid ${C.border}`,
-    color: row._tot ? "#fff" : row._red ? purple ? C.purple : C.green : row._add ? C.gold : C.ink,
+    color: row._tot ? "#fff" : row._red ? C.green : row._add ? C.gold : C.ink,
     textAlign: ci === row.cells.length - 1 ? "right" : "left",
     verticalAlign: "top",
-    fontWeight: row._tot ? 500 : "normal"
+    fontWeight: row._tot ? 600 : "normal"
   }
 }, c))))));
 const KpiRow = ({
@@ -1859,10 +1907,12 @@ const KpiRow = ({
 }, items.map((it, i) => /*#__PURE__*/React.createElement("div", {
   key: i,
   style: {
-    background: it.purple ? C.purpleLt : C.s2,
-    border: `1px solid ${it.purple ? C.purpleBd : C.border}`,
-    padding: "12px 14px",
-    textAlign: "center"
+    background: C.surface,
+    border: `1px solid ${C.border}`,
+    borderRadius: 10,
+    padding: "14px 14px",
+    textAlign: "center",
+    boxShadow: C.shadow
   }
 }, /*#__PURE__*/React.createElement("div", {
   style: {
@@ -1877,9 +1927,10 @@ const KpiRow = ({
 }, it.label), /*#__PURE__*/React.createElement("div", {
   style: {
     fontFamily: SERIF,
-    fontSize: it.sm ? 16 : 22,
+    fontSize: it.sm ? 17 : 26,
     fontWeight: 700,
-    color: it.purple ? C.purple : C.accent,
+    color: C.ink,
+    letterSpacing: "-0.02em",
     lineHeight: 1
   }
 }, it.value), /*#__PURE__*/React.createElement("div", {
@@ -2035,7 +2086,7 @@ const FteHelper = ({
   const hasDetail = calc.part > 0 || calc.seasonalEq > 0 || calc.contractors > 0;
   return /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2988,6 +3039,26 @@ const MigrationsGuide = ({
     }
   }, /*#__PURE__*/React.createElement("strong", null, "Tips:"), " Fyll i alla v\xE4rden \u2192 klicka \"Generera\" \u2192 kontrollera att mandagstalet \xE4r rimligt mot den gamla ber\xE4kningen. St\xE4mmer det \u2192 klicka \"\u2193 Spara kalkyl\" och arkivera JSON i Certcore. N\xE4sta g\xE5ng r\xE4cker \"\u2191 Ladda kalkyl\".")));
 };
+const AnimNum = ({ value, format }) => {
+  const [disp, setDisp] = React.useState(value);
+  const fromRef = React.useRef(value);
+  React.useEffect(() => {
+    const from = fromRef.current, to = value;
+    if (from === to) { setDisp(to); return; }
+    const t0 = performance.now(), dur = 480;
+    let raf;
+    const step = t => {
+      const p = Math.min(1, (t - t0) / dur);
+      const e = 1 - Math.pow(1 - p, 3);
+      setDisp(from + (to - from) * e);
+      if (p < 1) raf = requestAnimationFrame(step);
+      else fromRef.current = to;
+    };
+    raf = requestAnimationFrame(step);
+    return () => { cancelAnimationFrame(raf); fromRef.current = value; };
+  }, [value]);
+  return format ? format(disp) : String(disp);
+};
 const SiteDetailsPanel = ({
   sites,
   siteDetails,
@@ -3430,6 +3501,8 @@ function App() {
   const [showSecurity, setShowSecurity] = useState(false);
 
   // Läs sparad dagskostnad från localStorage (skrivs aldrig till GitHub-källkod)
+  const [fold, setFold] = useState({ 0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true });
+  const SP = (i, extra) => ({ sec: i, folded: !!fold[i], onToggle: () => setFold(p => ({ ...p, [i]: !p[i] })), ...(extra || {}) });
   const [revCost, setRevCost] = useState(() => { try { const s = localStorage.getItem(SBSC_REV_KEY); return s && parseInt(s) > 0 ? parseInt(s) : 0; } catch(e) { return 0; } });
   const [travelCost, setTravelCost] = useState(() => { try { const s = localStorage.getItem(SBSC_TRAVEL_KEY); return s && parseInt(s) > 0 ? parseInt(s) : 0; } catch(e) { return 0; } });
   useEffect(() => { if (revCost > 0) { try { localStorage.setItem(SBSC_REV_KEY, String(revCost)); } catch(e) {} } }, [revCost]);
@@ -5453,14 +5526,16 @@ function App() {
       style: {
         marginBottom: 8
       }
-    }, /*#__PURE__*/React.createElement("div", null, "1. \xA0Denna offert"), /*#__PURE__*/React.createElement("div", null, "2. \xA0Bilaga 1 \u2013 SBSC Allm\xE4nna Villkor (", /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: C.accent
-      }
-    }, "sbsc.se/allmanna-villkor"), ")"), /*#__PURE__*/React.createElement("div", null, "3. \xA0Bilaga 2 \u2013 SBSC Certifieringsbest\xE4mmelser (", /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: C.accent
-      }
+    }, /*#__PURE__*/React.createElement("div", null, "1. \xA0Denna offert"), /*#__PURE__*/React.createElement("div", null, "2. \xA0Bilaga 1 \u2013 SBSC Allm\xE4nna Villkor (", /*#__PURE__*/React.createElement("a", {
+      href: "https://www.sbsc.se/allmanna-villkor/",
+      target: "_blank",
+      rel: "noopener",
+      style: { color: C.accent, textDecoration: "underline" }
+    }, "sbsc.se/allmanna-villkor"), ")"), /*#__PURE__*/React.createElement("div", null, "3. \xA0Bilaga 2 \u2013 SBSC Certifieringsbest\xE4mmelser (", /*#__PURE__*/React.createElement("a", {
+      href: "https://www.sbsc.se/certifieringsbestammelser/",
+      target: "_blank",
+      rel: "noopener",
+      style: { color: C.accent, textDecoration: "underline" }
     }, "sbsc.se/certifieringsbestammelser"), ")")), /*#__PURE__*/React.createElement("p", null, "Priser \xE4r i svenska kronor exklusive moms. Samtliga resekostnader \xE4r inkluderade. Prisuppgifter baseras p\xE5 aktuell mandagsber\xE4kning och kan justeras vid f\xF6r\xE4ndring i verksamhetens omfattning eller antal anst\xE4llda.")), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 12,
@@ -5482,7 +5557,7 @@ function App() {
         letterSpacing: "0.06em",
         textTransform: "uppercase"
       }
-    }, "Vad h\xE4nder nu?"), [["1", "Signera offerten", "via SBSC:s e-tjänst. Båda parter får en bekräftelse per e-post."], ["2", "Ansökan", "logga in på SBSC:s kundportal och fyll i ansökan om certifiering."], ["3", "Komplettering", "SBSC kontaktar dig för att gå igenom eventuella handlingar som behövs inför revisionen, exempelvis ert ledningssystem."], ...(snap.s27001 && snap.ext27001reviewer && (snap.s9001 || snap.s14001 || snap.s45001) ? [["4a", "Bokning av revision — övriga standarder", "SBSC bokar Steg 1 och Steg 2 för er certifiering mot " + [snap.s9001 && "ISO 9001", snap.s14001 && "ISO 14001", snap.s45001 && "ISO 45001"].filter(Boolean).join(", ") + "."], ["4b", "Bokning av ISO 27001-revision", "ISO 27001-revisionen bokas separat i dialog med ansvarig revisor och planeras oberoende av övriga revisioner."]] : [["4", "Bokning av revision", snap.s27001 && snap.ext27001reviewer ? "ISO 27001-revisionen bokas i dialog med ansvarig revisor. Ni kontaktas av kund- och försäljningsansvarig inom en arbetsdag efter signerad offert." : "när ni är redo bokar SBSC Steg 1 (dokumentgranskning) och Steg 2 (revision på plats). Ni kontaktas av kund- och försäljningsansvarig inom en arbetsdag efter signerad offert."]])].map(([num, bold, text], i) => /*#__PURE__*/React.createElement("div", {
+    }, "Vad h\xE4nder nu?"), [["1", "Signera offerten", "via SBSC:s e-tjänst. Båda parter får en bekräftelse per e-post."], ["2", "Ansökan", "SBSC registrerar er ansökan om certifiering i kundportalen utifrån den accepterade offerten — ni behöver inte ansöka separat."], ["3", "Komplettering", "SBSC kontaktar dig för att gå igenom eventuella handlingar som behövs inför revisionen, exempelvis ert ledningssystem."], ...(snap.s27001 && snap.ext27001reviewer && (snap.s9001 || snap.s14001 || snap.s45001) ? [["4a", "Bokning av revision — övriga standarder", "SBSC bokar Steg 1 och Steg 2 för er certifiering mot " + [snap.s9001 && "ISO 9001", snap.s14001 && "ISO 14001", snap.s45001 && "ISO 45001"].filter(Boolean).join(", ") + "."], ["4b", "Bokning av ISO 27001-revision", "ISO 27001-revisionen bokas separat i dialog med ansvarig revisor och planeras oberoende av övriga revisioner."]] : [["4", "Bokning av revision", snap.s27001 && snap.ext27001reviewer ? "ISO 27001-revisionen bokas i dialog med ansvarig revisor. Ni kontaktas av kund- och försäljningsansvarig inom en arbetsdag efter signerad offert." : "när ni är redo bokar SBSC Steg 1 (dokumentgranskning) och Steg 2 (revision på plats). Ni kontaktas av kund- och försäljningsansvarig inom en arbetsdag efter signerad offert."]])].map(([num, bold, text], i) => /*#__PURE__*/React.createElement("div", {
       key: i,
       style: {
         display: "flex",
@@ -5505,7 +5580,23 @@ function App() {
       style: {
         color: C.ink
       }
-    }, bold), " \u2014 ", text)))), (snap.createdBy || snap.approvedBy) && /*#__PURE__*/React.createElement("div", {
+    }, bold), " \u2014 ", text)))), /*#__PURE__*/React.createElement(Sec, null, "Acceptans och villkor"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: SANS,
+        fontSize: 12,
+        color: C.ink,
+        lineHeight: 1.75,
+        marginBottom: 12
+      }
+    }, "Genom att acceptera denna offert godk\xE4nner ni \xE4ven SBSC:s Allm\xE4nna villkor (Bilaga 1) och SBSC:s Certifieringsbest\xE4mmelser (Bilaga 2), vilka utg\xF6r en del av avtalet. Dokumenten finns l\xE4nkade under Offertens omfattning ovan."), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: SANS,
+        fontSize: 12,
+        color: C.ink,
+        lineHeight: 1.75,
+        marginBottom: 24
+      }
+    }, "Vid accept av offerten registrerar SBSC er ans\xF6kan om certifiering i SBSC:s kundportal f\xF6r er r\xE4kning. Ni beh\xF6ver d\xE4rmed inte g\xF6ra en separat ans\xF6kan via kundportalen."), (snap.createdBy || snap.approvedBy) && /*#__PURE__*/React.createElement("div", {
       style: {
         marginBottom: 20,
         background: C.s2,
@@ -6010,7 +6101,7 @@ ${exportedHTML}
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      background: C.surface,
+      background: "linear-gradient(135deg, #101820 0%, #1c2836 100%)",
       borderBottom: "2px solid " + C.accent,
       padding: "0 28px",
       display: "flex",
@@ -6018,44 +6109,35 @@ ${exportedHTML}
       position: "sticky",
       top: 0,
       zIndex: 10,
-      height: 52,
-      boxShadow: "0 3px 16px rgba(16,24,32,.10)"
+      height: 56,
+      boxShadow: "0 4px 24px rgba(16,24,32,.28)"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "8px 20px 8px 0",
-      borderRight: "1px solid " + C.border,
+      borderRight: "1px solid rgba(255,255,255,0.12)",
       marginRight: 20,
       flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#fff",
+      borderRadius: 8,
+      padding: "4px 10px",
+      boxShadow: "0 2px 10px rgba(0,0,0,0.3)"
     }
   }, /*#__PURE__*/React.createElement("img", {
     src: `data:image/png;base64,${LOGO_B64}`,
     alt: "SBSC",
     style: {
-      height: 30,
+      height: 24,
       display: "block"
     }
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: MONO,
-      fontSize: 11,
-      letterSpacing: "0.12em",
-      textTransform: "uppercase",
-      color: C.ink,
-      flex: 1
-    }
-  }, "Mandagskalkyl \xB7 IAF MD 5:2023 \xB7 MD 11:2023 \xB7 MD 1:2023 \xB7 MD 2:2023 \xB7 ISO 27006-1:2024 Annex C"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: MONO,
-      fontSize: 11,
-      color: "rgba(255,255,255,0.3)",
-      marginLeft: 16,
-      flexShrink: 0
-    }
-  }, "v1.1"), /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", { style: { flex: 1 } }), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
-      borderLeft: "1px solid " + C.border
+      alignItems: "center",
+      gap: 2
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
@@ -6068,13 +6150,13 @@ ${exportedHTML}
       display: "flex",
       alignItems: "center",
       gap: 7,
-      padding: "0 20px",
-      height: 46,
-      background: showGuide ? "#101820" : "transparent",
-      color: showGuide ? "#fff" : "#6b5e52",
-      border: "none",
-      borderRight: "1px solid " + C.border,
-      borderLeft: "1px solid " + C.border,
+      padding: "0 16px",
+      height: 34,
+      background: showGuide ? C.accent : "rgba(255,255,255,0.06)",
+      color: showGuide ? "#101820" : "rgba(255,255,255,0.75)",
+      border: "1px solid " + (showGuide ? C.accent : "rgba(255,255,255,0.14)"),
+      borderRadius: 20,
+      margin: "0 3px",
       fontFamily: "'Segoe UI', system-ui, sans-serif",
       fontSize: 12,
       fontWeight: 600,
@@ -6094,12 +6176,13 @@ ${exportedHTML}
       display: "flex",
       alignItems: "center",
       gap: 7,
-      padding: "0 20px",
-      height: 46,
-      background: showSwedac ? "#101820" : "transparent",
-      color: showSwedac ? "#fff" : "#6b5e52",
-      border: "none",
-      borderRight: "1px solid " + C.border,
+      padding: "0 16px",
+      height: 34,
+      background: showSwedac ? C.accent : "rgba(255,255,255,0.06)",
+      color: showSwedac ? "#101820" : "rgba(255,255,255,0.75)",
+      border: "1px solid " + (showSwedac ? C.accent : "rgba(255,255,255,0.14)"),
+      borderRadius: 20,
+      margin: "0 3px",
       fontFamily: "'Segoe UI', system-ui, sans-serif",
       fontSize: 12,
       fontWeight: 600,
@@ -6119,12 +6202,13 @@ ${exportedHTML}
       display: "flex",
       alignItems: "center",
       gap: 7,
-      padding: "0 20px",
-      height: 46,
-      background: showProcess ? "#101820" : "transparent",
-      color: showProcess ? "#fff" : "#6b5e52",
-      border: "none",
-      borderRight: "1px solid " + C.border,
+      padding: "0 16px",
+      height: 34,
+      background: showProcess ? C.accent : "rgba(255,255,255,0.06)",
+      color: showProcess ? "#101820" : "rgba(255,255,255,0.75)",
+      border: "1px solid " + (showProcess ? C.accent : "rgba(255,255,255,0.14)"),
+      borderRadius: 20,
+      margin: "0 3px",
       fontFamily: "'Segoe UI', system-ui, sans-serif",
       fontSize: 12,
       fontWeight: 600,
@@ -6144,12 +6228,13 @@ ${exportedHTML}
       display: "flex",
       alignItems: "center",
       gap: 7,
-      padding: "0 20px",
-      height: 46,
-      background: showSecurity ? "#101820" : "transparent",
-      color: showSecurity ? "#fff" : "#6b5e52",
-      border: "none",
-      borderRight: "1px solid " + C.border,
+      padding: "0 16px",
+      height: 34,
+      background: showSecurity ? C.accent : "rgba(255,255,255,0.06)",
+      color: showSecurity ? "#101820" : "rgba(255,255,255,0.75)",
+      border: "1px solid " + (showSecurity ? C.accent : "rgba(255,255,255,0.14)"),
+      borderRadius: 20,
+      margin: "0 3px",
       fontFamily: "'Segoe UI', system-ui, sans-serif",
       fontSize: 12,
       fontWeight: 600,
@@ -6163,9 +6248,10 @@ ${exportedHTML}
     style: {
       background: "#fffdf8",
       borderBottom: "3px solid " + C.accent,
-      padding: "28px 40px",
-      fontFamily: MONO,
-      fontSize: 11,
+      padding: "32px 44px",
+      fontFamily: SANS,
+      fontSize: 12.5,
+      lineHeight: 1.65,
       color: C.ink,
       overflowY: "auto",
       maxHeight: "80vh"
@@ -6208,57 +6294,49 @@ ${exportedHTML}
     }
   }, "Stäng ✕")), /*#__PURE__*/React.createElement("div", {
     style: {
-      background: C.s2,
-      border: "1px solid " + C.border,
-      borderLeft: "3px solid " + C.brand,
-      padding: "12px 16px",
-      marginBottom: 20
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      marginBottom: 8,
-      color: C.accent
-    }
-  }, "Hur du anv\xE4nder kalkylatorn \u2014 steg f\xF6r steg"), [["1. Hämta in kundunderlag", "Skicka SBSC Kundunderlag (Word-mallen) till kunden. Uppgifterna mappar direkt mot formulärets fält."], ["2. Välj certifieringstyp", "Ny certifiering, Transfer eller Utökning. Transfer aktiverar förutsättningschecklistan och certifieringscykelhantering per IAF MD 2:2023. Utökning aktiverar mognadsreduktion automatiskt."], ["3. Fyll i kunduppgifter", "Organisation, bransch, kontakt, önskad certifieringstidpunkt (skriv år + välj kvartal — används i revisionsplanen för att kontextualisera År 0–3). Ange FTE och antal platser — stickprovsberäkning (√x) visas direkt. Vid fler platser: fyll i ort, FTE och HK per plats samt besvara filialkvalifikationsfrågorna (IAF MD 1:2023 §6.1.1)."], ["4. Välj standarder och bedöm", "Kryssa i ISO 9001/14001/45001 och/eller ISO 27001. Fyll i riskkategorier med kommentarfält — '? Exempel' ger SBSC-specifika kundexempel och frågor att ställa direkt i mötet. Live-prisindikatorn uppdateras i realtid."], ["5. Justeringsfaktorer", "Mognad, automatisering, offsite, komplexitet, regulatoriska krav. För ISO 27001: Annex D.2/D.3-poäng, D.4-val (Konservativ/Normal/Utökad inom Tabell D.4-intervallet, informativt Annex D). OBS: Vid IMS-revision inaktiveras prior knowledge-reduktionen automatiskt (IAF MD 5 §8(v) Note). Vid transfer/omcertifiering: fyll i erfarenhet från tidigare revisioner."], ["6. Generera och granska", "Klicka Generera. Granska arbetsunderlaget och metodnoteringsblocket (SBSC internt). Motiveringstexten är redigerbar direkt i exporterad HTML — klicka i texten för att komplettera före utskrift. Kopiera med ⎘-knappen för användning i andra system."], ["7. Ladda ner och arkivera", "Ladda ner kundoffert som HTML → PDF. Spara offert-ID. Signering sker via SBSC:s e-tjänst."]].map(([h, t], i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    style: {
       display: "flex",
-      gap: 10,
-      marginBottom: 6
+      gap: 14,
+      alignItems: "stretch",
+      marginBottom: 24,
+      flexWrap: "wrap"
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, [["1", "Fyll i", "Kund, certifieringstyp, standarder och bed\xF6mningar i panelen till v\xE4nster. Hj\xE4lptexter och \xA7-referenser finns vid varje f\xE4lt."], ["2", "Generera", "Granska arbetsunderlag, kundoffert och kombinationsjämf\xF6relse. Live-priset syns redan medan du fyller i."], ["3", "Arkivera", "Ladda ner kundofferten som HTML \u2192 skriv ut till PDF (Ctrl+P / \u2318+P). Spara offert-ID. Signering sker via SBSC:s e-tj\xE4nst."]].map(([n, t, d]) => /*#__PURE__*/React.createElement("div", {
+    key: n,
     style: {
-      background: C.brand,
-      color: "#fff",
-      fontFamily: MONO,
-      fontSize: 11,
-      padding: "2px 7px",
-      flexShrink: 0
+      flex: "1 1 180px",
+      background: "#fff",
+      border: "1px solid " + C.border,
+      borderRadius: 12,
+      padding: "14px 16px"
     }
-  }, h.split(".")[0]), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, h.split(". ")[1]), " \u2014 ", t)))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
-      background: "#fff8ed",
-      border: "1px solid " + C.accent,
-      borderLeft: "3px solid " + C.accent,
-      padding: "10px 14px",
-      marginBottom: 16,
-      fontSize: 10,
-      lineHeight: 1.8
+      display: "inline-flex",
+      width: 24,
+      height: 24,
+      borderRadius: "50%",
+      background: C.goldLt,
+      border: "2px solid " + C.accent,
+      color: "#7A4800",
+      alignItems: "center",
+      justifyContent: "center",
+      fontWeight: 700,
+      fontSize: 12,
+      marginBottom: 8
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, n), /*#__PURE__*/React.createElement("div", {
     style: {
       fontWeight: 700,
-      color: C.accent,
-      marginBottom: 6
+      fontSize: 13,
+      marginBottom: 4
     }
-  }, "Viktiga funktioner att k\xE4nna till"), /*#__PURE__*/React.createElement("div", {
+  }, t), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: "6px 20px"
+      fontSize: 11.5,
+      color: C.muted,
+      lineHeight: 1.6
     }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "? Exempel-knapp"), " \u2014 brandgul knapp vid varje f\xE4lt. \xD6ppnar SBSC-specifika kundexempel och en generisk fr\xE5ga att st\xE4lla kunden direkt i m\xF6tet."), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "Live-prisindikator"), " \u2014 alltid synlig i botten av formul\xE4ret, oavsett hur l\xE5ngt det scrollas. Uppdateras i realtid n\xE4r FTE, platser och standarder justeras \u2014 perfekt i kundm\xF6tet."), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "Filialkvalifikation"), " \u2014 visas vid fler \xE4n 1 plats. Sju ja/nej-fr\xE5gor per IAF MD 1:2023 \xA76.1.1 som dokumenterar om sampling \xE4r l\xE4mpligt."), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "\u2398 Kopiera motivering"), " \u2014 knapp bredvid motiveringsrubriken i arbetsunderlaget. Kopierar teknisk motiveringstext till urklipp. I exporterad HTML \xE4r texten \xE4ven direkt redigerbar i webbl\xE4saren f\xF6re utskrift till PDF."), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "Metodnoteringsblock"), " \u2014 gult block l\xE4ngst ned i arbetsunderlaget. Visas ej i kundofferten. Inneh\xE5ller SWEDAC-noteringar per uppdrag."), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "F\xF6reslagen revisionsplan"), " \u2014 genereras automatiskt i arbetsunderlag (teknisk, med regelverksst\xF6d) och offert (med kostnad per \xE5r). Vid ut\xF6kning visas \xE4ven samordningsvinst."), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "Transfer-checklista"), " \u2014 visas vid Transfer. Fem f\xF6ruts\xE4ttningspunkter att bocka av innan offert l\xE4mnas per SBSC:s interna rutin."))), /*#__PURE__*/React.createElement("div", {
+  }, d)))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
@@ -6310,9 +6388,10 @@ ${exportedHTML}
     style: {
       background: "#f0ede8",
       borderBottom: "2px solid " + C.accent,
-      padding: "28px 40px",
-      fontFamily: MONO,
-      fontSize: 11,
+      padding: "32px 44px",
+      fontFamily: SANS,
+      fontSize: 12.5,
+      lineHeight: 1.65,
       color: C.ink,
       overflowY: "auto",
       maxHeight: "80vh"
@@ -6436,9 +6515,10 @@ ${exportedHTML}
     style: {
       background: "#fffdf8",
       borderBottom: "2px solid " + C.accent,
-      padding: "28px 40px",
-      fontFamily: MONO,
-      fontSize: 11,
+      padding: "32px 44px",
+      fontFamily: SANS,
+      fontSize: 12.5,
+      lineHeight: 1.65,
       color: C.ink,
       overflowY: "auto",
       maxHeight: "80vh"
@@ -6457,7 +6537,7 @@ ${exportedHTML}
       color: C.accent,
       marginBottom: 4
     }
-  }, "Processbas \u2014 Regelefterlevnad & Kvalitetss\xe4kring \u00b7 v1.6"), /*#__PURE__*/React.createElement("div", {
+  }, "Processbas \u2014 Regelefterlevnad & Kvalitetss\xe4kring \u00b7 v1.7"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 9,
       color: C.ink,
@@ -6693,9 +6773,10 @@ ${exportedHTML}
     style: {
       background: "#fffdf8",
       borderBottom: "2px solid " + C.accent,
-      padding: "28px 40px",
-      fontFamily: MONO,
-      fontSize: 11,
+      padding: "32px 44px",
+      fontFamily: SANS,
+      fontSize: 12.5,
+      lineHeight: 1.65,
       color: C.ink,
       overflowY: "auto",
       maxHeight: "80vh"
@@ -6921,20 +7002,25 @@ ${exportedHTML}
       borderBottom: `1px solid ${C.border}`,
       display: "flex", flexWrap: "wrap", gap: 4
     }
-  }, ["Kund", "Typ", "Risk", "MD5", "27001", "Platser", "IMS", "Pris"].map((lbl, i) => /*#__PURE__*/React.createElement("button", {
+  }, [["Kund", "Kunduppgifter", 0], ["Typ", "Typ av certifiering", 1], ["Risk", "Verksamhetsbeskrivning", 2], ["MD5", "ISO 9001", 3], ["27001", "ISO 27001", 4], ["Platser", "Certifieringsplatser", 5], ["IMS", "IMS-integration", 6], ["Pris", "Rabatt", 7]].map(([lbl, match, si]) => /*#__PURE__*/React.createElement("button", {
     key: lbl,
     onClick: () => {
-      const els = document.querySelectorAll(".slbl");
-      if (els[i]) els[i].scrollIntoView({ behavior: "smooth", block: "start" });
+      setFold(p => ({ ...p, [si]: false }));
+      setTimeout(() => {
+        const els = [...document.querySelectorAll(".slbl")];
+        const el = els.find(e => (e.textContent || "").indexOf(match) === 0);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
     },
+    className: "jumpbtn",
     style: {
-      fontFamily: MONO, fontSize: 9, letterSpacing: "0.06em",
-      padding: "3px 8px", borderRadius: 10, cursor: "pointer",
-      border: `1px solid ${C.border}`, background: C.surface, color: C.muted
+      fontFamily: MONO, fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
+      padding: "6px 12px", borderRadius: 12, cursor: "pointer",
+      border: `1px solid ${C.border2}`, background: C.surface, color: C.ink
     }
-  }, lbl))), /*#__PURE__*/React.createElement(MigrationsBanner, null), /*#__PURE__*/React.createElement(SLbl, null, "Kunduppgifter"), /*#__PURE__*/React.createElement("div", {
+  }, lbl))), /*#__PURE__*/React.createElement(MigrationsBanner, null), /*#__PURE__*/React.createElement(SLbl, SP(0), "Kunduppgifter"), /*#__PURE__*/React.createElement("div", { className: fold[0] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, null, "Organisation"), /*#__PURE__*/React.createElement(Inp, {
     value: f.cName,
@@ -6942,7 +7028,7 @@ ${exportedHTML}
     placeholder: "Bolaget AB"
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, null, "Organisationsnummer (valfritt)"), /*#__PURE__*/React.createElement(Inp, {
     value: f.cOrg,
@@ -6950,7 +7036,7 @@ ${exportedHTML}
     placeholder: "556199-0143"
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, {
     tip: "Gatuadress till certifieringsplatsen. Visas i arbetsunderlag och offert, och anv\xE4nds av revisorn f\xF6r bes\xF6ksplanering per IAF MD 1:2023 \u00a77.1.1."
@@ -6970,7 +7056,7 @@ ${exportedHTML}
     placeholder: "Stockholm"
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, null, "Bransch / Verksamhet"), /*#__PURE__*/React.createElement(Inp, {
     value: f.cIndustry,
@@ -6978,7 +7064,7 @@ ${exportedHTML}
     placeholder: "t.ex. IT-tj\xE4nster, tillverkning..."
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, null, "Kontaktperson (valfritt)"), /*#__PURE__*/React.createElement(Inp, {
     value: f.cContact,
@@ -6989,7 +7075,7 @@ ${exportedHTML}
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
       gap: 8,
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, {
     tip: "Handl\xE4ggaren som uppr\xE4ttat kalkylen och offerten."
@@ -7008,7 +7094,7 @@ ${exportedHTML}
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
       gap: 8,
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, offertIdLocked ? "Offert-ID (låst — klicka ✎ för att redigera)" : "Offert-ID"), offertIdLocked ? /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7050,7 +7136,7 @@ ${exportedHTML}
     onChange: v => set("validTo", v)
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, {
     tip: "Kundens \xF6nskem\xE5l om n\xE4r certifieringen ska p\xE5b\xF6rjas (Steg 1). Visas i arbetsunderlaget \u2014 anv\xE4nds vid planering."
@@ -7093,9 +7179,9 @@ ${exportedHTML}
       color: C.teal,
       marginTop: 3
     }
-  }, f.cDesiredDate.split("-")[1], " ", f.cDesiredDate.split("-")[0])), /*#__PURE__*/React.createElement(SLbl, null, "Typ av certifiering"), /*#__PURE__*/React.createElement("div", {
+  }, f.cDesiredDate.split("-")[1], " ", f.cDesiredDate.split("-")[0])))), /*#__PURE__*/React.createElement(SLbl, SP(1), "Typ av certifiering"), /*#__PURE__*/React.createElement("div", { className: fold[1] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, {
     tip: "Styr motiveringstextens formulering och synligg\xF6r IAF MD 2:2023-transfer. P\xE5verkar inte ber\xE4kningslogiken \u2014 transferreduktionen aktiveras n\xE4r certifieringsorgan anges under respektive standard."
@@ -7178,9 +7264,9 @@ ${exportedHTML}
       background: C.goldLt,
       border: `1px solid ${C.goldBd}`,
       padding: "10px 12px",
-      marginBottom: 9
+      marginBottom: 14
     }
-  }, /*#__PURE__*/React.createElement(InfoNote, null, "IAF MD 2:2023 \xA72.3: Certifieringscykeln forts\xE4tter fr\xE5n utf\xE4rdande organ. Transferreduktionen (\u22120,5 dag per standard) baseras p\xe5 IAF MD 5:2023 \xa78(v)(d)+(e) och aktiveras automatiskt n\xe4r certifieringsorgan anges. \n\nNya i v1.6: koncerncertifikat (IAF MD 1 \xa73.3.1/\xa77.8 \u2014 juridiska enheter per plats), golv-upp\xe5tavrundning (\xa73.9), hoppmeny, prisindikator utan dagspris. Tidigare v1.5: s\xe4song peak (\xa72.3.1), ISMS C.6 personalbaserad, \xa78 SBSC-kalibrering. Tidigare v1.4: \xa78(v)a — ej designansvarig f\xf6r produkt/tj\xe4nst (QMS only, \u22120,5 dag). \xa78(v)b — liten anl\xe4ggning relativt personalstyrkan (\u22120,5 dag)."), /*#__PURE__*/React.createElement(TransferChecklist, null), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(InfoNote, null, "IAF MD 2:2023 \xA72.3: Certifieringscykeln forts\xE4tter fr\xE5n utf\xE4rdande organ. Transferreduktionen (\u22120,5 dag per standard) baseras p\xe5 IAF MD 5:2023 \xa78(v)(d)+(e) och aktiveras automatiskt n\xe4r certifieringsorgan anges. \n\nNya i v1.7: koncerncertifikat (IAF MD 1 \xa73.3.1/\xa77.8 \u2014 juridiska enheter per plats), golv-upp\xe5tavrundning (\xa73.9), hoppmeny, prisindikator utan dagspris. Tidigare v1.5: s\xe4song peak (\xa72.3.1), ISMS C.6 personalbaserad, \xa78 SBSC-kalibrering. Tidigare v1.4: \xa78(v)a — ej designansvarig f\xf6r produkt/tj\xe4nst (QMS only, \u22120,5 dag). \xa78(v)b — liten anl\xe4ggning relativt personalstyrkan (\u22120,5 dag)."), /*#__PURE__*/React.createElement(TransferChecklist, null), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
       fontSize: 11,
@@ -7196,7 +7282,7 @@ ${exportedHTML}
       display: "flex",
       flexDirection: "column",
       gap: 4,
-      marginBottom: 9
+      marginBottom: 14
     }
   }, [["transferHas9001", "s9001", "ISO 9001"], ["transferHas14001", "s14001", "ISO 14001"], ["transferHas45001", "s45001", "ISO 45001"], ["transferHas27001", "s27001", "ISO 27001"]].map(([k, sKey, lbl]) => /*#__PURE__*/React.createElement(Chk, {
     key: k,
@@ -7327,7 +7413,7 @@ ${exportedHTML}
       background: C.goldLt,
       border: `1px solid ${C.goldBd}`,
       padding: "10px 12px",
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(InfoNote, null, "Ut\xF6kning = kunden l\xE4gger till en ny standard i sitt befintliga certifikat hos SBSC. Ange vilka standarder som redan \xE4r certifierade \u2014 dessa ger mognadsreduktion per IAF MD 5:2023 \xA78(v)(d). OBS: Recertifiering (\xE5r 3) \xE4r inte en certifieringstyp h\xE4r \u2014 den hanteras automatiskt i omcertifieringsber\xE4kningen."), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7446,7 +7532,7 @@ ${exportedHTML}
     extHas45001: f.extHas45001
   })), (f.certType === "transfer" || f.certType === "extension" || f.s9001 && f.ex9001 || f.ex14001 || f.ex45001 || f.ex27001) && /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, {
     tip: "Erfarenheter fr\xE5n tidigare revisioner som kan p\xE5verka revisionstiden \u2014 t.ex. k\xE4nd mognad, tidigare avvikelser, revisionshistorik. Anv\xE4nds som underlag per IAF MD 5:2023 \xA78."
@@ -7468,9 +7554,9 @@ ${exportedHTML}
       resize: "vertical",
       lineHeight: 1.7
     }
-  })), /*#__PURE__*/React.createElement(SLbl, null, "Verksamhetsbeskrivning & Risk"), /*#__PURE__*/React.createElement("div", {
+  })))), /*#__PURE__*/React.createElement(SLbl, SP(2), "Verksamhetsbeskrivning & Risk"), /*#__PURE__*/React.createElement("div", { className: fold[2] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(RiskDescHelp, null), /*#__PURE__*/React.createElement("textarea", {
     value: f.riskDesc,
@@ -7490,9 +7576,9 @@ ${exportedHTML}
       minHeight: 60,
       lineHeight: 1.7
     }
-  })), /*#__PURE__*/React.createElement(SLbl, null, "ISO 9001 / 14001 / 45001 \u2014 IAF MD 5:2023"), /*#__PURE__*/React.createElement("div", {
+  })))), /*#__PURE__*/React.createElement(SLbl, SP(3), "ISO 9001 / 14001 / 45001 \u2014 IAF MD 5:2023"), /*#__PURE__*/React.createElement("div", { className: fold[3] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, null, "S\xF6ker certifiering mot"), f.certType === "extension" && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7630,9 +7716,9 @@ ${exportedHTML}
         }
       }, "\u2194 Transfer"))
     }));
-  }))), /*#__PURE__*/React.createElement(SLbl, {
+  }))))), /*#__PURE__*/React.createElement(SLbl, SP(4, {
     color: C.purple
-  }, "ISO 27001 \u2014 SS-EN ISO/IEC 27006-1:2024"), /*#__PURE__*/React.createElement("div", {
+  }), "ISO 27001 \u2014 SS-EN ISO/IEC 27006-1:2024"), /*#__PURE__*/React.createElement("div", { className: fold[4] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: f.s27001 ? 4 : 9
     }
@@ -7647,7 +7733,7 @@ ${exportedHTML}
       border: `1.5px solid ${C.purpleBd}`,
       borderRadius: 6,
       padding: "10px 12px",
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7757,9 +7843,20 @@ ${exportedHTML}
     style: {
       color: "#7A4800"
     }
-  }, "\u26A0 Integrerad revision:"), " IMS-reduktion per IAF MD 11:2023 till\xE4mpas. Kr\xE4ver att revisionen genomf\xF6rs av ett team med kombinerad kompetens vid samma tillf\xE4lle.")), /*#__PURE__*/React.createElement(SLbl, null, "Certifieringsplatser \u2014 IAF MD 1:2023"), /*#__PURE__*/React.createElement("div", {
+  }, "\u26A0 Integrerad revision:"), " IMS-reduktion per IAF MD 11:2023 till\xE4mpas. Kr\xE4ver att revisionen genomf\xF6rs av ett team med kombinerad kompetens vid samma tillf\xE4lle.")), !showImsPanel && f.s27001 && /*#__PURE__*/React.createElement("div", {
+    style: { marginBottom: 14 }
+  }, /*#__PURE__*/React.createElement(Lbl, {
+    tip: "C.2.1: Alla som arbetar under organisationens kontroll inom scope, alla skift."
+  }, "Antal personer inom ISMS-scope (C.2.1)"), /*#__PURE__*/React.createElement(Inp, {
+    type: "number",
+    min: "1",
+    value: f.imsPersons,
+    onChange: v => set("imsPersons", v),
+    placeholder: "t.ex. 120"
+  }))
+)), /*#__PURE__*/React.createElement(SLbl, SP(5), "Certifieringsplatser \u2014 IAF MD 1:2023"), /*#__PURE__*/React.createElement("div", { className: fold[5] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, {
     tip: "IAF MD 1:2023 \xA76.1.3.3: Stickprov = \u221Ax (initial), 0,6\xB7\u221Ax (surveillance). Centralfunktionen auditeras alltid."
@@ -7979,7 +8076,7 @@ ${exportedHTML}
     }, icon), /*#__PURE__*/React.createElement("span", null, msg));
   })())), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Chk, {
     checked: f.tempSites === "yes",
@@ -8208,7 +8305,7 @@ ${exportedHTML}
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
       gap: 6,
-      marginBottom: 9
+      marginBottom: 14
     }
   }, f.s9001 && !(f.certType === "extension" && f.extHas9001) && /*#__PURE__*/React.createElement(ExBox, {
     std: "9001",
@@ -8252,7 +8349,7 @@ ${exportedHTML}
       background: C.s2,
       border: `1px solid ${C.border}`,
       padding: "10px 11px",
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8423,7 +8520,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
       background: C.s2,
       border: `1px solid ${C.border}`,
       padding: "10px 11px",
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8524,18 +8621,18 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
     value: "medium"
   }, "Normal"), /*#__PURE__*/React.createElement("option", {
     value: "high"
-  }, "H\xF6g \u2014 olyckshistorik / farliga \xE4mnen")))))), showImsPanel && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SLbl, {
+  }, "H\xF6g \u2014 olyckshistorik / farliga \xE4mnen")))))))), showImsPanel && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SLbl, SP(6, {
     color: "#7A4800"
-  }, "IMS-integration \u2014 IAF MD 11:2023 Annex 1 Figur 1"), /*#__PURE__*/React.createElement("div", {
+  }), "IMS-integration \u2014 IAF MD 11:2023 Annex 1 Figur 1"), /*#__PURE__*/React.createElement("div", { className: fold[6] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.goldLt,
       border: `1px solid ${C.goldBd}`,
       padding: "10px 12px",
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(InfoNote, null, "\xA72.1.2: Max 20% reduktion av T. Best\xE4ms av integrationsniv\xE5 och revisorsteamets kombinerade kompetens."), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(SelHelp, {
     label: "Integrationsniv\xE5 (vertikal axel Figur 1)",
@@ -8628,7 +8725,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
       background: C.purpleLt,
       border: `1px solid ${C.purpleBd}`,
       padding: "12px 12px",
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(InfoNote, {
     color: C.purple,
@@ -8636,7 +8733,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
     bd: C.purpleBd
   }, "\xA79.1.4.2 normativt krav: Annex C ska anv\xE4ndas f\xF6r att best\xE4mma audittid. Annex D \xE4r informativt ber\xE4kningsexempel."), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, {
     tip: "Fyll i certifieringsorgan f\xF6r IAF MD 2:2023 transferreduktion. Aktiverar \u22120,5 dags transferreduktion automatiskt."
@@ -8646,7 +8743,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
     purple: true
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, {
     tip: "C.2.1: Alla som arbetar under organisationens kontroll inom scope, alla skift. Deltid r\xE4knas proportionellt. Inkluderar ej bara anst\xE4llda \u2014 alla som m\xE5ste f\xF6lja ISMS-kraven."
@@ -8951,7 +9048,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
       border: `1.5px solid ${C.purpleBd}`,
       borderRadius: 6,
       padding: "10px 12px",
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9256,7 +9353,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
     }
   }, "(", f.imsD4choice === "conservative" ? "konservativ" : f.imsD4choice === "extended" ? "utökad" : "normal", " till\xE4mpning)")))), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9370,7 +9467,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
   )
 ), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, null, "\xD6vrigt till offerten"), /*#__PURE__*/React.createElement("textarea", {
     value: f.extraNotes,
@@ -9392,7 +9489,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
     }
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, {
     tip: "IAF MD 5 \xA73.1: Steg 1 ska inte \xF6verstiga 1/3 av total audittid. 25% \xE4r SBSC:s standardtumregel. V\xE4lj 33% om scopet \xE4r komplext eller kunden \xE4r ny och kr\xE4ver mer f\xF6rberedelsetid."
@@ -9424,55 +9521,74 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
       color: C.teal,
       marginTop: 3
     }
-  }, "Steg 1 = 33% \u2014 mer tid f\xF6r dokumentgranskning och beredskapsanalys.")), /*#__PURE__*/React.createElement(SLbl, null, "Rabatt & Priss\xE4ttning"), /*#__PURE__*/React.createElement("div", {
+  }, "Steg 1 = 33% \u2014 mer tid f\xF6r dokumentgranskning och beredskapsanalys.")))), /*#__PURE__*/React.createElement(SLbl, SP(7), "Rabatt & Priss\xE4ttning"), /*#__PURE__*/React.createElement("div", { className: fold[7] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9,
-      background: "#fff8ed",
-      border: "1px solid " + C.accent,
-      borderLeft: "3px solid " + C.accent,
-      padding: "10px 12px"
+      marginBottom: 14,
+      background: "#fff",
+      border: `1px solid ${C.border}`,
+      borderRadius: 12,
+      padding: "14px 16px",
+      boxShadow: C.shadow
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontFamily: MONO,
+      fontFamily: SANS,
       fontSize: 11,
-      color: C.ink,
-      fontWeight: 600,
-      marginBottom: 6
+      letterSpacing: "0.07em",
+      textTransform: "uppercase",
+      color: "#7A4800",
+      fontWeight: 700,
+      marginBottom: 7,
+      display: "flex",
+      alignItems: "center",
+      gap: 7
     }
-  }, "\uD83D\uDCA1 Prispsykologisk rekommendation"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", {
+    style: { width: 7, height: 7, borderRadius: "50%", background: C.accent, display: "inline-block" }
+  }), "Prispsykologisk rekommendation"), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontFamily: MONO,
-      fontSize: 11,
-      color: C.ink,
-      lineHeight: 1.8
+      fontFamily: SANS,
+      fontSize: 12,
+      color: C.muted,
+      lineHeight: 1.7
     }
   }, "Ge rabatt ", /*#__PURE__*/React.createElement("strong", null, "framtill"), " (initial) \u2014 det s\xE4nker intr\xE4deshindret och har st\xF6rst upplevt v\xE4rde (ankringseffekten). Beh\xE5ll fullpris p\xE5 periodisk revision och omcertifiering \u2014 kunden \xE4r redan \"inne\" och priset \xE4r sekund\xE4rt. Rabatt p\xE5 hela paketet signalerar desperation; selektiv rabatt signalerar v\xE4rde.")), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 6,
-      fontFamily: MONO,
+      marginBottom: 8,
+      fontFamily: SANS,
       fontSize: 11,
-      fontWeight: 600,
-      color: C.ink
+      color: C.muted
     }
-  }, "S\xE4tt 0 om ingen rabatt f\xF6r den fasen."), /*#__PURE__*/React.createElement("div", {
+  }, "Rabatt per fas \u2014 l\xE4mna 0 d\xE4r ingen rabatt ges."), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 6,
-      marginBottom: 9
+      background: "#fff",
+      border: `1px solid ${C.border}`,
+      borderRadius: 14,
+      boxShadow: C.shadow,
+      marginBottom: 14,
+      overflow: "hidden"
     }
-  }, [["rabattInit", "Initial certifiering (Steg 1+2 samlat)", "Rekommenderat: 15–25% — ger störst upplevt värde"], ["rabattSteg1", "  ↳ Steg 1 separat (om du vill dela upp)", "Rekommenderat: 30–50% — lågt inträdeshinder, liten kostnad"], ["rabattSteg2", "  ↳ Steg 2 separat", "Rekommenderat: 10–15% — bevara marginalen på huvudrevisionen"], ["rabattSurv1", "Periodisk revision år 1", "Rekommenderat: 0–10%"], ["rabattSurv2", "Periodisk revision år 2", "Rekommenderat: 0%"], ["rabattRecert", "Omcertifiering år 3", "Rekommenderat: 0–5%"]].map(([key, label, rec]) => /*#__PURE__*/React.createElement("div", {
-    key: key
-  }, /*#__PURE__*/React.createElement(Lbl, {
-    tip: rec
-  }, label), /*#__PURE__*/React.createElement("div", {
+  }, [["rabattInit", "Initial certifiering", "Steg 1+2 samlat \u00b7 rek. 15\u201325%", false], ["rabattSteg1", "Steg 1 separat", "om uppdelat \u00b7 rek. 30\u201350%", true], ["rabattSteg2", "Steg 2 separat", "rek. 10\u201315% \u2014 bevara marginalen", true], ["rabattSurv1", "Periodisk revision \xE5r 1", "rek. 0\u201310%", false], ["rabattSurv2", "Periodisk revision \xE5r 2", "rek. 0%", false], ["rabattRecert", "Omcertifiering \xE5r 3", "rek. 0\u20135%", false]].map(([key, label, rec, sub], ri) => /*#__PURE__*/React.createElement("div", {
+    key: key,
     style: {
       display: "flex",
       alignItems: "center",
-      gap: 4
+      justifyContent: "space-between",
+      gap: 12,
+      padding: sub ? "9px 16px 9px 30px" : "11px 16px",
+      borderTop: ri > 0 ? `1px solid ${C.border}` : "none",
+      background: parseFloat(f[key]) > 0 ? C.greenLt : "transparent",
+      transition: "background .25s ease"
     }
-  }, /*#__PURE__*/React.createElement(Inp, {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: { fontFamily: SANS, fontSize: sub ? 12 : 12.5, fontWeight: sub ? 500 : 600, color: C.ink }
+  }, label), /*#__PURE__*/React.createElement("div", {
+    style: { fontFamily: SANS, fontSize: 10.5, color: C.muted, marginTop: 1 }
+  }, rec)), /*#__PURE__*/React.createElement("div", {
+    style: { display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }
+  }, parseFloat(f[key]) > 0 && /*#__PURE__*/React.createElement("span", {
+    style: { fontFamily: SANS, fontSize: 11.5, fontWeight: 600, color: C.green }
+  }, "\u2212", f[key], "%"), /*#__PURE__*/React.createElement(Inp, {
     type: "number",
     min: "0",
     max: "100",
@@ -9480,39 +9596,31 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
     onChange: v => set(key, v),
     placeholder: "0",
     style: {
-      width: "60px"
+      width: "58px",
+      textAlign: "right"
     }
   }), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontFamily: MONO,
-      fontSize: 11,
-      fontWeight: 600,
-      color: C.ink
-    }
-  }, "%"), parseFloat(f[key]) > 0 && /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontFamily: MONO,
-      fontSize: 11,
-      color: C.green
-    }
-  }, "\u2212", f[key], "%"))))), result && (parseFloat(f.rabattInit) || parseFloat(f.rabattSteg1) || parseFloat(f.rabattSteg2) || parseFloat(f.rabattSurv1) || parseFloat(f.rabattSurv2) || parseFloat(f.rabattRecert)) > 0 && (() => {
+    style: { fontFamily: SANS, fontSize: 12, fontWeight: 600, color: C.muted }
+  }, "%"))))), result && (parseFloat(f.rabattInit) || parseFloat(f.rabattSteg1) || parseFloat(f.rabattSteg2) || parseFloat(f.rabattSurv1) || parseFloat(f.rabattSurv2) || parseFloat(f.rabattRecert)) > 0 && (() => {
     const p = getPrices(result, f.rabatt, {
       ...f
     });
     return /*#__PURE__*/React.createElement("div", {
       style: {
-        fontFamily: MONO,
-        fontSize: 11,
+        fontFamily: SANS,
+        fontSize: 12,
+        fontWeight: 600,
         color: C.green,
-        marginBottom: 9,
-        padding: "6px 10px",
+        marginBottom: 12,
+        padding: "10px 14px",
         background: C.greenLt,
-        border: "1px solid " + C.greenBd
+        border: "1px solid " + C.greenBd,
+        borderRadius: 10
       }
     }, "Total rabatt: \u2212", sek(p.rabattBeloppTotal), " \xB7 Nettopris 3 \xE5r: ", sek(p.pTotal));
   })(), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 9
+      marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, {
     tip: "Anv\xE4nds om du vill ge en enkel total procentrabatt ist\xE4llet f\xF6r per-fas. L\xE4mna tomt om du anv\xE4nder per-fas-rabatt ovan."
@@ -9540,11 +9648,13 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
     }
   }, "\u2212", sek(Math.round(getPrices(result, f.rabatt, {}).rabattBeloppTotal)), " p\xE5 totalt pris"))), (() => { return /*#__PURE__*/React.createElement("div", {
       style: {
-        marginBottom: 9,
-        background: "#fffbeb",
-        border: "1px solid #e8d88a",
-        borderRadius: C.rSm,
-        padding: "8px 10px"
+        marginBottom: 12,
+        background: "#fff",
+        border: `1px solid ${C.border}`,
+        borderLeft: `3px solid ${C.accent}`,
+        borderRadius: 12,
+        padding: "12px 14px",
+        boxShadow: C.shadow
       }
     }, /*#__PURE__*/React.createElement(Lbl, {
       tip: "Dagskostnad sparas i webbl\xE4saren (localStorage) \u2014 aldrig i k\xe4llkod."
@@ -9568,7 +9678,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1,
         background: "white",
-        border: `1.5px solid #e8d88a`,
+        border: `1.5px solid ${C.border2}`,
         color: C.ink,
         fontFamily: MONO,
         fontSize: 12,
@@ -9586,8 +9696,8 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
     style: { borderTop: "1.5px solid " + C.border, paddingTop: 12, marginTop: 8 }
   },
     /*#__PURE__*/React.createElement("div", {
-      style: { fontFamily: MONO, fontSize: 9, fontWeight: 700, color: C.muted,
-               letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }
+      style: { fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: C.muted,
+               letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 8 }
     }, "T\xe4ckningsbidragskalkyl \u2014 intern uppskattning"),
     /*#__PURE__*/React.createElement("div", {
       style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }
@@ -9648,13 +9758,42 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
   )
   }),
 
+  // ── Dagsrate (kr/dag) — levande inmatning, sparas i localStorage ──
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 12,
+      background: "#fff",
+      border: `1px solid ${C.border}`,
+      borderLeft: `3px solid ${C.accent}`,
+      borderRadius: 12,
+      padding: "12px 14px",
+      boxShadow: C.shadow
+    }
+  }, /*#__PURE__*/React.createElement(Lbl, {
+    tip: "Anv\xE4nds f\xF6r prisber\xE4kningen. Sparas i webbl\xE4saren (localStorage) \u2014 aldrig i k\xE4llkod, f\xF6ljer inte med i sparade kalkyler."
+  }, "Dagsrate (kr/dag exkl. moms)"), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    min: "1000",
+    value: dayRate || "",
+    onChange: e => setDayRate(e.target.value === "" ? "" : parseInt(e.target.value) || 0),
+    onBlur: e => { const v = parseInt(e.target.value); if (!v || v < 1000) setDayRate(0); },
+    placeholder: "Ange kr/dag",
+    style: {
+      width: "100%",
+      color: C.ink,
+      fontFamily: SANS
+    }
+  }), dayRate > 999 && /*#__PURE__*/React.createElement("div", {
+    style: { fontFamily: SANS, fontSize: 11, color: C.green, marginTop: 5, fontWeight: 600 }
+  }, "\u2713 Sparas automatiskt i webbl\xE4saren")),
+
   // ── TB-kalkyl: separat sibling-div ────────────────────────────
   /*#__PURE__*/React.createElement("div", {
     style: { borderTop: "1.5px solid " + C.border, padding: "12px 16px", background: C.surface }
   },
     /*#__PURE__*/React.createElement("div", {
-      style: { fontFamily: MONO, fontSize: 9, fontWeight: 700, color: C.muted,
-               letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }
+      style: { fontFamily: SANS, fontSize: 10.5, fontWeight: 700, color: C.muted,
+               letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 8 }
     }, "T\xe4ckningsbidragskalkyl \u2014 intern uppskattning"),
     /*#__PURE__*/React.createElement("div", {
       style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }
@@ -9711,7 +9850,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
           style: { fontSize: 9, color: "#BF0D3E", marginTop: 5, fontStyle: "italic" }
         }, "\u26a0 L\xe5gt TB \u2014 kontrollera antaganden.")
       );
-    })()
+    })()))
   )),
 
   /*#__PURE__*/React.createElement("div", {
@@ -9791,7 +9930,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
         color: "rgba(255,255,255,0.7)",
         textAlign: "right"
       }
-    }, rateOk ? [sek(pInit), " \xB7 ", sek(pSurv * 2), " \xB7 ", sek(pRecert)] : [fmt(liveInit), " \xB7 ", fmt(liveSurv * 2), " \xB7 ", fmt(liveRecert), " dag"]), /*#__PURE__*/React.createElement("div", {
+    }, rateOk ? [/*#__PURE__*/React.createElement(AnimNum, { key: "pi", value: pInit, format: v => sek(Math.round(v)) }), " \xB7 ", /*#__PURE__*/React.createElement(AnimNum, { key: "ps", value: pSurv * 2, format: v => sek(Math.round(v)) }), " \xB7 ", /*#__PURE__*/React.createElement(AnimNum, { key: "pr", value: pRecert, format: v => sek(Math.round(v)) })] : [/*#__PURE__*/React.createElement(AnimNum, { key: "di", value: liveInit, format: v => fmt(Math.round(v * 2) / 2) }), " \xB7 ", /*#__PURE__*/React.createElement(AnimNum, { key: "ds", value: liveSurv * 2, format: v => fmt(Math.round(v * 2) / 2) }), " \xB7 ", /*#__PURE__*/React.createElement(AnimNum, { key: "dr", value: liveRecert, format: v => fmt(Math.round(v * 2) / 2) }), " dag"]), /*#__PURE__*/React.createElement("div", {
       style: {
         color: C.accent,
         fontWeight: 700
@@ -9802,7 +9941,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
         fontWeight: 700,
         textAlign: "right"
       }
-    }, rateOk ? sek(pTotal) : "\u2014 ange dagspris \u2014")), /*#__PURE__*/React.createElement("div", {
+    }, rateOk ? /*#__PURE__*/React.createElement(AnimNum, { value: pTotal, format: v => sek(Math.round(v)) }) : "\u2014 ange dagspris \u2014")), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: MONO,
         fontSize: 7,
@@ -9819,7 +9958,7 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
-      const exportData = { ...f, _version: "1.6", _exported: new Date().toISOString().slice(0,10) };
+      const exportData = { ...f, _version: "1.7", _exported: new Date().toISOString().slice(0,10) };
       const data = JSON.stringify(exportData, null, 2);
       const blob = new Blob([data], {
         type: "application/json"
@@ -9918,35 +10057,47 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexWrap: "wrap",
-      gap: 3,
-      marginBottom: 4
+      gap: 6,
+      marginBottom: 8
     }
-  }, [["Samlade cert.", "Kampanjpriset förutsätter att samtliga av kundens certifieringar är samlade hos SBSC. Vid flytt av certifikat till annat organ återgår ordinarie prissättning."], ["Tidsram", "Kampanjpriset gäller under förutsättning att certifieringsprocessen påbörjas (Steg 1) senast sex månader från offertens acceptdatum."], ["Oförändrat scope", "Offerten gäller under förutsättning att inga väsentliga förändringar i verksamhetens omfattning, antal anställda eller certifieringsscope sker före revisionsstart."], ["Underlag i tid", "Priset förutsätter att kunden lämnar fullständigt kundunderlag inom tre veckor från accept, så att Steg 1 kan planeras utan dröjsmål."]].map(([lbl, text], i) => /*#__PURE__*/React.createElement("button", {
-    key: i,
-    onClick: () => set("offerCondition", f.offerCondition ? f.offerCondition + " " + text : text),
-    style: {
-      padding: "2px 7px",
-      background: C.s2,
-      border: "1px solid " + C.border,
-      fontFamily: MONO,
-      fontSize: 7,
-      cursor: "pointer",
-      borderRadius: 3,
-      color: C.ink
-    }
-  }, "+", lbl)), f.offerCondition && /*#__PURE__*/React.createElement("button", {
+  }, [["Samlade cert.", "Kampanjpriset förutsätter att samtliga av kundens certifieringar är samlade hos SBSC. Vid flytt av certifikat till annat organ återgår ordinarie prissättning."], ["Tidsram", "Kampanjpriset gäller under förutsättning att certifieringsprocessen påbörjas (Steg 1) senast sex månader från offertens acceptdatum."], ["Oförändrat scope", "Offerten gäller under förutsättning att inga väsentliga förändringar i verksamhetens omfattning, antal anställda eller certifieringsscope sker före revisionsstart."], ["Underlag i tid", "Priset förutsätter att kunden lämnar fullständigt kundunderlag inom tre veckor från accept, så att Steg 1 kan planeras utan dröjsmål."]].map(([lbl, text], i) => {
+    const active = (f.offerCondition || "").indexOf(text) >= 0;
+    return /*#__PURE__*/React.createElement("button", {
+      key: i,
+      onClick: () => {
+        if (active) {
+          set("offerCondition", (f.offerCondition || "").replace(text, "").replace(/\s{2,}/g, " ").trim());
+        } else {
+          set("offerCondition", f.offerCondition ? f.offerCondition + " " + text : text);
+        }
+      },
+      title: text,
+      style: {
+        padding: "5px 12px",
+        background: active ? C.accent : "#fff",
+        border: `1.5px solid ${active ? C.accent : C.border2}`,
+        fontFamily: SANS,
+        fontSize: 11,
+        fontWeight: 600,
+        cursor: "pointer",
+        borderRadius: 14,
+        color: active ? "#101820" : C.ink
+      }
+    }, active ? "\u2713 " : "+ ", lbl);
+  }), f.offerCondition && /*#__PURE__*/React.createElement("button", {
     onClick: () => set("offerCondition", ""),
     style: {
-      padding: "2px 7px",
-      background: "#fdecea",
-      border: "1px solid #e0a0a0",
-      fontFamily: MONO,
-      fontSize: 7,
+      padding: "5px 12px",
+      background: "#fff",
+      border: "1.5px solid #d6a0a0",
+      fontFamily: SANS,
+      fontSize: 11,
+      fontWeight: 600,
       cursor: "pointer",
-      borderRadius: 3,
-      color: "#8b2020"
+      borderRadius: 14,
+      color: "#a33030"
     }
-  }, "\u2715")), /*#__PURE__*/React.createElement("textarea", {
+  }, "\u2715 Rensa")), /*#__PURE__*/React.createElement("textarea", {
     value: f.offerCondition,
     onChange: e => set("offerCondition", e.target.value),
     placeholder: "Fritext \u2014 syns i offerten under Villkor...",
@@ -9987,41 +10138,126 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
       height: "calc(100vh - 46px)",
       overflowY: "auto"
     }
-  }, !result ? /*#__PURE__*/React.createElement("div", {
+  }, !result ? (() => {
+    const hasStd = f.s9001 || f.s14001 || f.s45001 || f.s27001;
+    const needMD5 = f.s9001 || f.s14001 || f.s45001;
+    const persOk = hasStd && (!needMD5 || effectiveFte > 0) && (!f.s27001 || parseInt(f.imsPersons) > 0);
+    const kundOk = !!(f.cName && f.cName.trim());
+    const sdet = (f.siteDetails || []).filter(d => d && d.city);
+    const sitesOk = parseInt(f.sites) <= 1 || sdet.length >= parseInt(f.sites);
+    const entOk = !f.koncern || (f.siteDetails || []).filter(d => d && d.entity).length >= parseInt(f.sites || "1");
+    const allReady = hasStd && persOk;
+    const openSec = idxs => setFold(p => { const n = { ...p }; idxs.forEach(i => { n[i] = false; }); return n; });
+    const goSec = (i, match) => { openSec([i]); setTimeout(() => { const el = [...document.querySelectorAll(".slbl")].find(e => (e.textContent || "").indexOf(match) === 0); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 80); };
+    const qs = (patch, opens) => { Object.entries(patch).forEach(([k, v]) => set(k, v)); openSec(opens); };
+    const items = [
+      ["Kunduppgifter", kundOk, () => goSec(0, "Kunduppgifter"), false],
+      ["Standarder valda", hasStd, () => goSec(3, "ISO 9001"), true],
+      ["Personal (FTE / ISMS-personer)", persOk, () => needMD5 || !f.s27001 ? goSec(5, "Certifieringsplatser") : goSec(4, "ISO 27001"), true]
+    ];
+    if (parseInt(f.sites) > 1) items.push(["Platsuppgifter (" + sdet.length + "/" + f.sites + ")", sitesOk, () => goSec(5, "Certifieringsplatser"), false]);
+    if (f.koncern) items.push(["Juridiska enheter (koncern)", entOk, () => goSec(5, "Certifieringsplatser"), false]);
+    return /*#__PURE__*/React.createElement("div", {
+      className: "fade-up",
+      style: {
+        background: "#ffffff",
+        border: `1px solid ${C.border}`,
+        borderRadius: C.rLg,
+        boxShadow: C.shadowMd,
+        padding: "48px 48px 40px",
+        textAlign: "center",
+        color: C.ink,
+        maxWidth: 720,
+        margin: "24px auto 0"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 64, height: 64, margin: "0 auto 18px",
+        background: "linear-gradient(135deg, #FFA300, #E08C00)",
+        borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 28, color: "#101820",
+        boxShadow: "0 10px 26px rgba(255,163,0,0.35)",
+        animation: "floatSoft 4s ease-in-out infinite"
+      }
+    }, "\u2211"), /*#__PURE__*/React.createElement("div", {
+      style: { fontFamily: SANS, fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 26 }
+    }, "Redo att ber\xE4kna"), /*#__PURE__*/React.createElement("div", {
+      style: { fontFamily: SANS, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.muted, marginBottom: 10, textAlign: "left" }
+    }, "Snabbstart"), /*#__PURE__*/React.createElement("div", {
+      style: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 30 }
+    }, [["Ny: ISO 9001", () => qs({ certType: "new", s9001: true }, [0, 3, 5])], ["Ny: ISO 27001", () => qs({ certType: "new", s27001: true }, [0, 4])], ["Ny: 9001 + 27001", () => qs({ certType: "new", s9001: true, s27001: true }, [0, 3, 4, 5])], ["Ut\xF6kning (14001/45001/27001)", () => qs({ certType: "extension" }, [1, 3, 4])], ["Koncerncertifikat", () => qs({ koncern: true, sites: parseInt(f.sites) > 1 ? f.sites : "2" }, [5])]].map(([lbl, fn]) => /*#__PURE__*/React.createElement("button", {
+      key: lbl,
+      onClick: fn,
+      style: {
+        fontFamily: SANS, fontSize: 12, fontWeight: 600,
+        padding: "9px 15px", borderRadius: 11, cursor: "pointer",
+        border: `1.5px solid ${C.border2}`, background: "#fff", color: C.ink
+      }
+    }, lbl))), /*#__PURE__*/React.createElement("div", {
+      style: { fontFamily: SANS, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.muted, marginBottom: 10, textAlign: "left" }
+    }, "Status f\xF6r denna kalkyl"), /*#__PURE__*/React.createElement("div", {
+      style: { background: "#fff", border: `1px solid ${C.border}`, borderRadius: 14, padding: "6px 4px", marginBottom: 26, boxShadow: C.shadow }
+    }, items.map(([lbl, done, go, blocking]) => /*#__PURE__*/React.createElement("div", {
+      key: lbl,
+      onClick: go,
+      style: {
+        display: "flex", alignItems: "center", gap: 11,
+        padding: "10px 14px", cursor: "pointer", textAlign: "left",
+        fontFamily: SANS, fontSize: 13, color: done ? C.ink : blocking ? "#7A4800" : C.muted
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700,
+        background: done ? C.greenLt : blocking ? C.goldLt : C.s2,
+        border: `2px solid ${done ? C.green : blocking ? C.accent : C.border2}`,
+        color: done ? C.green : blocking ? "#7A4800" : C.muted
+      }
+    }, done ? "\u2713" : blocking ? "!" : ""), lbl, !done && /*#__PURE__*/React.createElement("span", {
+      style: { marginLeft: "auto", fontSize: 11, color: C.muted, opacity: 0.7 }
+    }, "\xF6ppna \u2192"))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "11px 14px", margin: "4px 8px 8px", borderRadius: 10, textAlign: "center",
+        fontFamily: SANS, fontSize: 12.5, fontWeight: 600,
+        background: allReady ? C.greenLt : C.s2,
+        color: allReady ? C.green : C.muted,
+        border: `1px dashed ${allReady ? C.greenBd : C.border}`
+      }
+    }, allReady ? "Allt klart \u2014 tryck Generera offertunderlag" : "Fyll i punkterna ovan f\xF6r att kunna generera")), /*#__PURE__*/React.createElement("div", {
+      style: { display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }
+    }, ["ISO 27006-1:2024 Annex C", "IAF MD 5:2023", "IAF MD 11:2023", "IAF MD 1:2023", "IAF MD 2:2023", "30%-golv \xA73.9"].map(t => /*#__PURE__*/React.createElement("button", {
+      key: t,
+      onClick: () => { setShowSwedac(true); setShowGuide(false); setShowProcess(false); setShowSecurity(false); },
+      title: "\xD6ppna Regelverkskartan",
+      style: {
+        fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.04em",
+        padding: "5px 12px", borderRadius: 20, cursor: "pointer",
+        background: "#fff", border: `1px solid ${C.border2}`, color: C.muted
+      }
+    }, t))));
+  })() : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
-      background: C.surface,
-      border: `1px dashed ${C.border2}`,
-      padding: "80px 40px",
-      textAlign: "center",
-      color: C.ink,
-      lineHeight: 2.4,
-      fontSize: 11
+      display: "flex",
+      position: "relative",
+      border: `1px solid ${C.border}`,
+      borderRadius: "12px 12px 0 0",
+      overflow: "hidden",
+      marginBottom: 20,
+      boxShadow: C.shadow
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 28,
-      marginBottom: 12,
-      opacity: .25
+      position: "absolute",
+      bottom: 0,
+      left: activeTab === "work" ? "0%" : activeTab === "customer" ? "33.333%" : "66.666%",
+      width: "33.334%",
+      height: 3,
+      background: C.accent,
+      transition: "left .42s cubic-bezier(.32,.72,0,1)",
+      pointerEvents: "none",
+      zIndex: 2
     }
-  }, "\u229E"), "Fyll i kunddata i formul\xE4ret till v\xE4nster", /*#__PURE__*/React.createElement("br", null), "och klicka ", /*#__PURE__*/React.createElement("strong", {
-    style: {
-      color: C.accent
-    }
-  }, "Generera offertunderlag"), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      color: C.border2,
-      lineHeight: 2.2
-    }
-  }, "ISO 27001: 27006-1:2024 Table C.1 (normativ) \xB7 C.3.4 \xB7 Annex D matris \xB7 C.3.5 \xB7 C.3.6 \xB7 C.7", /*#__PURE__*/React.createElement("br", null), "9001/14001/45001: IAF MD 5:2023 separata tabeller QMS/EMS/OH&SMS \xB7 30%-tak", /*#__PURE__*/React.createElement("br", null), "IAF MD 11:2023 IMS max 20% \xB7 IAF MD 1:2023 flerplats \xB7 IAF MD 2:2023 transfer")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      border: `1px solid ${C.border}`,
-      borderRadius: "8px 8px 0 0",
-      overflow: "hidden",
-      marginBottom: 20
-    }
-  }, /*#__PURE__*/React.createElement(TabBtn, {
+  }), /*#__PURE__*/React.createElement(TabBtn, {
     id: "work",
     label: "Mandagsberäkning",
     sub: "Intern beräkning och mandagsspecifikation"
@@ -10039,15 +10275,18 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
     });
   })()), /*#__PURE__*/React.createElement("div", {
     id: "doc-work",
+    className: activeTab === "work" ? "tabfade" : "",
     style: {
       display: activeTab === "work" ? "block" : "none"
     }
   }, /*#__PURE__*/React.createElement(WorkView, null)), /*#__PURE__*/React.createElement("div", {
     id: "doc-customer",
+    className: activeTab === "customer" ? "tabfade" : "",
     style: {
       display: activeTab === "customer" ? "block" : "none"
     }
   }, /*#__PURE__*/React.createElement(CustomerView, null)), /*#__PURE__*/React.createElement("div", {
+    className: activeTab === "compare" ? "tabfade" : "",
     style: {
       display: activeTab === "compare" ? "block" : "none"
     }
@@ -10184,108 +10423,128 @@ f.similar === "yes" && /*#__PURE__*/React.createElement("div", {
   }, "En HTML-fil laddas ner till din dator.", /*#__PURE__*/React.createElement("br", null), "\xD6ppna filen i webbl\xE4saren \u2192 tryck ", /*#__PURE__*/React.createElement("strong", null, "Ctrl+P"), " (Win) / ", /*#__PURE__*/React.createElement("strong", null, "\u2318+P"), " (Mac) \u2192 v\xE4lj ", /*#__PURE__*/React.createElement("strong", null, "Spara som PDF"), "."))))));
 }
 const StartPage = ({ onEnter }) => {
-  const card = (title, desc) => React.createElement("div", {
-    style: {
-      background: "#fff", borderRadius: 10, padding: "20px 22px",
-      border: "1px solid #E8E9EC", boxShadow: "0 1px 3px rgba(0,0,0,.07)"
-    }
-  },
-    React.createElement("div", {
-      style: { fontSize: 13, fontWeight: 700, color: "#101820", marginBottom: 6 }
-    }, title),
-    React.createElement("div", {
-      style: { fontSize: 11, color: "#6B6C74", lineHeight: 1.65 }
-    }, desc)
-  );
-
   return React.createElement("div", {
-    style: { minHeight: "100vh", background: "#F8F9FA",
-      fontFamily: "'Open Sans', system-ui, sans-serif", color: "#101820" }
+    style: { minHeight: "100vh", background: C.bg, fontFamily: SANS, color: C.ink }
   },
-    // Header — vit med amber-linje
-    React.createElement("div", { style: { background: "#fff", borderBottom: "1px solid #E8E9EC" } },
-      React.createElement("div", { style: { height: 3, background: "#FFA300" } }),
-      React.createElement("div", {
-        style: { maxWidth: 900, margin: "0 auto", padding: "0 32px",
-          height: 80, display: "flex", alignItems: "center", justifyContent: "space-between" }
-      },
-        React.createElement("img", {
-          src: "data:image/png;base64," + LOGO_B64,
-          alt: "SBSC", style: { height: 64, width: "auto" }
-        }),
-        React.createElement("div", {
-          style: { fontSize: 11, fontWeight: 700, color: "#6B6C74",
-            letterSpacing: ".08em", textTransform: "uppercase" }
-        }, "Internt beräkningsverktyg")
-      )
-    ),
-
-    // Innehåll
+    // ── HERO: mörk Ink-scen med amber-glöd ──
     React.createElement("div", {
-      style: { maxWidth: 780, margin: "0 auto", padding: "48px 24px 80px" }
+      style: {
+        background: "linear-gradient(135deg, #101820 0%, #1c2836 78%, #243240 100%)",
+        position: "relative",
+        overflow: "hidden",
+        borderBottom: "3px solid " + C.accent
+      }
     },
-      // Chip
+      // Subtil amber-glöd
       React.createElement("div", {
-        style: { display: "inline-block", background: "#FFA300", color: "#101820",
-          fontSize: 10, fontWeight: 800, letterSpacing: ".8px", textTransform: "uppercase",
-          padding: "4px 12px", borderRadius: 2, marginBottom: 16 }
-      }, "SBSC · Mandagskalkylator"),
-
-      // Rubrik
-      React.createElement("h1", {
-        style: { fontSize: 32, fontWeight: 800, color: "#101820",
-          letterSpacing: "-0.03em", lineHeight: 1.15, marginBottom: 10 }
-      }, "Mandagskalkylator"),
-
-      // Underrubrik
+        style: {
+          position: "absolute", top: -180, right: -120, width: 480, height: 480,
+          background: "radial-gradient(circle, rgba(255,163,0,0.16) 0%, rgba(255,163,0,0) 65%)",
+          pointerEvents: "none"
+        }
+      }),
+      // Toppbar
       React.createElement("div", {
-        style: { fontSize: 14, color: "#6B6C74", marginBottom: 36, lineHeight: 1.6, maxWidth: 540 }
-      }, "Beräkna revisionsdagar, generera offertunderlag och motiveringstext för ISO 9001, 14001, 45001 och ISO 27001 — i enlighet med IAF MD 1, 2, 5 och 11."),
-
-      // Informationsruta
-      React.createElement("div", {
-        style: { background: "#fff", border: "1px solid #E8E9EC", borderLeft: "3px solid #FFA300",
-          borderRadius: 8, padding: "14px 18px", marginBottom: 32,
-          fontSize: 12, color: "#101820", lineHeight: 1.75 }
+        style: { maxWidth: 880, margin: "0 auto", padding: "22px 32px 0",
+          display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }
       },
-        React.createElement("strong", null, "Internt verktyg — endast för SBSC-personal."),
-        " Mandagarna beräknas per IAF MD 5:2023 (ISO 9001/14001/45001), ISO/IEC 27006-1:2024 (ISO 27001) och IAF MD 1/2/11:2023. Beräkningarna inkluderar 30%-golv per §3.9 och IMS-reduktion per IAF MD 11. Priser baseras på angiven dagskostnad och visas aldrig i källkod."
+        React.createElement("div", {
+          style: { background: "#fff", borderRadius: 10, padding: "6px 14px", boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }
+        }, React.createElement("img", {
+          src: "data:image/png;base64," + LOGO_B64,
+          alt: "SBSC", style: { height: 30, width: "auto", display: "block" }
+        })),
+        React.createElement("div", {
+          style: { fontSize: 10.5, fontWeight: 700, color: "rgba(255,255,255,0.55)",
+            letterSpacing: ".12em", textTransform: "uppercase" }
+        }, "Internt ber\xE4kningsverktyg")
       ),
-
-      // Funktionskort
+      // Hero-innehåll
       React.createElement("div", {
-        style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 36 }
+        style: { maxWidth: 880, margin: "0 auto", padding: "64px 32px 72px", textAlign: "center", position: "relative" }
       },
-        card("Mandagsberäkning", "ISO 9001, 14001, 45001 och ISO 27001. Beräknar revisionsdagar per certifieringstyp och fas med regelverksstöd i IAF MD 5:2023 och ISO/IEC 27006-1:2024."),
-        card("Offertunderlag", "Genererar rabatter per fas och producerar ett strukturerat offertunderlag redo att presentera för kunden."),
-        card("Motiveringstext", "Skapar en kundanpassad motiveringstext som förklarar beräkningens normgrund och anpassningar.")
-      ),
-
-      // Starta-knapp
-      React.createElement("div", { style: { textAlign: "center" } },
+        React.createElement("div", {
+          className: "fade-up",
+          style: { display: "inline-flex", alignItems: "center", gap: 8,
+            background: "rgba(255,163,0,0.12)", border: "1px solid rgba(255,163,0,0.35)",
+            color: C.accent, fontSize: 10.5, fontWeight: 700, letterSpacing: ".14em",
+            textTransform: "uppercase", padding: "6px 16px", borderRadius: 20, marginBottom: 26 }
+        }, React.createElement("span", {
+          style: { width: 6, height: 6, borderRadius: "50%", background: C.accent, display: "inline-block" }
+        }), "SBSC \u00b7 Mandagskalkylator"),
+        React.createElement("h1", {
+          className: "fade-up stag-1",
+          style: { fontSize: 46, fontWeight: 800, color: "#fff",
+            letterSpacing: "-0.035em", lineHeight: 1.12, margin: "0 0 18px" }
+        }, "Revisionsdagar med regelverksst\xF6d", React.createElement("br", null),
+           React.createElement("span", { style: { color: C.accent } }, "i varje rad.")),
+        React.createElement("div", {
+          className: "fade-up stag-2",
+          style: { fontSize: 15, color: "rgba(255,255,255,0.65)", lineHeight: 1.7,
+            maxWidth: 560, margin: "0 auto 38px" }
+        }, "Ber\xE4kna mandagar, generera offertunderlag och kundanpassad motiveringstext f\xF6r ISO 9001, 14001, 45001 och ISO 27001 \u2014 enligt IAF MD 1, 2, 5 och 11."),
         React.createElement("button", {
+          className: "fade-up stag-3",
           onClick: onEnter,
           style: {
-            background: "#FFA300", color: "#101820", border: "none",
-            borderRadius: 8, padding: "14px 40px", fontSize: 15, fontWeight: 800,
-            cursor: "pointer", fontFamily: "inherit", letterSpacing: ".02em",
-            transition: "background .15s", display: "inline-block"
-          },
-          onMouseOver: e => e.target.style.background = "#e69200",
-          onMouseOut: e => e.target.style.background = "#FFA300"
-        }, "Öppna kalkylatorn →")
-      ),
-
-      // Footer-tagline
+            background: C.accent, color: "#101820", border: "none",
+            fontFamily: SANS, fontSize: 15, fontWeight: 700,
+            padding: "15px 38px", borderRadius: 14, cursor: "pointer",
+            boxShadow: "0 12px 32px rgba(255,163,0,0.35)",
+            animation: "pulseRing 2.6s ease-out infinite"
+          }
+        }, "\xD6ppna kalkylatorn \u2192")
+      )
+    ),
+    // ── Funktionskort ──
+    React.createElement("div", {
+      style: { maxWidth: 880, margin: "0 auto", padding: "44px 32px 24px" }
+    },
       React.createElement("div", {
-        style: { textAlign: "center", marginTop: 40,
-          fontSize: 10, fontWeight: 700, color: "#aaa",
-          letterSpacing: ".1em", textTransform: "uppercase" }
-      }, "SBSC · Säkrare. Tryggare. Certifierad.")
+        style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }
+      }, [
+        ["\u2211", "Mandagsber\xE4kning", "Revisionsdagar per certifieringstyp och fas \u2014 IAF MD 5:2023, ISO/IEC 27006-1:2024, 30%-golv och IMS-reduktion inbyggt."],
+        ["\u2197", "Offertunderlag", "Rabatter per fas, villkor och en strukturerad kundoffert \u2014 redo att presentera direkt."],
+        ["\u00a7", "Motiveringstext", "Kundanpassad text som f\xF6rklarar ber\xE4kningens normgrund \u2014 sp\xE5rbar till paragrafnummer."]
+      ].map(([icon, t, d], i) => React.createElement("div", {
+        key: t,
+        className: "fade-up lift stag-" + (i + 2),
+        style: {
+          background: "#fff", borderRadius: 16, padding: "24px 22px",
+          border: "1px solid " + C.border, boxShadow: C.shadow
+        }
+      },
+        React.createElement("div", {
+          style: { width: 40, height: 40, borderRadius: 12, background: C.goldLt,
+            border: "1.5px solid " + C.accent, color: "#7A4800",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 18, fontWeight: 700, marginBottom: 14 }
+        }, icon),
+        React.createElement("div", {
+          style: { fontSize: 14.5, fontWeight: 700, color: C.ink, marginBottom: 6 }
+        }, t),
+        React.createElement("div", {
+          style: { fontSize: 12, color: C.muted, lineHeight: 1.65 }
+        }, d)
+      ))),
+      // Regelverkschips
+      React.createElement("div", {
+        className: "fade-up stag-4",
+        style: { display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", margin: "34px 0 0" }
+      }, ["IAF MD 5:2023", "ISO/IEC 27006-1:2024", "IAF MD 11:2023", "IAF MD 1:2023", "IAF MD 2:2023"].map(t =>
+        React.createElement("span", {
+          key: t,
+          style: { fontFamily: SANS, fontSize: 10, fontWeight: 600, letterSpacing: "0.04em",
+            padding: "5px 13px", borderRadius: 20, background: "#fff",
+            border: "1px solid " + C.border2, color: C.muted }
+        }, t))),
+      React.createElement("div", {
+        style: { textAlign: "center", fontSize: 10, fontWeight: 700, letterSpacing: "0.18em",
+          textTransform: "uppercase", color: C.border2, padding: "40px 0 48px" }
+      }, "SBSC \u00b7 S\xE4krare. Tryggare. Certifierad.")
     )
   );
 };
-
 const AppShell = () => {
   const [appView, setAppView] = React.useState("start");
   return appView === "start"
