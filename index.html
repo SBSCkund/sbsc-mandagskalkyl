@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>SBSC Mandagskalkyl v1.7</title>
+<title>SBSC Mandagskalkyl</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%23FFA300%27/%3E%3Ctext x=%2716%27 y=%2722%27 font-family=%27Arial,sans-serif%27 font-size=%2718%27 font-weight=%27800%27 fill=%27%23101820%27 text-anchor=%27middle%27%3ES%3C/text%3E%3C/svg%3E">
 <script>/* React 18.2.0 UMD – inlined, inga externa beroenden */
 /**
  * @license React
@@ -338,6 +339,30 @@ button:hover { transform: translateY(-1px); }
 .tabfade { animation: fadeUp .35s ease both; }
 .chkrow { transition: background .15s ease; }
 .chkrow:hover { background: rgba(0,0,0,0.04) !important; }
+button { transition: transform .08s ease, box-shadow .15s ease; }
+button:active { transform: scale(0.96); }
+@keyframes popIn { 0% { transform: scale(0); opacity: 0; } 70% { transform: scale(1.18); } 100% { transform: scale(1); opacity: 1; } }
+.pop-in { animation: popIn .38s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes tlPop { 0% { transform: scale(0); opacity: 0; } 75% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
+.tl-pop { animation: tlPop .45s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes tlLine { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.tl-line { transform-origin: left center; animation: tlLine .65s ease-out both; animation-delay: .1s; }
+@keyframes docRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+#doc-work > div > *, #doc-customer > div > * { animation: docRise .5s ease both; }
+#doc-work > div > *:nth-child(1), #doc-customer > div > *:nth-child(1) { animation-delay: .04s; }
+#doc-work > div > *:nth-child(2), #doc-customer > div > *:nth-child(2) { animation-delay: .1s; }
+#doc-work > div > *:nth-child(3), #doc-customer > div > *:nth-child(3) { animation-delay: .16s; }
+#doc-work > div > *:nth-child(4), #doc-customer > div > *:nth-child(4) { animation-delay: .22s; }
+#doc-work > div > *:nth-child(5), #doc-customer > div > *:nth-child(5) { animation-delay: .28s; }
+#doc-work > div > *:nth-child(6), #doc-customer > div > *:nth-child(6) { animation-delay: .34s; }
+#doc-work > div > *:nth-child(n+7), #doc-customer > div > *:nth-child(n+7) { animation-delay: .4s; }
+#doc-work tr:hover td, #doc-customer tr:hover td { background: rgba(255,163,0,0.07); }
+@keyframes shimmer { 0% { left: -80%; } 55%, 100% { left: 120%; } }
+.btn-generate { position: relative; overflow: hidden; }
+.btn-generate::after { content: ""; position: absolute; top: 0; left: -80%; width: 45%; height: 100%;
+  background: linear-gradient(105deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0) 100%);
+  animation: shimmer 3.2s ease-in-out infinite; pointer-events: none; }
+@media print { #doc-work > div > *, #doc-customer > div > *, .tl-pop, .tl-line { animation: none !important; opacity: 1 !important; transform: none !important; } }
 
 /* ── Luftigt formulärskinn (demo) ── */
 input[type="text"], input[type="number"], input[type="date"], select, textarea {
@@ -1088,7 +1113,32 @@ function calcMD11Integration(md5, iso27001, f) {
 }
 
 // ── Motiveringstext ──
-function buildMotiv(f, md5, iso27001, integration) {
+function cycleNodes(snap, prices, extC, md5n) {
+  // Utökningsvariant: noder byggs från cykelpositionen för befintliga certifikat.
+  // Alla dagtal läses från redan beräknade objekt (md5n = nya standarder, extC = samordnad cykel).
+  if (snap && snap.certType === "extension" && extC && md5n) {
+    const pos = snap.extHas9001 ? (snap.ext9001cycle || "surv1") : snap.extHas14001 ? (snap.ext14001cycle || "surv1") : (snap.ext45001cycle || "surv1");
+    const n1 = ["S1", "Steg 1 \u2014 ny standard", fmt(md5n.stage1) + " dgr \u00B7 frist\xE5ende", true];
+    if (pos === "recert") return [n1,
+      ["S2", "Steg 2 + Omcertifiering", fmt(md5n.stage2) + " dgr + ord. revision", true],
+      ["1", "Periodisk \u2014 samtliga", fmt(extC.surv) + " dgr", false],
+      ["2", "Periodisk \u2014 samtliga", fmt(extC.surv) + " dgr", false]];
+    if (pos === "surv2") return [n1,
+      ["S2", "Steg 2 + Periodisk \xE5r 2", fmt(md5n.stage2) + " dgr + ord. revision", true],
+      ["1", "Omcertifiering \u2014 samtliga", fmt(extC.recert) + " dgr", true],
+      ["2+", "Ny gemensam 3-\xE5rscykel", fmt(extC.surv) + " dgr/\xE5r", false]];
+    return [n1,
+      ["S2", "Steg 2 + Periodisk \xE5r 1", fmt(md5n.stage2) + " dgr + ord. revision", true],
+      ["1", "Periodisk \u2014 samtliga", fmt(extC.surv) + " dgr", false],
+      ["2", "Omcertifiering \u2014 samtliga", fmt(extC.recert) + " dgr", true]];
+  }
+  return [
+    ["0", "Initial certifiering", fmt(prices.totalInit) + " dgr", true],
+    ["1", "Periodisk revision", fmt(prices.surv) + " dgr", false],
+    ["2", "Periodisk revision", fmt(prices.surv) + " dgr", false],
+    ["3", "Omcertifiering", fmt(prices.recert) + " dgr", true]];
+}
+function buildMotiv(f, md5, iso27001, integration, extCombined) {
   const parts = [];
   const allStds = [...(md5?.stds || []), f.s27001 ? "ISO 27001" : null].filter(Boolean);
   // ── Teknisk ingress för handläggaren ──────────────────────────────────
@@ -1213,12 +1263,26 @@ function buildMotiv(f, md5, iso27001, integration) {
     parts.push(`KONCERNCERTIFIKAT — flera juridiska enheter under ett certifikat. Omfattade enheter: ${entListK || "se platslista"}. Grund: IAF MD 1:2023 §3.3.1 — en multi-site-organisation behöver inte utgöra en enda juridisk enhet, förutsatt att samtliga enheter har en juridisk eller avtalsmässig koppling till centralfunktionen, omfattas av ett enda ledningssystem och att centralfunktionen kan kräva korrigerande åtgärder. Juridisk/avtalsmässig koppling: ${f.koncernQ8 || "ej bedömt"} (§3.3.1). Strukturen avser en sammanhållen koncern, inte fristående organisationer under konstgjort paraply (§1). Behörighetskraven i §5.1–5.6 dokumenteras genom filialkvalifikationen.`);
     parts.push(`Certifikatstruktur per IAF MD 1:2023 §7.8: huvudcertifikatet anger samtliga platser och juridiska enheter med namn och adress (§7.8.2). Eventuella platscertifikat utfärdas med spårbarhet till huvudcertifikatet och med texten att giltigheten beror av huvudcertifikatets giltighet (§7.8.3); platscertifikat utfärdas aldrig i den enskilda enhetens eget namn. Vid allvarlig avvikelse på en enhet nekas/återkallas certifieringen för hela organisationen (§7.7.3–7.8.4).`);
   }
+  // ── Samordnad certifieringscykel vid utökning ──────────────────────────
+  if (f.certType === "extension" && extCombined) {
+    const extOld = [f.extHas9001 && "ISO 9001", f.extHas14001 && "ISO 14001", f.extHas45001 && "ISO 45001"].filter(Boolean);
+    const extNew = (md5 ? md5.stds : []).concat(f.s27001 && !f.extHas27001 ? ["ISO 27001"] : []);
+    const pos = f.extHas9001 ? (f.ext9001cycle || "surv1") : f.extHas14001 ? (f.ext14001cycle || "surv1") : (f.ext45001cycle || "surv1");
+    const posLabel = pos === "recert" ? "omcertifiering" : pos === "surv2" ? "periodisk revision \xE5r 2" : "periodisk revision \xE5r 1";
+    parts.push(
+      "SAMORDNAD CERTIFIERINGSCYKEL (UT\xD6KNING)\n" +
+      "Steg 1 f\xF6r " + extNew.join(", ") + " genomf\xF6rs frist\xE5ende. Steg 2 f\xF6rl\xE4ggs i anslutning till ordinarie " + posLabel + " f\xF6r befintliga certifikat (" + extOld.join(", ") + ") \u2014 kombinerad revision per IAF MD 5:2023 \xA75\u20136; jfr ISO/IEC 27006-1:2024 C.7 f\xF6r ISMS-scopeut\xF6kningar (+0,5 dag vid samordning, +1,0 dag frist\xE5ende). " +
+      "Efter ut\xF6kningen harmoniseras certifikatens giltighetstid: framtida periodisk revision och omcertifiering genomf\xF6rs samordnat f\xF6r samtliga standarder. " +
+      "Det nya certifikatets f\xF6rsta omcertifiering kan d\xE4rmed ske tidigare \xE4n tre \xE5r efter utf\xE4rdandet \u2014 detta kommuniceras till kund i offerten.\n" +
+      "Samordnad framtida cykel (" + extOld.concat(extNew).join(" + ") + "): periodisk revision " + fmt(extCombined.surv) + " dgr/\xE5r \u00B7 omcertifiering " + fmt(extCombined.recert) + " dgr. Ber\xE4knat med samtliga standarder i scope per IAF MD 5:2023 \xA75\u20136 (surv \u2248 1/3, omcert \u2248 2/3 av initialtid f\xF6r d\xE5varande scope)."
+    );
+  }
   parts.push("Beräkningen följer " + regelverk.join(", ") + " inom ramen för SBSC:s ackreditering av SWEDAC.");
   return parts.join("\n\n");
 }
 
 // ── KUNDVÄNLIG MOTIVERINGSTEXT (omformulerad från buildMotiv) ──
-function buildCustomerMotiv(f, md5, iso27001, integration) {
+function buildCustomerMotiv(f, md5, iso27001, integration, extCombined) {
   const parts = [];
   const allStds = [...(md5?.stds || []), f.s27001 ? "ISO 27001" : null].filter(Boolean);
   const stdText = allStds.length === 1 ? allStds[0]
@@ -1293,6 +1357,62 @@ function buildCustomerMotiv(f, md5, iso27001, integration) {
     factLines.push(`Certifieringshistorik: Ni har en etablerad ISO 27001-historik (${f.ex27001y} år) — det har vi beaktat och det reducerar revisionstiden.`);
   }
   if (factLines.length > 0) parts.push("NI OCH ER VERKSAMHET\n" + factLines.map(l => "\u2022 " + l).join("\n"));
+
+  // ── Så har vi räknat (kundvänlig beräkningsberättelse) ────────────────
+  const calcLines = [];
+  if (md5) {
+    const stdBaseTexts = md5.perStdAdj.map(d => d.std + ": " + fmt(d.base) + " dagar (utifr\xE5n " + md5.fte + " medarbetare i ber\xE4kningsunderlaget)");
+    calcLines.push("Grundtid enligt de internationella tabellerna \u2014 " + stdBaseTexts.join("; ") + ".");
+    const redAdj = (md5.adj || []).filter(a => a.red);
+    const addAdj = (md5.adj || []).filter(a => !a.red);
+    if (redAdj.length) {
+      const redTexts = redAdj.map(a => {
+        const partAfter = a.label.indexOf("\u2014") >= 0 ? a.label.split("\u2014")[1] : a.label;
+        const lbl = partAfter.replace(/[\u2191\u2193]/g, "").trim();
+        return (lbl.charAt(0).toUpperCase() + lbl.slice(1)) + " (" + fmt(a.delta) + " dag)";
+      });
+      calcLines.push("Tid vi kunnat dra av tack vare era f\xF6ruts\xE4ttningar: " + redTexts.join("; ") + ".");
+    }
+    if (addAdj.length) {
+      const addTexts = addAdj.map(a => {
+        const partAfter = a.label.indexOf("\u2014") >= 0 ? a.label.split("\u2014")[1] : a.label;
+        const lbl = partAfter.replace(/[\u2191\u2193]/g, "").trim();
+        return (lbl.charAt(0).toUpperCase() + lbl.slice(1)) + " (+" + fmt(a.delta) + " dag)";
+      });
+      calcLines.push("Tid vi beh\xF6vt l\xE4gga till: " + addTexts.join("; ") + ".");
+    }
+    const _floorHit = (md5.perStdAdj || []).some(d => d.adjusted === d.floor && d.adjusted < r2(d.base + (md5.adj || []).reduce((s, a) => s + a.delta, 0)));
+    if (_floorHit) {
+      calcLines.push("Viktigt att veta: De internationella reglerna till\xE5ter aldrig att revisionstiden reduceras med mer \xE4n 30 % fr\xE5n grundtiden \u2014 det garanterar att revisionen alltid h\xE5ller full kvalitet. Den gr\xE4nsen har till\xE4mpats i er ber\xE4kning.");
+    }
+    calcLines.push("Resultat: " + fmt(md5.totalInit) + " revisionsdagar f\xF6r initial certifiering" + (f.s27001 && iso27001 ? " (ut\xF6ver informationss\xE4kerheten nedan)" : "") + ".");
+  }
+  if (iso27001) {
+    const p27 = iso27001.persons || iso27001.totalPersons;
+    calcLines.push("Informationss\xE4kerhet (ISO 27001): Grundtiden utg\xE5r fr\xE5n " + p27 + " personer inom ISMS-scope och justeras f\xF6r er verksamhets- och IT-komplexitet enligt SS-EN ISO/IEC 27006-1:2024. Resultat: " + fmt(iso27001.totalInit) + " revisionsdagar.");
+    if (integration && integration.reduction > 0) {
+      calcLines.push("Samordningsvinst: Eftersom ni certifierar flera standarder samtidigt kan delar av revisionerna samordnas \u2014 det sparar er " + fmt(integration.reduction) + " dagar (IAF MD 11:2023).");
+    }
+  }
+  if (calcLines.length) {
+    parts.push("S\xC5 HAR VI R\xC4KNAT\n" + calcLines.map(l => "\u2022 " + l).join("\n"));
+  }
+
+  // ── Samordning med befintlig cykel (utökning) ─────────────────────────
+  if (f.certType === "extension" && extCombined) {
+    const extOldC = [f.extHas9001 && "ISO 9001", f.extHas14001 && "ISO 14001", f.extHas45001 && "ISO 45001"].filter(Boolean);
+    const extNewC = (md5 ? md5.stds : []).concat(f.s27001 && !f.extHas27001 ? ["ISO 27001"] : []);
+    const posC = f.extHas9001 ? (f.ext9001cycle || "surv1") : f.extHas14001 ? (f.ext14001cycle || "surv1") : (f.ext45001cycle || "surv1");
+    const posLabelC = posC === "recert" ? "omcertifieringen" : posC === "surv2" ? "den periodiska revisionen (\xE5r 2)" : "den periodiska revisionen (\xE5r 1)";
+    parts.push(
+      "SAMORDNING MED ER BEFINTLIGA CERTIFIERINGSCYKEL\n" +
+      "\u2022 Steg 1 f\xF6r " + extNewC.join(", ") + " genomf\xF6r vi frist\xE5ende, n\xE4r ni \xE4r redo.\n" +
+      "\u2022 Steg 2 samordnar vi med " + posLabelC + " av era befintliga certifikat (" + extOldC.join(", ") + ") \u2014 en revisionsinsats ist\xE4llet f\xF6r tv\xE5, vilket sparar tid b\xE5de f\xF6r er och i revisionen.\n" +
+      "\u2022 D\xE4refter ligger samtliga certifikat i samma cykel: gemensam periodisk revision, gemensam omcertifiering och gemensam fakturering.\n" +
+      "\u2022 Att t\xE4nka p\xE5: f\xF6r att certifikaten ska hamna i samma cykel f\xE5r det nya certifikatet samma slutdatum som era befintliga. F\xF6rsta omcertifieringen av " + extNewC.join(", ") + " kan d\xE4rf\xF6r ske tidigare \xE4n tre \xE5r efter utf\xE4rdandet \u2014 d\xE4refter f\xF6ljer alla certifikat ordinarie tre\xE5rscykel.\n" +
+      "\u2022 Fram till samordningen revideras era befintliga certifikat enligt nuvarande uppl\xE4gg."
+    );
+  }
 
   // ── Steg 1 och Steg 2 ─────────────────────────────────────────────────
   if (md5 || iso27001) {
@@ -3734,6 +3854,24 @@ function App() {
   function generate() {
     const hasMD5 = f.s9001 || f.s14001 || f.s45001;
     const has27001 = f.s27001;
+    // ── Utökningsvalidering (före generell standardkontroll) ─────────────
+    if (f.certType === "extension") {
+      const dbl = [["s9001", "extHas9001", "ISO 9001"], ["s14001", "extHas14001", "ISO 14001"], ["s45001", "extHas45001", "ISO 45001"], ["s27001", "extHas27001", "ISO 27001"]]
+        .filter(([s, e]) => f[s] && f[e]).map(x => x[2]);
+      if (dbl.length) {
+        alert("Ut\xF6kning \u2014 dubbelmarkering: " + dbl.join(", ") + " \xE4r markerad b\xE5de som befintligt certifikat och som vald standard.\n\nAvmarkera standarden under ISO-sektionen. Befintliga certifikat ska inte ing\xE5 i ut\xF6kningsber\xE4kningen \u2014 annars dubbelr\xE4knas de och offerten blir felaktig.");
+        return;
+      }
+      const anyNew = (f.s9001 && !f.extHas9001) || (f.s14001 && !f.extHas14001) || (f.s45001 && !f.extHas45001) || (f.s27001 && !f.extHas27001);
+      if (!anyNew) {
+        alert("Ut\xF6kning: V\xE4lj minst en NY standard att ut\xF6ka certifikatet med (under ISO-sektionerna).");
+        return;
+      }
+      const anyExisting = f.extHas9001 || f.extHas14001 || f.extHas45001 || f.extHas27001;
+      if (!anyExisting) {
+        if (!confirm("Ut\xF6kning \xE4r vald men inget befintligt certifikat \xE4r markerat under Typ av ans\xF6kan.\n\nUtan befintligt certifikat uteblir historikreduktionen (\u22120,5 till \u22121,0 dag) och ber\xE4kningen blir som en helt ny certifiering.\n\nVill du forts\xE4tta \xE4nd\xE5?")) return;
+      }
+    }
     if (!hasMD5 && !has27001) {
       alert("Välj minst en standard.");
       return;
@@ -3805,11 +3943,27 @@ function App() {
     const md5 = hasMD5 ? calcMD5(fCalc) : null;
     const iso27001 = has27001 ? calc27006(fCalc) : null;
     const integration = md5 && iso27001 && !fCalc.iso27001separate ? calcMD11Integration(md5, iso27001, fCalc) : null;
-    setMotiv(buildMotiv(fCalc, md5, iso27001, integration));
+    // ── Samordnad framtida cykel vid utökning (alla standarder, befintliga + nya) ──
+    // Återanvänder calcMD5 oförändrad — endast inputen breddas. Per IAF MD 5 §5–6:
+    // framtida surv/recert beräknas på hela det då gällande scopet.
+    let extCombined = null;
+    if (f.certType === "extension" && (f.extHas9001 || f.extHas14001 || f.extHas45001)) {
+      const fComb = { ...fCalc,
+        s9001: fCalc.s9001 || f.extHas9001,
+        s14001: fCalc.s14001 || f.extHas14001,
+        s45001: fCalc.s45001 || f.extHas45001,
+        certType: "new",
+        ex9001: false, ex14001: false, ex45001: false, ex27001: false,
+        ex9001cb: "", ex14001cb: "", ex45001cb: "", ex27001cb: ""
+      };
+      extCombined = calcMD5(fComb);
+    }
+    setMotiv(buildMotiv(fCalc, md5, iso27001, integration, extCombined));
     setResult({
       md5,
       iso27001,
       integration,
+      extCombined,
       snap: {
         ...fCalc,
         dayRate
@@ -3817,6 +3971,10 @@ function App() {
     });
     setOffertIdLocked(true);
     setActiveTab("work");
+    setTimeout(() => {
+      const doc = document.querySelector(".docpane") || document.getElementById("doc-work") || document.querySelector("[class*='tabfade']");
+      if (doc) doc.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 250);
   }
   const ds = new Date().toLocaleDateString("sv-SE", {
     year: "numeric",
@@ -4069,7 +4227,7 @@ function App() {
           return parts.join(", ") + (snap.tempSites === "yes" ? " inkl. tillfälliga" : "");
         }
         return snap.sites + (snap.tempSites === "yes" ? " inkl. tillfälliga" : "") + ` st`;
-      })()], ["Certifieringstyp", snap.certType === "transfer" ? `Transfer från ${snap.transferOrg || "annat organ"} (IAF MD 2:2023)` : snap.certType === "extension" ? "Utökning av befintligt scope" : "Initial certifiering"], snap.certType === "transfer" && snap.transferCertNr && ["Certifikat-ID", snap.transferCertNr], snap.certType === "transfer" && snap.transferExpiry && ["Nuv. certifikat giltigt t.o.m.", new Date(snap.transferExpiry).toLocaleDateString("sv-SE")], snap.cContact && ["Kontakt", snap.cContact]]
+      })()], ["Typ av ans\xF6kan", snap.certType === "transfer" ? `Transfer från ${snap.transferOrg || "annat organ"} (IAF MD 2:2023)` : snap.certType === "extension" ? "Utökning av befintligt scope" : "Initial certifiering"], snap.certType === "transfer" && snap.transferCertNr && ["Certifikat-ID", snap.transferCertNr], snap.certType === "transfer" && snap.transferExpiry && ["Nuv. certifikat giltigt t.o.m.", new Date(snap.transferExpiry).toLocaleDateString("sv-SE")], snap.cContact && ["Kontakt", snap.cContact]]
     }), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
@@ -4131,7 +4289,19 @@ function App() {
         whiteSpace: "pre-wrap"
       }
     }, snap.riskDesc)), /*#__PURE__*/React.createElement(Sec, null, "Sammanfattning"), /*#__PURE__*/React.createElement(KpiRow, {
-      items: [{
+      items: snap.certType === "extension" && result.extCombined ? [{
+        label: "Utökning — Steg 1 + 2",
+        value: fmt(prices.totalInit),
+        unit: "auditdagar"
+      }, {
+        label: "Framtida periodisk — samtliga",
+        value: fmt(result.extCombined.surv),
+        unit: "dag/år"
+      }, {
+        label: "Framtida omcert — samtliga",
+        value: fmt(result.extCombined.recert),
+        unit: "auditdagar"
+      }] : [{
         label: "Initial certifiering",
         value: fmt(prices.totalInit),
         unit: "auditdagar"
@@ -4144,7 +4314,35 @@ function App() {
         value: fmt(prices.recert),
         unit: "auditdagar"
       }]
-    }), md5 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Sec, null, "Mandagsber\xE4kning \u2014 ", md5.stds.join(", "), /*#__PURE__*/React.createElement(RegTag, null, "IAF MD 5:2023"), md5.stds.length > 1 && /*#__PURE__*/React.createElement(RegTag, null, "IAF MD 11:2023"), md5.savedDays > 0 && /*#__PURE__*/React.createElement(Tag, null, `−${fmt(md5.savedDays)} d vs. okorrigerat`), md5.hasTransfer && /*#__PURE__*/React.createElement(Tag, {
+    }), /*#__PURE__*/React.createElement("div", {
+      style: { margin: "18px 0 4px", padding: "20px 22px 16px", background: "#fafafa",
+        border: "1px solid " + C.border, borderRadius: 12 }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: { fontFamily: SANS, fontSize: 9.5, fontWeight: 700, letterSpacing: "0.12em",
+        textTransform: "uppercase", color: C.muted, marginBottom: 16 }
+    }, snap.certType === "extension" && result.extCombined ? "Samordnad certifieringscykel \u2014 ut\xF6kning" : "Certifieringscykel — 3 år"), /*#__PURE__*/React.createElement("div", {
+      style: { display: "flex", alignItems: "flex-start", position: "relative" }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "tl-line",
+      style: { position: "absolute", top: 19, left: "12%", right: "12%", height: 2,
+        background: C.accent, opacity: 0.45, zIndex: 0 }
+    }), cycleNodes(snap, prices, result.extCombined, md5).map(([yr, lbl, days, major], _ti) => /*#__PURE__*/React.createElement("div", {
+      key: yr + lbl,
+      style: { flex: 1, textAlign: "center", position: "relative", zIndex: 1 }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "tl-pop",
+      style: { animationDelay: (_ti * 0.13 + 0.15) + "s", width: major ? 38 : 28, height: major ? 38 : 28, borderRadius: "50%",
+        background: major ? C.accent : "#fff",
+        border: major ? "none" : "2.5px solid " + C.accent,
+        margin: major ? "0 auto" : "5px auto 0", display: "flex", alignItems: "center", justifyContent: "center",
+        fontFamily: SANS, fontSize: major ? 12 : 10, fontWeight: 800,
+        color: major ? "#101820" : "#B26E00",
+        boxShadow: major ? "0 4px 12px rgba(255,163,0,0.35)" : "none" }
+    }, yr), /*#__PURE__*/React.createElement("div", {
+      style: { fontFamily: SANS, fontSize: 10, fontWeight: 700, color: C.ink, marginTop: 9 }
+    }, lbl), /*#__PURE__*/React.createElement("div", {
+      style: { fontFamily: MONO, fontSize: 10.5, fontWeight: 700, color: major ? "#B26E00" : C.muted, marginTop: 2 }
+    }, days))))), md5 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Sec, null, "Mandagsber\xE4kning \u2014 ", md5.stds.join(", "), /*#__PURE__*/React.createElement(RegTag, null, "IAF MD 5:2023"), md5.stds.length > 1 && /*#__PURE__*/React.createElement(RegTag, null, "IAF MD 11:2023"), md5.savedDays > 0 && /*#__PURE__*/React.createElement(Tag, null, `−${fmt(md5.savedDays)} d vs. okorrigerat`), md5.hasTransfer && /*#__PURE__*/React.createElement(Tag, {
       bg: C.goldLt,
       color: "#7A4800",
       bd: C.goldBd
@@ -4868,7 +5066,7 @@ function App() {
     const allStds = [...(md5?.stds || []), snap.s27001 ? "ISO 27001" : null].filter(Boolean);
     const certType = snap.certType === "transfer" ? `Transfer från ${snap.transferOrg || "annat certifieringsorgan"} (IAF MD 2:2023)` : snap.certType === "extension" ? "Utökning av befintligt scope" : snap.s27001 && snap.ex27001 || Object.keys(md5?.existing || {}).length > 0 ? "Utökning / tilläggscertifiering" : "Initial certifiering";
     const paras = motiv.split(/\n+/).filter(p => p.trim());
-    const customerParas = buildCustomerMotiv(snap, md5, iso27001, integration).split(/\n+/).filter(p => p.trim());
+    const customerParas = buildCustomerMotiv(snap, md5, iso27001, integration, result.extCombined).split(/\n+/).filter(p => p.trim());
 
     // Komprimerade mandagsrader för kundoffert — utan interna noteringar
     const md5RowsCust = md5 ? [...md5.perStdAdj.map(d => ({
@@ -5278,7 +5476,7 @@ function App() {
         style: {
           marginBottom: 20
         }
-      }, /*#__PURE__*/React.createElement(Sec, null, "Certifieringskostnad \u2014 3-\xE5rig certifieringscykel"), (() => {
+      }, /*#__PURE__*/React.createElement(Sec, null, snap.certType === "extension" && result.extCombined ? "Certifieringskostnad \u2014 Del 1: Ut\xF6kningen" : "Certifieringskostnad \u2014 3-\xE5rig certifieringscykel"), (() => {
         const q = snap.cDesiredDate && snap.cDesiredDate.includes("-") ? snap.cDesiredDate.split("-")[1] : "";
         const yr = snap.cDesiredDate && snap.cDesiredDate.includes("-") ? snap.cDesiredDate.split("-")[0] : "";
         if (!q || !yr) return null;
@@ -5386,7 +5584,23 @@ function App() {
       return /*#__PURE__*/React.createElement("div",{
         style:{border:`1.5px solid ${C.border}`,borderRadius:6,overflow:"hidden",marginBottom:10}
       }, hdrRow, ...rows, totalBar);
-    })()), /*#__PURE__*/React.createElement("div", {
+    })()), snap.certType === "extension" && result.extCombined && (() => {
+        const dr = parseFloat(String(snap.dayRate).replace(",", ".")) || 0;
+        const fmtKr = n => n > 0 ? Math.round(n).toLocaleString("sv-SE") + " kr" : "\u2014 ange dagspris \u2014";
+        return /*#__PURE__*/React.createElement("div", {
+          style: { background: "#fffdf5", border: "1.5px solid " + C.accent, borderLeft: "4px solid " + C.accent,
+            borderRadius: 8, padding: "14px 16px", margin: "14px 0", fontSize: 12, lineHeight: 1.9, color: C.ink }
+        }, /*#__PURE__*/React.createElement("div", {
+          style: { fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", fontSize: 11, color: "#7A4800", marginBottom: 8 }
+        }, "Del 2 \u2014 Framtida samordnad cykel (samtliga certifikat)"),
+        /*#__PURE__*/React.createElement("div", null,
+          "Gemensam periodisk revision: " + fmt(result.extCombined.surv) + " revisionsdagar/\xE5r" + (dr > 0 ? " \u2192 " + fmtKr(result.extCombined.surv * dr) + "/\xE5r" : "")),
+        /*#__PURE__*/React.createElement("div", null,
+          "Gemensam omcertifiering (vart tredje \xE5r): " + fmt(result.extCombined.recert) + " revisionsdagar" + (dr > 0 ? " \u2192 " + fmtKr(result.extCombined.recert * dr) : "")),
+        /*#__PURE__*/React.createElement("div", {
+          style: { marginTop: 6, fontSize: 11, color: C.muted }
+        }, "Den samordnade cykeln ers\xE4tter nuvarande separata revisionsuppl\xE4gg f\xF6r era befintliga certifikat \u2014 en revision, en faktura. Fram till samordningen revideras befintliga certifikat enligt nuvarande avtal."));
+      })(), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
           fontSize: 11,
@@ -5432,14 +5646,49 @@ function App() {
         color: C.ink,
         lineHeight: 1.9
       }
-    }, snap.offerCondition)), /*#__PURE__*/React.createElement(Sec, null, "Vad ing\xE5r"), (() => {
+    }, snap.offerCondition)), /*#__PURE__*/React.createElement(Sec, null, "Vad ing\xE5r"), /*#__PURE__*/React.createElement("div", {
+      style: { margin: "14px 0 22px", padding: "20px 22px 16px", background: "#fafafa",
+        border: "1px solid " + C.border, borderRadius: 12 }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: { fontFamily: SANS, fontSize: 9.5, fontWeight: 700, letterSpacing: "0.12em",
+        textTransform: "uppercase", color: C.muted, marginBottom: 16 }
+    }, snap.certType === "extension" && result.extCombined ? "Er samordnade certifieringscykel \u2014 ut\xF6kning" : "Er certifieringscykel \u2014 3 \xE5r"), /*#__PURE__*/React.createElement("div", {
+      style: { display: "flex", alignItems: "flex-start", position: "relative" }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "tl-line",
+      style: { position: "absolute", top: 19, left: "12%", right: "12%", height: 2,
+        background: C.accent, opacity: 0.45, zIndex: 0 }
+    }), cycleNodes(snap, prices, result.extCombined, md5).map(([yr, lbl, days, major], _ti) => /*#__PURE__*/React.createElement("div", {
+      key: yr + lbl,
+      style: { flex: 1, textAlign: "center", position: "relative", zIndex: 1 }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "tl-pop",
+      style: { animationDelay: (_ti * 0.13 + 0.15) + "s", width: major ? 38 : 28, height: major ? 38 : 28, borderRadius: "50%",
+        background: major ? C.accent : "#fff",
+        border: major ? "none" : "2.5px solid " + C.accent,
+        margin: major ? "0 auto" : "5px auto 0", display: "flex", alignItems: "center", justifyContent: "center",
+        fontFamily: SANS, fontSize: major ? 12 : 10, fontWeight: 800,
+        color: major ? "#101820" : "#B26E00",
+        boxShadow: major ? "0 4px 12px rgba(255,163,0,0.35)" : "none" }
+    }, yr), /*#__PURE__*/React.createElement("div", {
+      style: { fontFamily: SANS, fontSize: 10, fontWeight: 700, color: C.ink, marginTop: 9 }
+    }, lbl), /*#__PURE__*/React.createElement("div", {
+      style: { fontFamily: MONO, fontSize: 10.5, fontWeight: 700, color: major ? "#B26E00" : C.muted, marginTop: 2 }
+    }, days))))), (() => {
       const s1d = md5 ? md5.stage1 : (iso27001 ? iso27001.stage1 : 0);
       const s2d = md5 ? md5.stage2 : (iso27001 ? iso27001.stage2 : 0);
       const is27001only = !md5 && !!iso27001;
       // IAF MD 5 §4.5 + ISO 27006-1:2024 C.3.2: Steg 1 på distans gäller alla standarder
       const distans = snap.imsSteg1Distans === "yes";
       const initText = `Revisionen genomf\xF6rs i tv\xE5 steg: Steg 1 (${fmt(s1d)} dag) \u2014 dokumentationsgranskning och beredskapsanalys${distans ? " p\xE5 distans via digitalt m\xF6te" : ""}. Steg 2 (${fmt(s2d)} dag) \u2014 fullst\xE4ndig revision p\xE5 plats.`;
-      const items = [
+      const isExt = snap.certType === "extension" && result.extCombined;
+      const items = isExt ? [
+        [`Del 1 \u2014 Ut\xF6kningen: Steg 1 + Steg 2 (${fmt(prices.totalInit)} revisionsdagar)`, initText + " Steg 2 samordnas med ordinarie revision av era befintliga certifikat."],
+        ...(distans ? [["Steg 1 genomf\xF6rs p\xE5 distans", "Dokumentgranskning och beredskapsanalys via digitalt m\xF6te \u2014 ingen resa till er anl\xE4ggning f\xF6r Steg 1."]] : []),
+        [`Del 2 \u2014 Gemensam periodisk revision (${fmt(result.extCombined.surv)} revisionsdagar/\xE5r)`, "Efter samordningen revideras samtliga certifikat vid ett och samma tillf\xE4lle per \xE5r \u2014 en revision, en faktura. Ers\xE4tter nuvarande separata revisionsuppl\xE4gg."],
+        [`Del 2 \u2014 Gemensam omcertifiering (${fmt(result.extCombined.recert)} revisionsdagar)`, "Samtliga certifikat omcertifieras samtidigt vart tredje \xE5r och f\xF6ljer d\xE4refter samma cykel."],
+        ["SWEDAC-ackrediterad certifiering", "SBSC \xE4r ackrediterat av SWEDAC. Certifikaten \xE4r internationellt erk\xE4nda i \xF6ver 90 l\xE4nder via IAF MLA."]
+      ] : [
         [`Initial certifiering (${fmt(prices.totalInit)} revisionsdagar)`, initText],
         ...(distans ? [["Steg 1 genomf\xF6rs p\xE5 distans", "Dokumentgranskning och beredskapsanalys via digitalt m\xF6te \u2014 ingen resa till er anl\xE4ggning f\xF6r Steg 1."]] : []),
         [`Periodisk revision \xE5r 1 & 2 (${fmt(prices.surv)} revisionsdagar/tillf\xE4lle)`, "Uppf\xF6ljande revision som s\xE4kerst\xE4ller att certifieringen h\xE5lls aktiv och att er verksamhet forts\xE4tt uppfyller standardens krav."],
@@ -5468,9 +5717,9 @@ function App() {
       }
     }, t)))); })(), /*#__PURE__*/React.createElement(Sec, null, "Motivering av revisionstid"), /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 13,
+        fontSize: 12.5,
         lineHeight: 1.9,
-        fontWeight: 700,
+        fontWeight: 400,
       color: C.ink
       }
     }, customerParas.map((p, i) => /*#__PURE__*/React.createElement("p", {
@@ -7467,7 +7716,8 @@ ${exportedHTML}
         ...prev,
         [chkKey]: v,
         [exKey]: v,
-        [exYrKey]: prev[yrKey] || "3"
+        [exYrKey]: prev[yrKey] || "3",
+        ["s" + chkKey.replace("extHas", "")]: v ? false : prev["s" + chkKey.replace("extHas", "")]
       }));
     },
     label: /*#__PURE__*/React.createElement("span", null, lbl, " ", f[chkKey] && /*#__PURE__*/React.createElement("span", {
@@ -7545,7 +7795,20 @@ ${exportedHTML}
     style: {
       color: "#7A4800"
     }
-  }, "Verifiering:"), " Kontrollera att angivna certifikat \xE4r aktiva i Certcore innan offerten skickas. Mognadsreduktionen \xE4r nu kopplad automatiskt \u2014 du beh\xF6ver inte fylla i ExBox separat."), /*#__PURE__*/React.createElement(MigrationsGuide, {
+  }, "Verifiering:"), " Kontrollera att angivna certifikat \xE4r aktiva i Certcore innan offerten skickas. Mognadsreduktionen \xE4r nu kopplad automatiskt \u2014 du beh\xF6ver inte fylla i ExBox separat."), (f.extHas9001 || f.extHas14001 || f.extHas45001) && /*#__PURE__*/React.createElement("div", {
+    style: { background: "#fffaed", border: "1.5px solid " + C.accent, borderLeft: "3px solid " + C.accent,
+      padding: "7px 10px", fontFamily: MONO, fontSize: 11, color: C.ink, lineHeight: 1.7, marginTop: 8 }
+  }, /*#__PURE__*/React.createElement("strong", { style: { color: "#7A4800" } }, "Samordnad cykelber\xE4kning:"),
+    " F\xF6r att den framtida gemensamma cykeln (alla certifikat) ska ber\xE4knas korrekt m\xE5ste riskklasserna f\xF6r de befintliga standarderna fyllas i p\xE5 nytt under respektive ISO-sektion (samma v\xE4rden som i den tidigare mandagsber\xE4kningen). Lite omst\xE4ndligt \u2014 men n\xF6dv\xE4ndigt f\xF6r en sp\xE5rbar ber\xE4kning."),
+  (() => {
+    const cyclesSet = [f.extHas9001 && (f.ext9001cycle || "surv1"), f.extHas14001 && (f.ext14001cycle || "surv1"), f.extHas45001 && (f.ext45001cycle || "surv1")].filter(Boolean);
+    const mismatch = cyclesSet.length > 1 && new Set(cyclesSet).size > 1;
+    return mismatch ? /*#__PURE__*/React.createElement("div", {
+      style: { background: "#fdf2f2", border: "1.5px solid #d9534f", borderLeft: "3px solid #d9534f",
+        padding: "7px 10px", fontFamily: MONO, fontSize: 11, color: "#7a1f1c", lineHeight: 1.7, marginTop: 8 }
+    }, /*#__PURE__*/React.createElement("strong", null, "\u26A0 Olika cykelpositioner:"),
+      " De befintliga certifikaten har angetts med olika cykelpositioner. Samcertifierade certifikat ligger normalt i samma cykel \u2014 kontrollera mot Certcore. Ber\xE4kningen utg\xE5r fr\xE5n den f\xF6rsta markerade standardens position.") : null;
+  })(), /*#__PURE__*/React.createElement(MigrationsGuide, {
     extHas9001: f.extHas9001,
     extHas14001: f.extHas14001,
     extHas45001: f.extHas45001
@@ -7696,8 +7959,9 @@ ${exportedHTML}
       }
     }, /*#__PURE__*/React.createElement(Chk, {
       checked: f[sKey],
-      onChange: v => set(sKey, v),
+      onChange: v => { if (isExisting && v) return; set(sKey, v); },
       label: /*#__PURE__*/React.createElement("span", {
+        title: isExisting ? "Markerad som befintligt certifikat i ut\xF6kningspanelen \u2014 ing\xE5r inte i ut\xF6kningsber\xE4kningen" : undefined,
         style: {
           display: "flex",
           alignItems: "center",
@@ -10037,6 +10301,7 @@ ${exportedHTML}
     }
   })), /*#__PURE__*/React.createElement("button", {
     onClick: generate,
+    className: "btn-generate",
     style: {
       width: "100%",
       padding: 13,
@@ -10206,7 +10471,17 @@ ${exportedHTML}
       style: { fontFamily: SANS, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.muted, marginBottom: 10, textAlign: "left" }
     }, "Snabbstart"), /*#__PURE__*/React.createElement("div", {
       style: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 30 }
-    }, [["Ny: ISO 9001", () => qs({ certType: "new", s9001: true }, [0, 3, 5])], ["Ny: ISO 27001", () => qs({ certType: "new", s27001: true }, [0, 4])], ["Ny: 9001 + 27001", () => qs({ certType: "new", s9001: true, s27001: true }, [0, 3, 4, 5])], ["Ut\xF6kning (14001/45001/27001)", () => qs({ certType: "extension" }, [1, 3, 4])], ["Koncerncertifikat", () => qs({ koncern: true, sites: parseInt(f.sites) > 1 ? f.sites : "2" }, [5])]].map(([lbl, fn]) => /*#__PURE__*/React.createElement("button", {
+    }, [["Ny: ISO 9001", () => qs({ certType: "new", s9001: true }, [0, 3, 5])], ["Ny: ISO 27001", () => qs({ certType: "new", s27001: true }, [0, 4])], ["Ny: 9001 + 27001", () => qs({ certType: "new", s9001: true, s27001: true }, [0, 3, 4, 5])], ["Ut\xF6kning (14001/45001/27001)", () => qs({ certType: "extension" }, [1, 3, 4])], ["Koncerncertifikat", () => qs({ koncern: true, sites: parseInt(f.sites) > 1 ? f.sites : "2" }, [5])], ["\u26A1 Visa exempel", () => qs({
+      certType: "new", s9001: true,
+      cName: "Nordlarm AB", cOrgNr: "556321-7845",
+      cStreet: "Industrigatan 12", cZip: "169 03", cCity: "Solna",
+      cIndustry: "Larmcentral \u2014 certifierad larmmottagning och \xE5tg\xE4rdsstyrning",
+      scope: "Larmcentralsverksamhet med dygnet-runt-bemanning: mottagning, verifiering och \xE5tg\xE4rdsstyrning av inbrotts-, brand- och tekniska larm. Cirka 120 anst\xE4llda varav majoriteten larmoperat\xF6rer i skiftg\xE5ng.",
+      fteFulltime: "110", ftePart: "20", ftePartPct: "50",
+      qmsRisk: "medium", maturity: "low",
+      similar: "larmcentral", shifts: "yes",
+      sites: "1"
+    }, [0, 1, 2, 3, 5])]].map(([lbl, fn]) => /*#__PURE__*/React.createElement("button", {
       key: lbl,
       onClick: fn,
       style: {
@@ -10229,6 +10504,8 @@ ${exportedHTML}
         borderRadius: 8
       }
     }, /*#__PURE__*/React.createElement("span", {
+      key: done ? "done" : "todo",
+      className: done ? "pop-in" : "",
       style: {
         width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700,
