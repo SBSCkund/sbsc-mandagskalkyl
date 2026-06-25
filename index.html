@@ -328,9 +328,11 @@ button:hover { transform: translateY(-1px); }
 @keyframes floatSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(255,163,0,0.35); } 70% { box-shadow: 0 0 0 14px rgba(255,163,0,0); } 100% { box-shadow: 0 0 0 0 rgba(255,163,0,0); } }
 .fade-up { animation: fadeUp .45s ease both; }
-.secb { display: grid; grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows .45s cubic-bezier(.32,.72,0,1), opacity .35s ease .08s; }
+.secb { display: grid; grid-template-rows: minmax(0, 1fr); opacity: 1; transition: grid-template-rows .45s cubic-bezier(.32,.72,0,1), opacity .35s ease .08s; }
 .secb.folded { grid-template-rows: 0fr; opacity: 0; pointer-events: none; transition: grid-template-rows .4s cubic-bezier(.32,.72,0,1), opacity .22s ease; }
 .seci { overflow: hidden; min-height: 0; }
+.secb:not(.folded) { grid-template-rows: minmax(0, 1fr); }
+.secb:not(.folded) .seci { height: auto; overflow: visible; }
 .slbl { transition: background .18s ease; border-radius: 8px 8px 0 0; }
 .slbl:hover { background: rgba(0,0,0,0.035); }
 .stag-1 { animation-delay: .08s; } .stag-2 { animation-delay: .16s; } .stag-3 { animation-delay: .26s; } .stag-4 { animation-delay: .38s; }
@@ -3630,7 +3632,8 @@ function App() {
   const [showSecurity, setShowSecurity] = useState(false);
 
   // Läs sparad dagskostnad från localStorage (skrivs aldrig till GitHub-källkod)
-  const [fold, setFold] = useState({ 0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true });
+  const [fold, setFold] = useState({ 0: false, 1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false });
+  const [panelOpen, setPanelOpen] = useState(false);
   const SP = (i, extra) => ({ sec: i, folded: !!fold[i], onToggle: () => setFold(p => ({ ...p, [i]: !p[i] })), ...(extra || {}) });
   const [revCost, setRevCost] = useState(() => { try { const s = localStorage.getItem(SBSC_REV_KEY); return s && parseInt(s) > 0 ? parseInt(s) : 0; } catch(e) { return 0; } });
   const [travelCost, setTravelCost] = useState(() => { try { const s = localStorage.getItem(SBSC_TRAVEL_KEY); return s && parseInt(s) > 0 ? parseInt(s) : 0; } catch(e) { return 0; } });
@@ -8007,7 +8010,7 @@ ${exportedHTML}
     }
   }, /*#__PURE__*/React.createElement(Chk, {
     checked: f.s27001,
-    onChange: v => set("s27001", v),
+    onChange: v => { set("s27001", v); if (v) setFold(p => ({ ...p, 4: false })); },
     label: "ISO 27001 \u2014 Informationss\xE4kerhet (ISMS)",
     color: C.purple
   })), f.s27001 && /*#__PURE__*/React.createElement("div", {
@@ -8136,773 +8139,9 @@ ${exportedHTML}
     value: f.imsPersons,
     onChange: v => set("imsPersons", v),
     placeholder: "t.ex. 120"
-  }))
-)), /*#__PURE__*/React.createElement(SLbl, SP(5), "Verksamhet & Ber\xE4kningsunderlag"), /*#__PURE__*/React.createElement("div", { className: fold[5] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, {
-    tip: "IAF MD 1:2023 \xA76.1.3.3: Stickprov = \u221Ax (initial), 0,6\xB7\u221Ax (surveillance). Centralfunktionen auditeras alltid."
-  }, "Antal fasta certifieringsplatser"), /*#__PURE__*/React.createElement(Inp, {
-    type: "number",
-    min: "1",
-    value: f.sites,
-    onChange: v => set("sites", v)
-  }), parseInt(f.sites) > 1 && (() => {
-    const x = parseInt(f.sites) || 1;
-    const init = md1Sample(x, "initial");
-    const surv = md1Sample(x, "surv");
-    const recert = md1Sample(x, "recert"); // omcertifiering: √x (alt. 0,8·√x vid bevisad effektiv cykel)
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        background: "#fff",
-        border: "1.5px solid " + C.tealBd,
-        borderRadius: 6,
-        padding: "8px 10px",
-        marginTop: 6
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: MONO,
-        fontSize: 11,
-        color: C.teal,
-        fontWeight: 700,
-        marginBottom: 6,
-        letterSpacing: "0.05em",
-        textTransform: "uppercase"
-      }
-    }, "Stickprovsber\xE4kning \u2014 IAF MD 1:2023 \xA76.1.3.3"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        flexDirection: "column",
-        gap: 4
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        fontFamily: MONO,
-        fontSize: 11,
-        padding: "4px 0",
-        borderBottom: "1px solid " + C.border
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: C.ink
-      }
-    }, "Initial & Omcertifiering \xA0", /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: C.ink
-      }
-    }, "y = \u2308\u221A", x, "\u2309")), /*#__PURE__*/React.createElement("strong", {
-      style: {
-        color: C.teal
-      }
-    }, "= ", init.y, " av ", x, " platser")), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        fontFamily: MONO,
-        fontSize: 11,
-        padding: "4px 0",
-        borderBottom: "1px solid " + C.border
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: C.ink
-      }
-    }, "Periodisk revision \xA0", /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: C.ink
-      }
-    }, "y = \u23080,6\xB7\u221A", x, "\u2309")), /*#__PURE__*/React.createElement("strong", {
-      style: {
-        color: C.teal
-      }
-    }, "= ", surv.y, " av ", x, " platser/\xE5r")), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: MONO,
-        fontSize: 11,
-      fontWeight: 600,
-      color: C.ink,
-        paddingTop: 4,
-        lineHeight: 1.6
-      }
-    }, "Centralfunktionen ing\xE5r alltid i stickprovet och auditeras vid varje revision per \xA76.1.3.3. Extra dag per samplad plats ut\xF6ver centralfunktionen: +", init.y - 1, " dag(ar) (50%-till\xE4gg per \xA77.3.1).")));
-  })(), parseInt(f.sites) > 1 && /*#__PURE__*/React.createElement("label", {
-    style: {
-      display: "flex", alignItems: "flex-start", gap: 7, marginTop: 8,
-      cursor: "pointer", fontFamily: MONO, fontSize: 11, color: C.ink,
-      background: f.koncern ? C.goldLt : "transparent",
-      border: f.koncern ? `1px solid ${C.goldBd}` : "1px solid transparent",
-      padding: "6px 8px", borderRadius: 3
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: !!f.koncern,
-    onChange: e => set("koncern", e.target.checked),
-    style: { accentColor: C.accent, marginTop: 1, cursor: "pointer" }
-  }), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("strong", null, "Koncerncertifikat \u2014 platserna tillh\xF6r olika juridiska enheter"), /*#__PURE__*/React.createElement("div", {
-    style: { fontSize: 10, color: C.muted, marginTop: 2, lineHeight: 1.5, fontWeight: 400 }
-  }, "IAF MD 1:2023 \xA73.3.1: en multi-site-organisation beh\xF6ver inte vara en juridisk enhet, men alla enheter ska ha juridisk/avtalsm\xE4ssig koppling till centralfunktionen och ing\xE5 i ett enda ledningssystem. G\xE4ller \xC4KTA koncernstruktur \u2014 inte frist\xE5ende bolag under konstgjort paraply (\xA71)."))), /*#__PURE__*/React.createElement(SiteDetailsPanel, {
-    sites: f.sites,
-    siteDetails: f.siteDetails || [],
-    onChange: v => set("siteDetails", v),
-    koncern: !!f.koncern
-  }), parseInt(f.sites) > 1 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 8,
-      background: C.s2,
-      border: `1px solid ${C.border}`,
-      borderLeft: "3px solid " + C.teal,
-      padding: "9px 11px"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: MONO,
-      fontSize: 11,
-      color: C.teal,
-      fontWeight: 600,
-      letterSpacing: "0.08em",
-      textTransform: "uppercase",
-      marginBottom: 7
-    }
-  }, "Filialkvalifikation f\xF6r sampling \u2014 IAF MD 1:2023 \xA76.1.1"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: MONO,
-      fontSize: 11,
-      fontWeight: 600,
-      color: C.ink,
-      marginBottom: 8,
-      lineHeight: 1.6
-    }
-  }, "Besvara fr\xE5gorna f\xF6r att dokumentera om sampling \xE4r l\xE4mpligt. Sparas i arbetsunderlaget."), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 6
-    }
-  }, [["sitesQ1", "Bedrivs liknande processer/aktiviteter på de olika certifieringsplatserna?"], ["sitesQ2", "Om processerna skiljer sig — är de länkade? (t.ex. försäljning och utförande på olika certifieringsplatser)"], ["sitesQ3", "Styrs ledningssystemet från en central funktion?"], ["sitesQ4", "Behandlas certifieringsplatserna på ledningens genomgång?"], ["sitesQ5", "Genomförs interna revisioner på certifieringsplatserna (ska vara utfört innan SBSC påbörjar revision)?"], ["sitesQ6", "Förefaller ledningssystemet vara relevant och tillämpat för alla certifieringsplatser?"], ["sitesQ7", "Visar organisationen förmåga att samla in och analysera information från certifieringsplatserna (avvikelser, kundklagomål, legala krav)?"]].concat(f.koncern ? [["koncernQ8", "Har samtliga juridiska enheter en juridisk eller avtalsmässig koppling till centralfunktionen som ger den rätt att kräva korrigerande åtgärder? (IAF MD 1 §3.3.1 — krav vid koncerncertifikat)"]] : []).map(([key, question]) => /*#__PURE__*/React.createElement("div", {
-    key: key,
-    style: {
-      display: "flex",
-      alignItems: "flex-start",
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 6,
-      flexShrink: 0,
-      marginTop: 1
-    }
-  }, ["Ja", "Nej", "Ej bedömt"].map(val => /*#__PURE__*/React.createElement("label", {
-    key: val,
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 3,
-      cursor: "pointer",
-      fontFamily: MONO,
-      fontSize: 11,
-      color: f[key] === val ? C.teal : C.muted,
-      whiteSpace: "nowrap"
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "radio",
-    name: key,
-    checked: f[key] === val,
-    onChange: () => set(key, val),
-    style: {
-      accentColor: C.teal,
-      cursor: "pointer"
-    }
-  }), val))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: MONO,
-      fontSize: 11,
-      color: C.ink,
-      lineHeight: 1.5
-    }
-  }, question)))), (() => {
-    const keys = ["sitesQ1", "sitesQ2", "sitesQ3", "sitesQ4", "sitesQ5", "sitesQ6", "sitesQ7"];
-    const answered = keys.filter(k => f[k]);
-    if (answered.length === 0) return null;
-    const samplingOk = f.sitesQ1 === "Ja" && f.sitesQ3 === "Ja" && f.sitesQ4 === "Ja" && f.sitesQ5 === "Ja";
-    const allDone = keys.every(k => f[k]);
-    const hasNej = keys.some(k => f[k] === "Nej");
-    const bg = samplingOk ? "#edf7ed" : hasNej ? "#fdecea" : "#fff8e8";
-    const bd = samplingOk ? "#7bc47b" : hasNej ? "#e0a0a0" : "#e8d88a";
-    const col = samplingOk ? "#265c3a" : hasNej ? "#8b2020" : "#7a5c1e";
-    const icon = samplingOk ? "✓" : hasNej ? "✗" : "…";
-    const msg = samplingOk ? "Indikerar att sampling är lämpligt per IAF MD 1:2023 §6.1.1" : hasNej ? "Ett eller flera kriterier uppfylls ej — kontrollera om sampling är tillämpligt" : allDone ? "Alla frågor besvarade med 'Ej bedömt' — bedömning krävs av handläggare" : `${answered.length} av ${keys.length} frågor besvarade — fortsätt fylla i`;
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        marginTop: 8,
-        padding: "7px 10px",
-        background: bg,
-        border: "1px solid " + bd,
-        fontFamily: MONO,
-        fontSize: 11,
-        fontWeight: 600,
-        color: col,
-        display: "flex",
-        gap: 6,
-        alignItems: "flex-start"
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        flexShrink: 0
-      }
-    }, icon), /*#__PURE__*/React.createElement("span", null, msg));
-  })())), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement(Chk, {
-    checked: f.tempSites === "yes",
-    onChange: v => set("tempSites", v ? "yes" : "no"),
-    label: "Tillf\xE4lliga arbetsplatser (temporary sites) inom scope",
-    tip: "IAF MD 5:2023 \xA79: Tillf\xE4lliga platser ska ing\xE5 i auditprogrammet p\xE5 stickprovsbasis."
-  }), f.tempSites === "yes" && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 7,
-      background: C.s2,
-      border: `1px solid ${C.border}`,
-      borderLeft: "3px solid " + C.teal,
-      padding: "9px 11px"
-    }
-  }, /*#__PURE__*/React.createElement(InfoNote, {
-    color: C.teal,
-    bg: "white",
-    bd: C.teal
-  }, "\xA79 IAF MD 5:2023: Tillf\xE4lliga platser ska ing\xE5 i auditprogrammet p\xE5 stickprovsbasis. Exakt urval best\xE4ms av revisorn vid auditplaneringen \u2014 inte av kalkylatorn."), /*#__PURE__*/React.createElement(Lbl, {
-    tip: "Beskriv typ av tillf\xE4lliga platser, ungef\xE4rligt antal aktiva simultant och geografisk spridning. Anv\xE4nds som underlag f\xF6r revisorns auditplanering."
-  }, "Beskriv de tillf\xE4lliga arbetsplatserna"), /*#__PURE__*/React.createElement("textarea", {
-    value: f.tempSiteDesc || "",
-    onChange: e => set("tempSiteDesc", e.target.value),
-    placeholder: `t.ex. "Kundanläggningar vid installation av brandlarm och inbrottslarm, typiskt 3–6 aktiva projekt simultant. Geografisk spridning: Mellansverige. Varierande storlek — allt från kontorsinstallationer till industrianläggningar."`,
-    rows: 3,
-    style: {
-      width: "100%",
-      background: "white",
-      border: `1px solid ${C.border}`,
-      color: C.ink,
-      fontFamily: MONO,
-      fontSize: 11,
-      padding: "6px 8px",
-      outline: "none",
-      resize: "vertical",
-      lineHeight: 1.6,
-      marginTop: 4
-    }
-  }))), (f.s9001 || f.s14001 || f.s45001) && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(FteHelper, {
-    f: f,
-    set: set
-  }), f.s9001 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 9,
-      background: C.s2,
-      padding: "8px 10px",
-      border: `1px solid ${C.border}`
-    }
-  }, /*#__PURE__*/React.createElement(SelHelp, {
-    label: "ISO 9001 \u2014 Komplexitet & Risk (Tabell QMS 1)",
-    tip: "Avg\xF6r bastalet per Tabell QMS 2. H\xF6g risk = fler mandagar.",
-    value: f.qmsRisk,
-    onChange: v => set("qmsRisk", v),
-    help: [{
-      lbl: "Låg",
-      ex: "Säkerhets- och låsprodukter. Installation. Butik (t.ex. låsbranschen). Brandskyddskonsult (kontorsbaserat). Säkerhetskonsult. Utbildningsföretag. Fel på produkt/tjänst orsakar sannolikt inte skada eller sjukdom.",
-      q: 'Fråga: "Är er verksamhet sådan att fel sannolikt inte orsakar skada eller sjukdom?"'
-    }, {
-      lbl: "Medel",
-      ex: "Anläggningsfirma (brandlarm/inbrottslarm/CCTV/passersystem). Besiktningsfirma brand. Installatör med SSF- eller SBF-certifikat. Säkerhetsföretag med servicetjänster.",
-      q: 'Fråga: "Installerar eller underhåller ni säkerhetssystem, eller utför ni besiktningar?"'
-    }, {
-      lbl: "Hög",
-      ex: "Sprinklerinstallatör (trycksatta system, svetsarbete). Installatör med CE-märkta produkter och spårbarhetskrav. Brandskyddsprojektör med myndighetsuppdrag i känsliga miljöer.",
-      q: 'Fråga: "Arbetar ni med trycksatta system, CE-märkning, spårbarhetskrav eller myndighetsuppdrag i kritiska miljöer?"'
-    }]
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "low"
-  }, "L\xE5g \u2014 r\xE5dgivning, kontor, utbildning"), /*#__PURE__*/React.createElement("option", {
-    value: "medium"
-  }, "Medel \u2014 installation, service, besiktning"), /*#__PURE__*/React.createElement("option", {
-    value: "high"
-  }, "H\xF6g \u2014 trycksatta system, CE-m\xE4rkning, sp\xE5rbarhetskrav")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 5
-    }
-  }, /*#__PURE__*/React.createElement(RiskCommentHelp, {
-    type: "qms",
-    choice: f.qmsRisk
-  }), /*#__PURE__*/React.createElement("textarea", {
-    value: f.qmsComment,
-    onChange: e => set("qmsComment", e.target.value),
-    placeholder: "t.ex. Kunden installerar brandlarm utan trycksatta system \u2014 medium risk bed\xF6mt korrekt.",
-    rows: 2,
-    style: {
-      width: "100%",
-      background: C.bg,
-      border: `1px solid ${C.border}`,
-      color: C.ink,
-      fontFamily: MONO,
-      fontSize: 11,
-      padding: "5px 8px",
-      outline: "none",
-      resize: "vertical",
-      lineHeight: 1.6
-    }
-  }))), f.s14001 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 9,
-      background: C.s2,
-      padding: "8px 10px",
-      border: `1px solid ${C.border}`
-    }
-  }, /*#__PURE__*/React.createElement(SelHelp, {
-    label: "ISO 14001 \u2014 Milj\xF6komplexitet (Tabell EMS 2)",
-    tip: "Avg\xF6r bastalet per Tabell EMS 2. H\xF6g komplexitet = fler mandagar.",
-    value: f.emsComplexity,
-    onChange: v => set("emsComplexity", v),
-    help: [{
-      lbl: "Begränsad",
-      ex: "Konsult/projektering på eget kontor. Anläggar-, besiktnings- och bevakningsföretag där i princip endast bilkörning är betydande miljöaspekt. Larmcentraler. Utbildning. Minimal direkt miljöpåverkan.",
-      q: 'Fråga: "Är er miljöpåverkan i princip begränsad till kontorets energi- och pappersförbrukning?"'
-    }, {
-      lbl: "Låg",
-      ex: "Tillverkning av säkerhetsskåp, dörrar, låscylindrar och liknande mekaniska produkter utan kemisk ytbehandling. Butik (t.ex. låsbranschen). Elektroniktillverkning (ej kretskort). Anläggnings-/besiktningsfirma.",
-      q: 'Fråga: "Har ni fordon och viss energianvändning men inga kemikalier, utsläppstillstånd eller direkt miljöpåverkan?"'
-    }, {
-      lbl: "Medel",
-      ex: "Tillverkning av säkerhetsskåp/dörrar med kemisk ytbehandling (t.ex. målning). Installatör som hanterar kemikalier (kylmedel, lösningsmedel, batterier). Verksamhet med miljötillstånd.",
-      q: 'Fråga: "Hanterar ni kemikalier, kylmedel eller trycksatta medier, eller har ni miljötillstånd?"'
-    }, {
-      lbl: "Hög",
-      ex: "Verksamhet med regelbunden hantering av miljöfarliga ämnen. Deponi eller avfallshantering. (Ovanligt inom SBSC:s kundstock.)",
-      q: 'Fråga: "Hanterar ni miljöfarliga ämnen i stor skala, driver deponi eller har ni komplex miljötillståndsplikt?"'
-    }]
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "limited"
-  }, "Begr\xE4nsad \u2014 kontorsbaserad, minimal milj\xF6p\xE5verkan"), /*#__PURE__*/React.createElement("option", {
-    value: "low"
-  }, "L\xE5g \u2014 fordon, viss energianv\xE4ndning"), /*#__PURE__*/React.createElement("option", {
-    value: "medium"
-  }, "Medel \u2014 kemikalier, kylmedel, milj\xF6tillst\xE5nd"), /*#__PURE__*/React.createElement("option", {
-    value: "high"
-  }, "H\xF6g \u2014 milj\xF6farliga \xE4mnen, deponi")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 5
-    }
-  }, /*#__PURE__*/React.createElement(RiskCommentHelp, {
-    type: "ems",
-    choice: f.emsComplexity
-  }), /*#__PURE__*/React.createElement("textarea", {
-    value: f.emsComment,
-    onChange: e => set("emsComment", e.target.value),
-    placeholder: "t.ex. Kunden hanterar inga kemikalier \u2014 begr\xE4nsad komplexitet bed\xF6mt korrekt.",
-    rows: 2,
-    style: {
-      width: "100%",
-      background: C.bg,
-      border: `1px solid ${C.border}`,
-      color: C.ink,
-      fontFamily: MONO,
-      fontSize: 11,
-      padding: "5px 8px",
-      outline: "none",
-      resize: "vertical",
-      lineHeight: 1.6
-    }
-  }))), f.s45001 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 9,
-      background: C.s2,
-      padding: "8px 10px",
-      border: `1px solid ${C.border}`
-    }
-  }, /*#__PURE__*/React.createElement(SelHelp, {
-    label: "ISO 45001 \u2014 OH&S-riskkategori (Tabell OH&SMS 2)",
-    tip: "Avg\xF6r bastalet per Tabell OH&SMS 2. H\xF6g risk = fler mandagar.",
-    value: f.ohsComplexity,
-    onChange: v => set("ohsComplexity", v),
-    help: [{
-      lbl: "Låg",
-      ex: "Kontor, butik, anläggar-/besiktnings-/bevakningsföretag, konsult/projektering, larmcentraler, stationär bevakning, utbildning. Felaktig riskhantering kan orsaka mindre skada eller sjukdom.",
-      q: 'Fråga: "Kan felaktig riskhantering i er verksamhet på sin höjd orsaka mindre skada eller sjukdom?"'
-    }, {
-      lbl: "Medel",
-      ex: "Mekanisk tillverkning. Anläggningsfirma (brandlarm/CCTV/inbrottslarm) med elarbete och montering. Viss höjdmontage. Felaktig riskhantering kan orsaka skada eller sjukdom. De flesta SBSC-installatörer.",
-      q: 'Fråga: "Utför ni installationsarbete med elarbete, viss höjdmontage eller arbete i befintliga anläggningar?"'
-    }, {
-      lbl: "Hög",
-      ex: "Felaktig riskhantering kan orsaka allvarlig skada eller fara för liv. Sprinklerinstallatör med svetsarbete och trycksatta system. Frekventa höjdarbeten (>2 m). Arbete med farliga ämnen.",
-      q: 'Fråga: "Arbetar ni regelbundet med svetsning, trycksatta system, höjdarbeten eller andra högriskmoment?"'
-    }]
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "low"
-  }, "L\xE5g \u2014 kontorsbaserat, ingen installation"), /*#__PURE__*/React.createElement("option", {
-    value: "medium"
-  }, "Medel \u2014 installation, elarbete, viss h\xF6jdmontage"), /*#__PURE__*/React.createElement("option", {
-    value: "high"
-  }, "H\xF6g \u2014 svetsning, trycksatta system, h\xF6jdarbete")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 5
-    }
-  }, /*#__PURE__*/React.createElement(RiskCommentHelp, {
-    type: "ohs",
-    choice: f.ohsComplexity
-  }), /*#__PURE__*/React.createElement("textarea", {
-    value: f.ohsComment,
-    onChange: e => set("ohsComment", e.target.value),
-    placeholder: "t.ex. Kunden utf\xF6r elarbete och viss h\xF6jdmontage \u2014 medium risk bed\xF6mt korrekt.",
-    rows: 2,
-    style: {
-      width: "100%",
-      background: C.bg,
-      border: `1px solid ${C.border}`,
-      color: C.ink,
-      fontFamily: MONO,
-      fontSize: 11,
-      padding: "5px 8px",
-      outline: "none",
-      resize: "vertical",
-      lineHeight: 1.6
-    }
-  }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 6
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, {
-    tip: "Valfritt \u2014 aktiverar prior knowledge-reduktion (IAF MD 5:2023 \xA78(v)d+e) och transferreduktion (IAF MD 2:2023) om certifieringsorgan anges. L\xE4mna tomt om kunden saknar tidigare certifiering."
-  }, "Befintliga certifikat hos annat organ ", /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontWeight: 400,
-      color: C.ink
-    }
-  }, "(valfritt \u2014 f\xF6r prior knowledge-reduktion)"))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 6,
-      marginBottom: 14
-    }
-  }, f.s9001 && !(f.certType === "extension" && f.extHas9001) && /*#__PURE__*/React.createElement(ExBox, {
-    std: "9001",
-    label: "ISO 9001"
-  }), f.s14001 && !(f.certType === "extension" && f.extHas14001) && /*#__PURE__*/React.createElement(ExBox, {
-    std: "14001",
-    label: "ISO 14001"
-  }), f.s45001 && !(f.certType === "extension" && f.extHas45001) && /*#__PURE__*/React.createElement(ExBox, {
-    std: "45001",
-    label: "ISO 45001"
-  }), f.certType === "extension" && (f.extHas9001 || f.extHas14001 || f.extHas45001) && /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: C.greenLt,
-      border: "1px solid " + C.greenBd,
-      borderRadius: 4,
-      padding: "6px 10px",
-      fontFamily: MONO,
-      fontSize: 11,
-      color: C.green,
-      lineHeight: 1.7
-    }
-  }, "\u2713 Befintliga certifikat och mognadsreduktion hanteras via ut\xF6kningspanelen ovan \u2014 inget mer beh\xF6ver fyllas i h\xE4r."), f.certType === "extension" && (f.extHas9001 || f.extHas14001 || f.extHas45001) && /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "#fffaed",
-      border: "1.5px solid " + C.accent,
-      borderLeft: "3px solid " + C.accent,
-      borderRadius: 4,
-      padding: "7px 10px",
-      fontFamily: MONO,
-      fontSize: 11,
-      color: C.ink,
-      lineHeight: 1.8,
-      marginTop: 4
-    }
-  }, /*#__PURE__*/React.createElement("strong", {
-    style: {
-      color: C.accent
-    }
-  }, "\u2139 Ut\xF6kning \u2014 s\xE5 h\xE4r fungerar ber\xE4kningen:"), /*#__PURE__*/React.createElement("br", null), "Kalkylatorn ber\xE4knar ", /*#__PURE__*/React.createElement("strong", null, "hela det samlade certifikatet"), " (befintliga + nya standarder) i ett paket. F\xE4lten nedan (FTE, riskkategorier, mognad m.m.) m\xE5ste st\xE4mma \xF6verens med den tidigare mandagsber\xE4kningen f\xF6r ", [f.extHas9001 && "ISO 9001", f.extHas14001 && "ISO 14001", f.extHas45001 && "ISO 45001"].filter(Boolean).join(" och "), ".", !f.extHas9001 && !f.extHas14001 && !f.extHas45001 ? "" : "", " F\xE4lt specifika f\xF6r den nya standarden (t.ex. OH&S-komplexitet f\xF6r ISO 45001) fylls i som vanligt.")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: C.s2,
-      border: `1px solid ${C.border}`,
-      padding: "10px 11px",
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: MONO,
-      fontSize: 11,
-      color: "#101820",
-      letterSpacing: "0.08em",
-      textTransform: "uppercase",
-      marginBottom: 8
-    }
-  }, "Reduktionsfaktorer \xA78(v)"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement(SelHelp, {
-    label: "Automatiseringsgrad (\xA78(v)f \u2014 ej OH&SMS)",
-    tip: "\xA78(v)f: H\xF6g automatisering = f\xE4rre mandagar. Ej till\xE4mpbart f\xF6r ISO 45001.",
-    value: f.automation,
-    onChange: v => set("automation", v),
-    help: [{
-      lbl: "Låg (ingen reduktion)",
-      ex: "Hantverksmässig installation av brandlarm, inbrottslarm eller CCTV. Manuella processer, personal styr varje moment.",
-      q: 'Fråga: "Är er kärnverksamhet manuell, med personal som utför varje steg utan maskinell styrning?"'
-    }, {
-      lbl: "Medel (−0,5 dag)",
-      ex: "Viss automatisering i administrativa processer (t.ex. ärendehanteringssystem) men installationsarbetet är manuellt.",
-      q: 'Fråga: "Har ni automatiserade back office-processer men manuellt utförandearbete?"'
-    }, {
-      lbl: "Hög (−1,0 dag)",
-      ex: "Verksamhet där majoriteten av processerna styrs maskinellt. Ovanligt för SBSC:s typiska kunder.",
-      q: 'Fråga: "Är majoriteten av era processer maskinellt styrda med personal i övervakande roll?"'
-    }]
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "low"
-  }, "L\xE5g \u2014 manuella processer"), /*#__PURE__*/React.createElement("option", {
-    value: "medium"
-  }, "Medel \u2014 viss automatisering"), /*#__PURE__*/React.createElement("option", {
-    value: "high"
-  }, "H\xF6g \u2014 majoriteten maskinellt styrd")), /*#__PURE__*/React.createElement(SelHelp, {
-    label: "Mognadsniv\xE5 (\xA78(v)c)",
-    tip: "\xA78(v)c: V\xE4lestablerat system med bevisad historik ger reduktion.",
-    value: f.maturity,
-    onChange: v => set("maturity", v),
-    help: [{
-      lbl: "Låg (ingen reduktion)",
-      ex: "Ny certifiering utan tidigare ISO-erfarenhet. Ledningssystemet under uppbyggnad. Oklar intern revisionshistorik.",
-      q: 'Fråga: "Är detta er första ISO-certifiering? Har ni etablerade rutiner för intern revision och ledningsgenomgång?"'
-    }, {
-      lbl: "Normal (−0,5 dag)",
-      ex: "Certifierat 1–3 år, eller nytt ISO-system men med etablerade kvalitetsrutiner via SSF- eller SBF-certifikat.",
-      q: 'Fråga: "Har ni haft ISO-certifiering 1–3 år, eller har ni välstrukturerade rutiner via SSF/SBF men utan lång ISO-historik?"'
-    }, {
-      lbl: "Hög (−1,0 dag)",
-      ex: "ISO-certifierat >3 år, regelbunden intern revision, dokumenterad ledningsgenomgång, inga allvarliga avvikelser. SSF/SBF-certifikat sedan länge med välstrukturerade rutiner.",
-      q: 'Fråga: "Har ni haft ISO-certifiering mer än 3 år med dokumenterade interna revisioner och utan allvarliga avvikelser?"'
-    }]
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "low"
-  }, "L\xE5g \u2014 nytt ledningssystem"), /*#__PURE__*/React.createElement("option", {
-    value: "medium"
-  }, "Normal \u2014 etablerat 1\u20133 \xE5r"), /*#__PURE__*/React.createElement("option", {
-    value: "high"
-  }, "H\xF6g \u2014 >3 \xE5r, dokumenterad historik")), /*#__PURE__*/React.createElement(SelHelp, {
-    label: "Likartade/repetitiva processer (\xA72.3.4)",
-    tip: "\xA72.3.4 \u2014 SBSC-beslut: till\xE4mpas ENBART f\xF6r larmcentraler och bevakningsf\xF6retag. Fast 30\xA0% FTE-reduktion (Alt A). Ej till\xE4mpbart vid enbart ISO 45001. SWEDAC krav: konsekvent till\xE4mpning f\xF6retag f\xF6r f\xF6retag. (SBSC:s fastställda rutiner)",
-    value: f.similar,
-    onChange: v => set("similar", v),
-    help: [{
-      lbl: "Nej",
-      ex: "Anläggningsfirma, installatör, brandskyddskonsult, besiktningsfirma m.fl. — varierande processer. Ska INTE reduceras."
-    }, {
-      lbl: "Larmcentral (30 % FTE-reduktion)",
-      ex: "Kunden driver larmcentral där operatörerna hanterar inkommande larm enligt exakt samma procedur. SBSC-beslut: alltid 30 % FTE-reduktion (SBSC:s fastställda rutiner). Gäller QMS/EMS — ej enbart 45001.",
-      q: 'Kontroll: Är kunden en larmcentral?'
-    }, {
-      lbl: "Bevakningsföretag (30 % FTE-reduktion)",
-      ex: "Kunden bedriver väktarverksamhet med standardiserade ronduppdrag. SBSC-beslut: alltid 30 % FTE-reduktion (SBSC:s fastställda rutiner). Gäller QMS/EMS — ej enbart 45001.",
-      q: 'Kontroll: Är kunden ett bevakningsföretag?'
-    }]
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "no"
-  }, "Nej — varierande processer (standard)"), /*#__PURE__*/React.createElement("option", {
-    value: "larmcentral"
-  }, "Larmcentral — 30 % FTE-reduktion"), /*#__PURE__*/React.createElement("option", {
-    value: "bevakning"
-  }, "Bevakningsföretag — 30 % FTE-reduktion")),
-(f.similar === "larmcentral" || f.similar === "bevakning") && /*#__PURE__*/React.createElement("div", {
-  style: { margin: "5px 0 8px 0", padding: "8px 10px", background: C.goldLt, border: "1px solid " + C.goldBd, borderRadius: 8, fontSize: 11, color: "#7A4800", fontFamily: SANS }
-}, "⚠️ SBSC fastställd rutin: 30 % FTE-reduktion tillämpas. Beräkningsunderlag: " + Math.max(Math.round(effectiveFte * 0.7), 1) + " pers. (från " + (fteCalc.total || parseInt(f.fte) || 0) + " FTE). Dokumenteras i arbetsunderlaget."),
-/*#__PURE__*/React.createElement(SelHelp, {
-  label: "Ej designansvarig f\xf6r produkt/tj\xe4nst? (\xA78(v)a, QMS)",
-  tip: "\xA78(v)a: Om kunden saknar designansvar reduceras scope och revisionstid (QMS only).",
-  value: f.notDesignResp,
-  onChange: function(v) { set("notDesignResp", v); },
-  help: [{
-    lbl: "Nej (designansvar ing\xe5r)",
-    ex: "Tillverkare med eget produktutvecklingsteam. F\xf6retag som \xe4ger sin produktdesign.",
-    q: "Fr\xe5ga: \"Har ni designansvar f\xf6r era produkter eller tj\xe4nster?\""
-  },{
-    lbl: "Ja (\u22120,5 dag, QMS)",
-    ex: "Underleverant\xf6r som producerar efter kundens ritningar. Installat\xf6r eller servicef\xf6retag utan produktdesign. De flesta av SBSC:s brandskyddskunder.",
-    q: "Fr\xe5ga: \"Tillverkar/levererar ni uteslutande efter n\xe5gon annans design eller specifikation?\""
-  }]
-},
-  /*#__PURE__*/React.createElement("option", { value: "no" }, "Nej \u2014 designansvar ing\xe5r"),
-  /*#__PURE__*/React.createElement("option", { value: "yes" }, "Ja \u2014 ej designansvarig (\u22120,5 dag, QMS)")
-),
-/*#__PURE__*/React.createElement(SelHelp, {
-  label: "Liten anl\xe4ggning relativt personalstyrkan? (\xA78(v)b)",
-  tip: "\xA78(v)b: Kontor eller tj\xe4nstelokaler d\xe4r anl\xe4ggningens storlek inte \xe4r avg\xf6rande f\xf6r revisionen.",
-  value: f.verySmallSite,
-  onChange: function(v) { set("verySmallSite", v); },
-  help: [{
-    lbl: "Nej (normal anl\xe4ggning)",
-    ex: "Fabrik, lager, stor serviceverkstad eller anl\xe4ggning d\xe4r den fysiska platsen \xe4r central.",
-    q: "Fr\xe5ga: \"Kr\xe4ver er anl\xe4ggning n\xe5mnv\xe4rd tid att g\xe5 igenom under revision?\""
-  },{
-    lbl: "Ja (\u22120,5 dag)",
-    ex: "Kontorslandskap. Liten serviceverkstad. F\xf6retag d\xe4r all verksamhet sker p\xe5 f\xe5 kvm.",
-    q: "Fr\xe5ga: \"Kan revisorn \xf6vervaka hela anl\xe4ggningen p\xe5 under en halvtimme?\""
-  }]
-},
-  /*#__PURE__*/React.createElement("option", { value: "no" }, "Nej \u2014 normal anl\xe4ggningsstorlek"),
-  /*#__PURE__*/React.createElement("option", { value: "yes" }, "Ja \u2014 liten anl\xe4ggning (\u22120,5 dag)")
-),
-/*#__PURE__*/React.createElement(SelHelp, {
-    label: "F\xE4ltpersonal \u2014 stor andel arbetar ute hos kund? (\xA78(v)g)",
-    tip: "\xA78(v)g: Stor andel f\xE4ltpersonal kan motivera reduktion. Ej till\xE4mpbart f\xF6r ISO 45001.",
-    value: f.offsite,
-    onChange: v => set("offsite", v),
-    help: [{
-      lbl: "Nej (ingen reduktion)",
-      ex: "Kontorsbaserad verksamhet. Brandskyddskonsult. Besiktningsfirma där kontoret är basen.",
-      q: 'Fråga: "Arbetar majoriteten av er personal från ett fast kontor eller anläggning?"'
-    }, {
-      lbl: "Ja (−0,5 dag)",
-      ex: "Anläggningsfirma där installatörerna primärt arbetar på kundanläggningar. Säljare och tekniker med bil som arbetsplats. De flesta SBSC-kunder med installationsverksamhet.",
-      q: 'Fråga: "Arbetar majoriteten av er personal ute hos kunder, snarare än på ett fast kontor?"'
-    }]
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "no"
-  }, "Nej \u2014 kontors- eller anl\xE4ggningsbaserat"), /*#__PURE__*/React.createElement("option", {
-    value: "yes"
-  }, "Ja \u2014 stor andel f\xE4ltpersonal"))), f.offsite === "no" && (f.s9001 || f.s14001) && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 6,
-      background: "#fff8ed",
-      border: "1px solid " + C.accent,
-      borderLeft: "3px solid " + C.accent,
-      padding: "7px 10px",
-      fontFamily: MONO,
-      fontSize: 11,
-      color: C.ink,
-      lineHeight: 1.7
-    }
-  }, /*#__PURE__*/React.createElement("strong", {
-    style: {
-      color: C.accent
-    }
-  }, "\uD83D\uDCA1 Kom ih\xE5g:"), " Om kunden \xE4r en anl\xE4ggarfirma, installat\xF6r eller bevakningsf\xF6retag d\xE4r personalen prim\xE4rt arbetar ute hos kund \u2014 v\xE4lj ", /*#__PURE__*/React.createElement("strong", null, "\"Ja \u2014 stor andel f\xE4ltpersonal\""), " ovan. Det \xE4r det vanligaste till\xE4ggat f\xF6r SBSC:s kundstock och ger +0,5 dag p\xE5 revisionstiden.")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: C.s2,
-      border: `1px solid ${C.border}`,
-      padding: "10px 11px",
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: MONO,
-      fontSize: 11,
-      color: "#101820",
-      letterSpacing: "0.08em",
-      textTransform: "uppercase",
-      marginBottom: 8
-    }
-  }, "Till\xE4ggsfaktorer \xA78(i) + \xA79 + \xA711"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement(SelHelp, {
-    label: "Processkomplexitet (\xA78(i)e)",
-    tip: "\xA78(i)e: Komplex verksamhet med m\xE5nga unika processer \xF6kar audittid.",
-    value: f.complexity,
-    onChange: v => set("complexity", v),
-    help: [{
-      lbl: "Låg",
-      ex: "Besiktningsfirma med standardiserat besiktningsflöde. Konsult med enkla och väldefinierade processer.",
-      q: 'Fråga: "Har ni få och väldefinierade processer utan stora variationer mellan uppdragen?"'
-    }, {
-      lbl: "Normal",
-      ex: "Anläggningsfirma med projektering, installation, driftsättning och service. Tydliga processer men med viss variation per uppdrag.",
-      q: 'Fråga: "Har ni ett antal tydliga processer men med viss variation beroende på kund och uppdragstyp?"'
-    }, {
-      lbl: "Hög (+1,0 dag)",
-      ex: "Installatör med komplex projektering, certifierade specialsystem och många unika processer per uppdrag. Verksamhet med flera simultana affärsområden.",
-      q: 'Fråga: "Är era uppdrag komplexa och unika, med specialiserade processer som varierar kraftigt?"'
-    }]
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "low"
-  }, "L\xE5g \u2014 enkla, standardiserade processer"), /*#__PURE__*/React.createElement("option", {
-    value: "medium"
-  }, "Normal"), /*#__PURE__*/React.createElement("option", {
-    value: "high"
-  }, "H\xF6g (+1,0 dag) \u2014 komplex, unik scope")), /*#__PURE__*/React.createElement(SelHelp, {
-    label: "Regulatoriska krav (\xA78(i)d)",
-    tip: "\xA78(i)d: H\xF6ga krav fr\xE5n lagar och myndigheter \xF6kar revisionsdjupet.",
-    value: f.regulatory,
-    onChange: v => set("regulatory", v),
-    help: [{
-      lbl: "Inga / få",
-      ex: "Brandskyddskonsult utan myndighetsuppdrag. Verksamhet utan branschspecifik lagstiftning utöver allmänna krav.",
-      q: 'Fråga: "Är ni underställda någon specifik branschlagstiftning eller myndighetstillsyn utöver det normala?"'
-    }, {
-      lbl: "Normala",
-      ex: "Anläggningsfirma med SSF- eller SBF-certifikat och branschkrav. Besiktningsfirma med ackreditering. Installatör med krav på behörighet och dokumentation.",
-      q: 'Fråga: "Har ni branschcertifikat, ackreditering eller behörighetskrav som styr er verksamhet?"'
-    }, {
-      lbl: "Höga (+0,5 dag)",
-      ex: "Verksamhet under säkerhetsskyddslagen. NIS2-pliktig verksamhet. Sprinklerinstallatör med krav enligt MSB och Boverket i känsliga miljöer.",
-      q: 'Fråga: "Omfattas ni av säkerhetsskyddslagen, NIS2, eller har ni myndighetskrav från MSB eller liknande?"'
-    }]
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "low"
-  }, "Inga / f\xE5"), /*#__PURE__*/React.createElement("option", {
-    value: "medium"
-  }, "Normala \u2014 branschcertifikat, ackreditering"), /*#__PURE__*/React.createElement("option", {
-    value: "high"
-  }, "H\xF6ga (+0,5 dag) \u2014 s\xE4kerhetsskydd, NIS2, MSB")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, {
-    tip: "\xA73.7 OH&SMS: Kr\xE4ver audit av skift inom OCH utanf\xF6r kontorstid under cykel 1."
-  }, "Skiftdrift (\xA73.7)"), /*#__PURE__*/React.createElement(Sel, {
-    value: f.shifts,
-    onChange: v => set("shifts", v)
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "no"
-  }, "Nej"), /*#__PURE__*/React.createElement("option", {
-    value: "yes"
-  }, "Ja \u2014 flerskift")), f.shifts === "yes" && f.s45001 && /*#__PURE__*/React.createElement(InfoNote, null, "OH&SMS \xA73.7: Kr\xE4ver audit inom OCH utanf\xF6r kontorstid \u2014 +1,0 dag extra.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, {
-    tip: "\xA711: CAB granskar organisationens styrning av outsourcade processer."
-  }, "Outsourcade processer (\xA711)"), /*#__PURE__*/React.createElement(Sel, {
-    value: f.outsourcing,
-    onChange: v => set("outsourcing", v)
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "no"
-  }, "Nej"), /*#__PURE__*/React.createElement("option", {
-    value: "yes"
-  }, "Ja"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, {
-    tip: "\xA78(i)b: Tolk kr\xE4vs \u2014 revisorer kan ej arbeta sj\xE4lvst\xE4ndigt."
-  }, "Flerspr\xE5kig / tolk (\xA78(i)b)"), /*#__PURE__*/React.createElement(Sel, {
-    value: f.multilang,
-    onChange: v => set("multilang", v)
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "no"
-  }, "Nej"), /*#__PURE__*/React.createElement("option", {
-    value: "yes"
-  }, "Ja"))), f.s45001 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, {
-    tip: "\xA78(iv): Olyckshistorik, farliga \xE4mnen, allm\xE4nhet p\xE5 plats."
-  }, "OH&S-riskprofil (\xA78(iv))"), /*#__PURE__*/React.createElement(Sel, {
-    value: f.ohsRisk,
-    onChange: v => set("ohsRisk", v)
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "medium"
-  }, "Normal"), /*#__PURE__*/React.createElement("option", {
-    value: "high"
-  }, "H\xF6g \u2014 olyckshistorik / farliga \xE4mnen")))))))), showImsPanel && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SLbl, SP(6, {
+  })), f.s27001 && /*#__PURE__*/React.createElement(React.Fragment, null, showImsPanel && /*#__PURE__*/React.createElement(SLbl, SP(6, {
     color: "#7A4800"
-  }), "IMS-integration \u2014 IAF MD 11:2023 Annex 1 Figur 1"), /*#__PURE__*/React.createElement("div", { className: fold[6] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
+  }), "IMS-integration \u2014 IAF MD 11:2023 Annex 1 Figur 1"), f.s27001 && /*#__PURE__*/React.createElement("div", { className: "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, showImsPanel && /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.goldLt,
       border: `1px solid ${C.goldBd}`,
@@ -9800,7 +9039,770 @@ ${exportedHTML}
       color: C.teal,
       marginTop: 3
     }
-  }, "Steg 1 = 33% \u2014 mer tid f\xF6r dokumentgranskning och beredskapsanalys.")))), /*#__PURE__*/React.createElement(SLbl, SP(7), "Rabatt & Priss\xE4ttning"), /*#__PURE__*/React.createElement("div", { className: fold[7] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
+  }, "Steg 1 = 33% \u2014 mer tid f\xF6r dokumentgranskning och beredskapsanalys.")))), /*#__PURE__*/React.createElement(SLbl, SP(5), "Verksamhet & Ber\xE4kningsunderlag"), /*#__PURE__*/React.createElement("div", { className: fold[5] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement(Lbl, {
+    tip: "IAF MD 1:2023 \xA76.1.3.3: Stickprov = \u221Ax (initial), 0,6\xB7\u221Ax (surveillance). Centralfunktionen auditeras alltid."
+  }, "Antal fasta certifieringsplatser"), /*#__PURE__*/React.createElement(Inp, {
+    type: "number",
+    min: "1",
+    value: f.sites,
+    onChange: v => set("sites", v)
+  }), parseInt(f.sites) > 1 && (() => {
+    const x = parseInt(f.sites) || 1;
+    const init = md1Sample(x, "initial");
+    const surv = md1Sample(x, "surv");
+    const recert = md1Sample(x, "recert"); // omcertifiering: √x (alt. 0,8·√x vid bevisad effektiv cykel)
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: "#fff",
+        border: "1.5px solid " + C.tealBd,
+        borderRadius: 6,
+        padding: "8px 10px",
+        marginTop: 6
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: MONO,
+        fontSize: 11,
+        color: C.teal,
+        fontWeight: 700,
+        marginBottom: 6,
+        letterSpacing: "0.05em",
+        textTransform: "uppercase"
+      }
+    }, "Stickprovsber\xE4kning \u2014 IAF MD 1:2023 \xA76.1.3.3"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 4
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        fontFamily: MONO,
+        fontSize: 11,
+        padding: "4px 0",
+        borderBottom: "1px solid " + C.border
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.ink
+      }
+    }, "Initial & Omcertifiering \xA0", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.ink
+      }
+    }, "y = \u2308\u221A", x, "\u2309")), /*#__PURE__*/React.createElement("strong", {
+      style: {
+        color: C.teal
+      }
+    }, "= ", init.y, " av ", x, " platser")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        fontFamily: MONO,
+        fontSize: 11,
+        padding: "4px 0",
+        borderBottom: "1px solid " + C.border
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.ink
+      }
+    }, "Periodisk revision \xA0", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.ink
+      }
+    }, "y = \u23080,6\xB7\u221A", x, "\u2309")), /*#__PURE__*/React.createElement("strong", {
+      style: {
+        color: C.teal
+      }
+    }, "= ", surv.y, " av ", x, " platser/\xE5r")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: MONO,
+        fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
+        paddingTop: 4,
+        lineHeight: 1.6
+      }
+    }, "Centralfunktionen ing\xE5r alltid i stickprovet och auditeras vid varje revision per \xA76.1.3.3. Extra dag per samplad plats ut\xF6ver centralfunktionen: +", init.y - 1, " dag(ar) (50%-till\xE4gg per \xA77.3.1).")));
+  })(), parseInt(f.sites) > 1 && /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: "flex", alignItems: "flex-start", gap: 7, marginTop: 8,
+      cursor: "pointer", fontFamily: MONO, fontSize: 11, color: C.ink,
+      background: f.koncern ? C.goldLt : "transparent",
+      border: f.koncern ? `1px solid ${C.goldBd}` : "1px solid transparent",
+      padding: "6px 8px", borderRadius: 3
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: !!f.koncern,
+    onChange: e => set("koncern", e.target.checked),
+    style: { accentColor: C.accent, marginTop: 1, cursor: "pointer" }
+  }), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("strong", null, "Koncerncertifikat \u2014 platserna tillh\xF6r olika juridiska enheter"), /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 10, color: C.muted, marginTop: 2, lineHeight: 1.5, fontWeight: 400 }
+  }, "IAF MD 1:2023 \xA73.3.1: en multi-site-organisation beh\xF6ver inte vara en juridisk enhet, men alla enheter ska ha juridisk/avtalsm\xE4ssig koppling till centralfunktionen och ing\xE5 i ett enda ledningssystem. G\xE4ller \xC4KTA koncernstruktur \u2014 inte frist\xE5ende bolag under konstgjort paraply (\xA71)."))), /*#__PURE__*/React.createElement(SiteDetailsPanel, {
+    sites: f.sites,
+    siteDetails: f.siteDetails || [],
+    onChange: v => set("siteDetails", v),
+    koncern: !!f.koncern
+  }), parseInt(f.sites) > 1 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 8,
+      background: C.s2,
+      border: `1px solid ${C.border}`,
+      borderLeft: "3px solid " + C.teal,
+      padding: "9px 11px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: MONO,
+      fontSize: 11,
+      color: C.teal,
+      fontWeight: 600,
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      marginBottom: 7
+    }
+  }, "Filialkvalifikation f\xF6r sampling \u2014 IAF MD 1:2023 \xA76.1.1"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: MONO,
+      fontSize: 11,
+      fontWeight: 600,
+      color: C.ink,
+      marginBottom: 8,
+      lineHeight: 1.6
+    }
+  }, "Besvara fr\xE5gorna f\xF6r att dokumentera om sampling \xE4r l\xE4mpligt. Sparas i arbetsunderlaget."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
+    }
+  }, [["sitesQ1", "Bedrivs liknande processer/aktiviteter på de olika certifieringsplatserna?"], ["sitesQ2", "Om processerna skiljer sig — är de länkade? (t.ex. försäljning och utförande på olika certifieringsplatser)"], ["sitesQ3", "Styrs ledningssystemet från en central funktion?"], ["sitesQ4", "Behandlas certifieringsplatserna på ledningens genomgång?"], ["sitesQ5", "Genomförs interna revisioner på certifieringsplatserna (ska vara utfört innan SBSC påbörjar revision)?"], ["sitesQ6", "Förefaller ledningssystemet vara relevant och tillämpat för alla certifieringsplatser?"], ["sitesQ7", "Visar organisationen förmåga att samla in och analysera information från certifieringsplatserna (avvikelser, kundklagomål, legala krav)?"]].concat(f.koncern ? [["koncernQ8", "Har samtliga juridiska enheter en juridisk eller avtalsmässig koppling till centralfunktionen som ger den rätt att kräva korrigerande åtgärder? (IAF MD 1 §3.3.1 — krav vid koncerncertifikat)"]] : []).map(([key, question]) => /*#__PURE__*/React.createElement("div", {
+    key: key,
+    style: {
+      display: "flex",
+      alignItems: "flex-start",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexShrink: 0,
+      marginTop: 1
+    }
+  }, ["Ja", "Nej", "Ej bedömt"].map(val => /*#__PURE__*/React.createElement("label", {
+    key: val,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 3,
+      cursor: "pointer",
+      fontFamily: MONO,
+      fontSize: 11,
+      color: f[key] === val ? C.teal : C.muted,
+      whiteSpace: "nowrap"
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "radio",
+    name: key,
+    checked: f[key] === val,
+    onChange: () => set(key, val),
+    style: {
+      accentColor: C.teal,
+      cursor: "pointer"
+    }
+  }), val))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: MONO,
+      fontSize: 11,
+      color: C.ink,
+      lineHeight: 1.5
+    }
+  }, question)))), (() => {
+    const keys = ["sitesQ1", "sitesQ2", "sitesQ3", "sitesQ4", "sitesQ5", "sitesQ6", "sitesQ7"];
+    const answered = keys.filter(k => f[k]);
+    if (answered.length === 0) return null;
+    const samplingOk = f.sitesQ1 === "Ja" && f.sitesQ3 === "Ja" && f.sitesQ4 === "Ja" && f.sitesQ5 === "Ja";
+    const allDone = keys.every(k => f[k]);
+    const hasNej = keys.some(k => f[k] === "Nej");
+    const bg = samplingOk ? "#edf7ed" : hasNej ? "#fdecea" : "#fff8e8";
+    const bd = samplingOk ? "#7bc47b" : hasNej ? "#e0a0a0" : "#e8d88a";
+    const col = samplingOk ? "#265c3a" : hasNej ? "#8b2020" : "#7a5c1e";
+    const icon = samplingOk ? "✓" : hasNej ? "✗" : "…";
+    const msg = samplingOk ? "Indikerar att sampling är lämpligt per IAF MD 1:2023 §6.1.1" : hasNej ? "Ett eller flera kriterier uppfylls ej — kontrollera om sampling är tillämpligt" : allDone ? "Alla frågor besvarade med 'Ej bedömt' — bedömning krävs av handläggare" : `${answered.length} av ${keys.length} frågor besvarade — fortsätt fylla i`;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 8,
+        padding: "7px 10px",
+        background: bg,
+        border: "1px solid " + bd,
+        fontFamily: MONO,
+        fontSize: 11,
+        fontWeight: 600,
+        color: col,
+        display: "flex",
+        gap: 6,
+        alignItems: "flex-start"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        flexShrink: 0
+      }
+    }, icon), /*#__PURE__*/React.createElement("span", null, msg));
+  })())), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement(Chk, {
+    checked: f.tempSites === "yes",
+    onChange: v => set("tempSites", v ? "yes" : "no"),
+    label: "Tillf\xE4lliga arbetsplatser (temporary sites) inom scope",
+    tip: "IAF MD 5:2023 \xA79: Tillf\xE4lliga platser ska ing\xE5 i auditprogrammet p\xE5 stickprovsbasis."
+  }), f.tempSites === "yes" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 7,
+      background: C.s2,
+      border: `1px solid ${C.border}`,
+      borderLeft: "3px solid " + C.teal,
+      padding: "9px 11px"
+    }
+  }, /*#__PURE__*/React.createElement(InfoNote, {
+    color: C.teal,
+    bg: "white",
+    bd: C.teal
+  }, "\xA79 IAF MD 5:2023: Tillf\xE4lliga platser ska ing\xE5 i auditprogrammet p\xE5 stickprovsbasis. Exakt urval best\xE4ms av revisorn vid auditplaneringen \u2014 inte av kalkylatorn."), /*#__PURE__*/React.createElement(Lbl, {
+    tip: "Beskriv typ av tillf\xE4lliga platser, ungef\xE4rligt antal aktiva simultant och geografisk spridning. Anv\xE4nds som underlag f\xF6r revisorns auditplanering."
+  }, "Beskriv de tillf\xE4lliga arbetsplatserna"), /*#__PURE__*/React.createElement("textarea", {
+    value: f.tempSiteDesc || "",
+    onChange: e => set("tempSiteDesc", e.target.value),
+    placeholder: `t.ex. "Kundanläggningar vid installation av brandlarm och inbrottslarm, typiskt 3–6 aktiva projekt simultant. Geografisk spridning: Mellansverige. Varierande storlek — allt från kontorsinstallationer till industrianläggningar."`,
+    rows: 3,
+    style: {
+      width: "100%",
+      background: "white",
+      border: `1px solid ${C.border}`,
+      color: C.ink,
+      fontFamily: MONO,
+      fontSize: 11,
+      padding: "6px 8px",
+      outline: "none",
+      resize: "vertical",
+      lineHeight: 1.6,
+      marginTop: 4
+    }
+  }))), (f.s9001 || f.s14001 || f.s45001) && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(FteHelper, {
+    f: f,
+    set: set
+  }), f.s9001 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 9,
+      background: C.s2,
+      padding: "8px 10px",
+      border: `1px solid ${C.border}`
+    }
+  }, /*#__PURE__*/React.createElement(SelHelp, {
+    label: "ISO 9001 \u2014 Komplexitet & Risk (Tabell QMS 1)",
+    tip: "Avg\xF6r bastalet per Tabell QMS 2. H\xF6g risk = fler mandagar.",
+    value: f.qmsRisk,
+    onChange: v => set("qmsRisk", v),
+    help: [{
+      lbl: "Låg",
+      ex: "Säkerhets- och låsprodukter. Installation. Butik (t.ex. låsbranschen). Brandskyddskonsult (kontorsbaserat). Säkerhetskonsult. Utbildningsföretag. Fel på produkt/tjänst orsakar sannolikt inte skada eller sjukdom.",
+      q: 'Fråga: "Är er verksamhet sådan att fel sannolikt inte orsakar skada eller sjukdom?"'
+    }, {
+      lbl: "Medel",
+      ex: "Anläggningsfirma (brandlarm/inbrottslarm/CCTV/passersystem). Besiktningsfirma brand. Installatör med SSF- eller SBF-certifikat. Säkerhetsföretag med servicetjänster.",
+      q: 'Fråga: "Installerar eller underhåller ni säkerhetssystem, eller utför ni besiktningar?"'
+    }, {
+      lbl: "Hög",
+      ex: "Sprinklerinstallatör (trycksatta system, svetsarbete). Installatör med CE-märkta produkter och spårbarhetskrav. Brandskyddsprojektör med myndighetsuppdrag i känsliga miljöer.",
+      q: 'Fråga: "Arbetar ni med trycksatta system, CE-märkning, spårbarhetskrav eller myndighetsuppdrag i kritiska miljöer?"'
+    }]
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "low"
+  }, "L\xE5g \u2014 r\xE5dgivning, kontor, utbildning"), /*#__PURE__*/React.createElement("option", {
+    value: "medium"
+  }, "Medel \u2014 installation, service, besiktning"), /*#__PURE__*/React.createElement("option", {
+    value: "high"
+  }, "H\xF6g \u2014 trycksatta system, CE-m\xE4rkning, sp\xE5rbarhetskrav")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 5
+    }
+  }, /*#__PURE__*/React.createElement(RiskCommentHelp, {
+    type: "qms",
+    choice: f.qmsRisk
+  }), /*#__PURE__*/React.createElement("textarea", {
+    value: f.qmsComment,
+    onChange: e => set("qmsComment", e.target.value),
+    placeholder: "t.ex. Kunden installerar brandlarm utan trycksatta system \u2014 medium risk bed\xF6mt korrekt.",
+    rows: 2,
+    style: {
+      width: "100%",
+      background: C.bg,
+      border: `1px solid ${C.border}`,
+      color: C.ink,
+      fontFamily: MONO,
+      fontSize: 11,
+      padding: "5px 8px",
+      outline: "none",
+      resize: "vertical",
+      lineHeight: 1.6
+    }
+  }))), f.s14001 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 9,
+      background: C.s2,
+      padding: "8px 10px",
+      border: `1px solid ${C.border}`
+    }
+  }, /*#__PURE__*/React.createElement(SelHelp, {
+    label: "ISO 14001 \u2014 Milj\xF6komplexitet (Tabell EMS 2)",
+    tip: "Avg\xF6r bastalet per Tabell EMS 2. H\xF6g komplexitet = fler mandagar.",
+    value: f.emsComplexity,
+    onChange: v => set("emsComplexity", v),
+    help: [{
+      lbl: "Begränsad",
+      ex: "Konsult/projektering på eget kontor. Anläggar-, besiktnings- och bevakningsföretag där i princip endast bilkörning är betydande miljöaspekt. Larmcentraler. Utbildning. Minimal direkt miljöpåverkan.",
+      q: 'Fråga: "Är er miljöpåverkan i princip begränsad till kontorets energi- och pappersförbrukning?"'
+    }, {
+      lbl: "Låg",
+      ex: "Tillverkning av säkerhetsskåp, dörrar, låscylindrar och liknande mekaniska produkter utan kemisk ytbehandling. Butik (t.ex. låsbranschen). Elektroniktillverkning (ej kretskort). Anläggnings-/besiktningsfirma.",
+      q: 'Fråga: "Har ni fordon och viss energianvändning men inga kemikalier, utsläppstillstånd eller direkt miljöpåverkan?"'
+    }, {
+      lbl: "Medel",
+      ex: "Tillverkning av säkerhetsskåp/dörrar med kemisk ytbehandling (t.ex. målning). Installatör som hanterar kemikalier (kylmedel, lösningsmedel, batterier). Verksamhet med miljötillstånd.",
+      q: 'Fråga: "Hanterar ni kemikalier, kylmedel eller trycksatta medier, eller har ni miljötillstånd?"'
+    }, {
+      lbl: "Hög",
+      ex: "Verksamhet med regelbunden hantering av miljöfarliga ämnen. Deponi eller avfallshantering. (Ovanligt inom SBSC:s kundstock.)",
+      q: 'Fråga: "Hanterar ni miljöfarliga ämnen i stor skala, driver deponi eller har ni komplex miljötillståndsplikt?"'
+    }]
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "limited"
+  }, "Begr\xE4nsad \u2014 kontorsbaserad, minimal milj\xF6p\xE5verkan"), /*#__PURE__*/React.createElement("option", {
+    value: "low"
+  }, "L\xE5g \u2014 fordon, viss energianv\xE4ndning"), /*#__PURE__*/React.createElement("option", {
+    value: "medium"
+  }, "Medel \u2014 kemikalier, kylmedel, milj\xF6tillst\xE5nd"), /*#__PURE__*/React.createElement("option", {
+    value: "high"
+  }, "H\xF6g \u2014 milj\xF6farliga \xE4mnen, deponi")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 5
+    }
+  }, /*#__PURE__*/React.createElement(RiskCommentHelp, {
+    type: "ems",
+    choice: f.emsComplexity
+  }), /*#__PURE__*/React.createElement("textarea", {
+    value: f.emsComment,
+    onChange: e => set("emsComment", e.target.value),
+    placeholder: "t.ex. Kunden hanterar inga kemikalier \u2014 begr\xE4nsad komplexitet bed\xF6mt korrekt.",
+    rows: 2,
+    style: {
+      width: "100%",
+      background: C.bg,
+      border: `1px solid ${C.border}`,
+      color: C.ink,
+      fontFamily: MONO,
+      fontSize: 11,
+      padding: "5px 8px",
+      outline: "none",
+      resize: "vertical",
+      lineHeight: 1.6
+    }
+  }))), f.s45001 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 9,
+      background: C.s2,
+      padding: "8px 10px",
+      border: `1px solid ${C.border}`
+    }
+  }, /*#__PURE__*/React.createElement(SelHelp, {
+    label: "ISO 45001 \u2014 OH&S-riskkategori (Tabell OH&SMS 2)",
+    tip: "Avg\xF6r bastalet per Tabell OH&SMS 2. H\xF6g risk = fler mandagar.",
+    value: f.ohsComplexity,
+    onChange: v => set("ohsComplexity", v),
+    help: [{
+      lbl: "Låg",
+      ex: "Kontor, butik, anläggar-/besiktnings-/bevakningsföretag, konsult/projektering, larmcentraler, stationär bevakning, utbildning. Felaktig riskhantering kan orsaka mindre skada eller sjukdom.",
+      q: 'Fråga: "Kan felaktig riskhantering i er verksamhet på sin höjd orsaka mindre skada eller sjukdom?"'
+    }, {
+      lbl: "Medel",
+      ex: "Mekanisk tillverkning. Anläggningsfirma (brandlarm/CCTV/inbrottslarm) med elarbete och montering. Viss höjdmontage. Felaktig riskhantering kan orsaka skada eller sjukdom. De flesta SBSC-installatörer.",
+      q: 'Fråga: "Utför ni installationsarbete med elarbete, viss höjdmontage eller arbete i befintliga anläggningar?"'
+    }, {
+      lbl: "Hög",
+      ex: "Felaktig riskhantering kan orsaka allvarlig skada eller fara för liv. Sprinklerinstallatör med svetsarbete och trycksatta system. Frekventa höjdarbeten (>2 m). Arbete med farliga ämnen.",
+      q: 'Fråga: "Arbetar ni regelbundet med svetsning, trycksatta system, höjdarbeten eller andra högriskmoment?"'
+    }]
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "low"
+  }, "L\xE5g \u2014 kontorsbaserat, ingen installation"), /*#__PURE__*/React.createElement("option", {
+    value: "medium"
+  }, "Medel \u2014 installation, elarbete, viss h\xF6jdmontage"), /*#__PURE__*/React.createElement("option", {
+    value: "high"
+  }, "H\xF6g \u2014 svetsning, trycksatta system, h\xF6jdarbete")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 5
+    }
+  }, /*#__PURE__*/React.createElement(RiskCommentHelp, {
+    type: "ohs",
+    choice: f.ohsComplexity
+  }), /*#__PURE__*/React.createElement("textarea", {
+    value: f.ohsComment,
+    onChange: e => set("ohsComment", e.target.value),
+    placeholder: "t.ex. Kunden utf\xF6r elarbete och viss h\xF6jdmontage \u2014 medium risk bed\xF6mt korrekt.",
+    rows: 2,
+    style: {
+      width: "100%",
+      background: C.bg,
+      border: `1px solid ${C.border}`,
+      color: C.ink,
+      fontFamily: MONO,
+      fontSize: 11,
+      padding: "5px 8px",
+      outline: "none",
+      resize: "vertical",
+      lineHeight: 1.6
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement(Lbl, {
+    tip: "Valfritt \u2014 aktiverar prior knowledge-reduktion (IAF MD 5:2023 \xA78(v)d+e) och transferreduktion (IAF MD 2:2023) om certifieringsorgan anges. L\xE4mna tomt om kunden saknar tidigare certifiering."
+  }, "Befintliga certifikat hos annat organ ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 400,
+      color: C.ink
+    }
+  }, "(valfritt \u2014 f\xF6r prior knowledge-reduktion)"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 6,
+      marginBottom: 14
+    }
+  }, f.s9001 && !(f.certType === "extension" && f.extHas9001) && /*#__PURE__*/React.createElement(ExBox, {
+    std: "9001",
+    label: "ISO 9001"
+  }), f.s14001 && !(f.certType === "extension" && f.extHas14001) && /*#__PURE__*/React.createElement(ExBox, {
+    std: "14001",
+    label: "ISO 14001"
+  }), f.s45001 && !(f.certType === "extension" && f.extHas45001) && /*#__PURE__*/React.createElement(ExBox, {
+    std: "45001",
+    label: "ISO 45001"
+  }), f.certType === "extension" && (f.extHas9001 || f.extHas14001 || f.extHas45001) && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.greenLt,
+      border: "1px solid " + C.greenBd,
+      borderRadius: 4,
+      padding: "6px 10px",
+      fontFamily: MONO,
+      fontSize: 11,
+      color: C.green,
+      lineHeight: 1.7
+    }
+  }, "\u2713 Befintliga certifikat och mognadsreduktion hanteras via ut\xF6kningspanelen ovan \u2014 inget mer beh\xF6ver fyllas i h\xE4r."), f.certType === "extension" && (f.extHas9001 || f.extHas14001 || f.extHas45001) && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#fffaed",
+      border: "1.5px solid " + C.accent,
+      borderLeft: "3px solid " + C.accent,
+      borderRadius: 4,
+      padding: "7px 10px",
+      fontFamily: MONO,
+      fontSize: 11,
+      color: C.ink,
+      lineHeight: 1.8,
+      marginTop: 4
+    }
+  }, /*#__PURE__*/React.createElement("strong", {
+    style: {
+      color: C.accent
+    }
+  }, "\u2139 Ut\xF6kning \u2014 s\xE5 h\xE4r fungerar ber\xE4kningen:"), /*#__PURE__*/React.createElement("br", null), "Kalkylatorn ber\xE4knar ", /*#__PURE__*/React.createElement("strong", null, "hela det samlade certifikatet"), " (befintliga + nya standarder) i ett paket. F\xE4lten nedan (FTE, riskkategorier, mognad m.m.) m\xE5ste st\xE4mma \xF6verens med den tidigare mandagsber\xE4kningen f\xF6r ", [f.extHas9001 && "ISO 9001", f.extHas14001 && "ISO 14001", f.extHas45001 && "ISO 45001"].filter(Boolean).join(" och "), ".", !f.extHas9001 && !f.extHas14001 && !f.extHas45001 ? "" : "", " F\xE4lt specifika f\xF6r den nya standarden (t.ex. OH&S-komplexitet f\xF6r ISO 45001) fylls i som vanligt.")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.s2,
+      border: `1px solid ${C.border}`,
+      padding: "10px 11px",
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: MONO,
+      fontSize: 11,
+      color: "#101820",
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      marginBottom: 8
+    }
+  }, "Reduktionsfaktorer \xA78(v)"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement(SelHelp, {
+    label: "Automatiseringsgrad (\xA78(v)f \u2014 ej OH&SMS)",
+    tip: "\xA78(v)f: H\xF6g automatisering = f\xE4rre mandagar. Ej till\xE4mpbart f\xF6r ISO 45001.",
+    value: f.automation,
+    onChange: v => set("automation", v),
+    help: [{
+      lbl: "Låg (ingen reduktion)",
+      ex: "Hantverksmässig installation av brandlarm, inbrottslarm eller CCTV. Manuella processer, personal styr varje moment.",
+      q: 'Fråga: "Är er kärnverksamhet manuell, med personal som utför varje steg utan maskinell styrning?"'
+    }, {
+      lbl: "Medel (−0,5 dag)",
+      ex: "Viss automatisering i administrativa processer (t.ex. ärendehanteringssystem) men installationsarbetet är manuellt.",
+      q: 'Fråga: "Har ni automatiserade back office-processer men manuellt utförandearbete?"'
+    }, {
+      lbl: "Hög (−1,0 dag)",
+      ex: "Verksamhet där majoriteten av processerna styrs maskinellt. Ovanligt för SBSC:s typiska kunder.",
+      q: 'Fråga: "Är majoriteten av era processer maskinellt styrda med personal i övervakande roll?"'
+    }]
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "low"
+  }, "L\xE5g \u2014 manuella processer"), /*#__PURE__*/React.createElement("option", {
+    value: "medium"
+  }, "Medel \u2014 viss automatisering"), /*#__PURE__*/React.createElement("option", {
+    value: "high"
+  }, "H\xF6g \u2014 majoriteten maskinellt styrd")), /*#__PURE__*/React.createElement(SelHelp, {
+    label: "Mognadsniv\xE5 (\xA78(v)c)",
+    tip: "\xA78(v)c: V\xE4lestablerat system med bevisad historik ger reduktion.",
+    value: f.maturity,
+    onChange: v => set("maturity", v),
+    help: [{
+      lbl: "Låg (ingen reduktion)",
+      ex: "Ny certifiering utan tidigare ISO-erfarenhet. Ledningssystemet under uppbyggnad. Oklar intern revisionshistorik.",
+      q: 'Fråga: "Är detta er första ISO-certifiering? Har ni etablerade rutiner för intern revision och ledningsgenomgång?"'
+    }, {
+      lbl: "Normal (−0,5 dag)",
+      ex: "Certifierat 1–3 år, eller nytt ISO-system men med etablerade kvalitetsrutiner via SSF- eller SBF-certifikat.",
+      q: 'Fråga: "Har ni haft ISO-certifiering 1–3 år, eller har ni välstrukturerade rutiner via SSF/SBF men utan lång ISO-historik?"'
+    }, {
+      lbl: "Hög (−1,0 dag)",
+      ex: "ISO-certifierat >3 år, regelbunden intern revision, dokumenterad ledningsgenomgång, inga allvarliga avvikelser. SSF/SBF-certifikat sedan länge med välstrukturerade rutiner.",
+      q: 'Fråga: "Har ni haft ISO-certifiering mer än 3 år med dokumenterade interna revisioner och utan allvarliga avvikelser?"'
+    }]
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "low"
+  }, "L\xE5g \u2014 nytt ledningssystem"), /*#__PURE__*/React.createElement("option", {
+    value: "medium"
+  }, "Normal \u2014 etablerat 1\u20133 \xE5r"), /*#__PURE__*/React.createElement("option", {
+    value: "high"
+  }, "H\xF6g \u2014 >3 \xE5r, dokumenterad historik")), /*#__PURE__*/React.createElement(SelHelp, {
+    label: "Likartade/repetitiva processer (\xA72.3.4)",
+    tip: "\xA72.3.4 \u2014 SBSC-beslut: till\xE4mpas ENBART f\xF6r larmcentraler och bevakningsf\xF6retag. Fast 30\xA0% FTE-reduktion (Alt A). Ej till\xE4mpbart vid enbart ISO 45001. SWEDAC krav: konsekvent till\xE4mpning f\xF6retag f\xF6r f\xF6retag. (SBSC:s fastställda rutiner)",
+    value: f.similar,
+    onChange: v => set("similar", v),
+    help: [{
+      lbl: "Nej",
+      ex: "Anläggningsfirma, installatör, brandskyddskonsult, besiktningsfirma m.fl. — varierande processer. Ska INTE reduceras."
+    }, {
+      lbl: "Larmcentral (30 % FTE-reduktion)",
+      ex: "Kunden driver larmcentral där operatörerna hanterar inkommande larm enligt exakt samma procedur. SBSC-beslut: alltid 30 % FTE-reduktion (SBSC:s fastställda rutiner). Gäller QMS/EMS — ej enbart 45001.",
+      q: 'Kontroll: Är kunden en larmcentral?'
+    }, {
+      lbl: "Bevakningsföretag (30 % FTE-reduktion)",
+      ex: "Kunden bedriver väktarverksamhet med standardiserade ronduppdrag. SBSC-beslut: alltid 30 % FTE-reduktion (SBSC:s fastställda rutiner). Gäller QMS/EMS — ej enbart 45001.",
+      q: 'Kontroll: Är kunden ett bevakningsföretag?'
+    }]
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "no"
+  }, "Nej — varierande processer (standard)"), /*#__PURE__*/React.createElement("option", {
+    value: "larmcentral"
+  }, "Larmcentral — 30 % FTE-reduktion"), /*#__PURE__*/React.createElement("option", {
+    value: "bevakning"
+  }, "Bevakningsföretag — 30 % FTE-reduktion")),
+(f.similar === "larmcentral" || f.similar === "bevakning") && /*#__PURE__*/React.createElement("div", {
+  style: { margin: "5px 0 8px 0", padding: "8px 10px", background: C.goldLt, border: "1px solid " + C.goldBd, borderRadius: 8, fontSize: 11, color: "#7A4800", fontFamily: SANS }
+}, "⚠️ SBSC fastställd rutin: 30 % FTE-reduktion tillämpas. Beräkningsunderlag: " + Math.max(Math.round(effectiveFte * 0.7), 1) + " pers. (från " + (fteCalc.total || parseInt(f.fte) || 0) + " FTE). Dokumenteras i arbetsunderlaget."),
+/*#__PURE__*/React.createElement(SelHelp, {
+  label: "Ej designansvarig f\xf6r produkt/tj\xe4nst? (\xA78(v)a, QMS)",
+  tip: "\xA78(v)a: Om kunden saknar designansvar reduceras scope och revisionstid (QMS only).",
+  value: f.notDesignResp,
+  onChange: function(v) { set("notDesignResp", v); },
+  help: [{
+    lbl: "Nej (designansvar ing\xe5r)",
+    ex: "Tillverkare med eget produktutvecklingsteam. F\xf6retag som \xe4ger sin produktdesign.",
+    q: "Fr\xe5ga: \"Har ni designansvar f\xf6r era produkter eller tj\xe4nster?\""
+  },{
+    lbl: "Ja (\u22120,5 dag, QMS)",
+    ex: "Underleverant\xf6r som producerar efter kundens ritningar. Installat\xf6r eller servicef\xf6retag utan produktdesign. De flesta av SBSC:s brandskyddskunder.",
+    q: "Fr\xe5ga: \"Tillverkar/levererar ni uteslutande efter n\xe5gon annans design eller specifikation?\""
+  }]
+},
+  /*#__PURE__*/React.createElement("option", { value: "no" }, "Nej \u2014 designansvar ing\xe5r"),
+  /*#__PURE__*/React.createElement("option", { value: "yes" }, "Ja \u2014 ej designansvarig (\u22120,5 dag, QMS)")
+),
+/*#__PURE__*/React.createElement(SelHelp, {
+  label: "Liten anl\xe4ggning relativt personalstyrkan? (\xA78(v)b)",
+  tip: "\xA78(v)b: Kontor eller tj\xe4nstelokaler d\xe4r anl\xe4ggningens storlek inte \xe4r avg\xf6rande f\xf6r revisionen.",
+  value: f.verySmallSite,
+  onChange: function(v) { set("verySmallSite", v); },
+  help: [{
+    lbl: "Nej (normal anl\xe4ggning)",
+    ex: "Fabrik, lager, stor serviceverkstad eller anl\xe4ggning d\xe4r den fysiska platsen \xe4r central.",
+    q: "Fr\xe5ga: \"Kr\xe4ver er anl\xe4ggning n\xe5mnv\xe4rd tid att g\xe5 igenom under revision?\""
+  },{
+    lbl: "Ja (\u22120,5 dag)",
+    ex: "Kontorslandskap. Liten serviceverkstad. F\xf6retag d\xe4r all verksamhet sker p\xe5 f\xe5 kvm.",
+    q: "Fr\xe5ga: \"Kan revisorn \xf6vervaka hela anl\xe4ggningen p\xe5 under en halvtimme?\""
+  }]
+},
+  /*#__PURE__*/React.createElement("option", { value: "no" }, "Nej \u2014 normal anl\xe4ggningsstorlek"),
+  /*#__PURE__*/React.createElement("option", { value: "yes" }, "Ja \u2014 liten anl\xe4ggning (\u22120,5 dag)")
+),
+/*#__PURE__*/React.createElement(SelHelp, {
+    label: "F\xE4ltpersonal \u2014 stor andel arbetar ute hos kund? (\xA78(v)g)",
+    tip: "\xA78(v)g: Stor andel f\xE4ltpersonal kan motivera reduktion. Ej till\xE4mpbart f\xF6r ISO 45001.",
+    value: f.offsite,
+    onChange: v => set("offsite", v),
+    help: [{
+      lbl: "Nej (ingen reduktion)",
+      ex: "Kontorsbaserad verksamhet. Brandskyddskonsult. Besiktningsfirma där kontoret är basen.",
+      q: 'Fråga: "Arbetar majoriteten av er personal från ett fast kontor eller anläggning?"'
+    }, {
+      lbl: "Ja (−0,5 dag)",
+      ex: "Anläggningsfirma där installatörerna primärt arbetar på kundanläggningar. Säljare och tekniker med bil som arbetsplats. De flesta SBSC-kunder med installationsverksamhet.",
+      q: 'Fråga: "Arbetar majoriteten av er personal ute hos kunder, snarare än på ett fast kontor?"'
+    }]
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "no"
+  }, "Nej \u2014 kontors- eller anl\xE4ggningsbaserat"), /*#__PURE__*/React.createElement("option", {
+    value: "yes"
+  }, "Ja \u2014 stor andel f\xE4ltpersonal"))), f.offsite === "no" && (f.s9001 || f.s14001) && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 6,
+      background: "#fff8ed",
+      border: "1px solid " + C.accent,
+      borderLeft: "3px solid " + C.accent,
+      padding: "7px 10px",
+      fontFamily: MONO,
+      fontSize: 11,
+      color: C.ink,
+      lineHeight: 1.7
+    }
+  }, /*#__PURE__*/React.createElement("strong", {
+    style: {
+      color: C.accent
+    }
+  }, "\uD83D\uDCA1 Kom ih\xE5g:"), " Om kunden \xE4r en anl\xE4ggarfirma, installat\xF6r eller bevakningsf\xF6retag d\xE4r personalen prim\xE4rt arbetar ute hos kund \u2014 v\xE4lj ", /*#__PURE__*/React.createElement("strong", null, "\"Ja \u2014 stor andel f\xE4ltpersonal\""), " ovan. Det \xE4r det vanligaste till\xE4ggat f\xF6r SBSC:s kundstock och ger +0,5 dag p\xE5 revisionstiden.")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: C.s2,
+      border: `1px solid ${C.border}`,
+      padding: "10px 11px",
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: MONO,
+      fontSize: 11,
+      color: "#101820",
+      letterSpacing: "0.08em",
+      textTransform: "uppercase",
+      marginBottom: 8
+    }
+  }, "Till\xE4ggsfaktorer \xA78(i) + \xA79 + \xA711"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement(SelHelp, {
+    label: "Processkomplexitet (\xA78(i)e)",
+    tip: "\xA78(i)e: Komplex verksamhet med m\xE5nga unika processer \xF6kar audittid.",
+    value: f.complexity,
+    onChange: v => set("complexity", v),
+    help: [{
+      lbl: "Låg",
+      ex: "Besiktningsfirma med standardiserat besiktningsflöde. Konsult med enkla och väldefinierade processer.",
+      q: 'Fråga: "Har ni få och väldefinierade processer utan stora variationer mellan uppdragen?"'
+    }, {
+      lbl: "Normal",
+      ex: "Anläggningsfirma med projektering, installation, driftsättning och service. Tydliga processer men med viss variation per uppdrag.",
+      q: 'Fråga: "Har ni ett antal tydliga processer men med viss variation beroende på kund och uppdragstyp?"'
+    }, {
+      lbl: "Hög (+1,0 dag)",
+      ex: "Installatör med komplex projektering, certifierade specialsystem och många unika processer per uppdrag. Verksamhet med flera simultana affärsområden.",
+      q: 'Fråga: "Är era uppdrag komplexa och unika, med specialiserade processer som varierar kraftigt?"'
+    }]
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "low"
+  }, "L\xE5g \u2014 enkla, standardiserade processer"), /*#__PURE__*/React.createElement("option", {
+    value: "medium"
+  }, "Normal"), /*#__PURE__*/React.createElement("option", {
+    value: "high"
+  }, "H\xF6g (+1,0 dag) \u2014 komplex, unik scope")), /*#__PURE__*/React.createElement(SelHelp, {
+    label: "Regulatoriska krav (\xA78(i)d)",
+    tip: "\xA78(i)d: H\xF6ga krav fr\xE5n lagar och myndigheter \xF6kar revisionsdjupet.",
+    value: f.regulatory,
+    onChange: v => set("regulatory", v),
+    help: [{
+      lbl: "Inga / få",
+      ex: "Brandskyddskonsult utan myndighetsuppdrag. Verksamhet utan branschspecifik lagstiftning utöver allmänna krav.",
+      q: 'Fråga: "Är ni underställda någon specifik branschlagstiftning eller myndighetstillsyn utöver det normala?"'
+    }, {
+      lbl: "Normala",
+      ex: "Anläggningsfirma med SSF- eller SBF-certifikat och branschkrav. Besiktningsfirma med ackreditering. Installatör med krav på behörighet och dokumentation.",
+      q: 'Fråga: "Har ni branschcertifikat, ackreditering eller behörighetskrav som styr er verksamhet?"'
+    }, {
+      lbl: "Höga (+0,5 dag)",
+      ex: "Verksamhet under säkerhetsskyddslagen. NIS2-pliktig verksamhet. Sprinklerinstallatör med krav enligt MSB och Boverket i känsliga miljöer.",
+      q: 'Fråga: "Omfattas ni av säkerhetsskyddslagen, NIS2, eller har ni myndighetskrav från MSB eller liknande?"'
+    }]
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "low"
+  }, "Inga / f\xE5"), /*#__PURE__*/React.createElement("option", {
+    value: "medium"
+  }, "Normala \u2014 branschcertifikat, ackreditering"), /*#__PURE__*/React.createElement("option", {
+    value: "high"
+  }, "H\xF6ga (+0,5 dag) \u2014 s\xE4kerhetsskydd, NIS2, MSB")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, {
+    tip: "\xA73.7 OH&SMS: Kr\xE4ver audit av skift inom OCH utanf\xF6r kontorstid under cykel 1."
+  }, "Skiftdrift (\xA73.7)"), /*#__PURE__*/React.createElement(Sel, {
+    value: f.shifts,
+    onChange: v => set("shifts", v)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "no"
+  }, "Nej"), /*#__PURE__*/React.createElement("option", {
+    value: "yes"
+  }, "Ja \u2014 flerskift")), f.shifts === "yes" && f.s45001 && /*#__PURE__*/React.createElement(InfoNote, null, "OH&SMS \xA73.7: Kr\xE4ver audit inom OCH utanf\xF6r kontorstid \u2014 +1,0 dag extra.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, {
+    tip: "\xA711: CAB granskar organisationens styrning av outsourcade processer."
+  }, "Outsourcade processer (\xA711)"), /*#__PURE__*/React.createElement(Sel, {
+    value: f.outsourcing,
+    onChange: v => set("outsourcing", v)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "no"
+  }, "Nej"), /*#__PURE__*/React.createElement("option", {
+    value: "yes"
+  }, "Ja"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, {
+    tip: "\xA78(i)b: Tolk kr\xE4vs \u2014 revisorer kan ej arbeta sj\xE4lvst\xE4ndigt."
+  }, "Flerspr\xE5kig / tolk (\xA78(i)b)"), /*#__PURE__*/React.createElement(Sel, {
+    value: f.multilang,
+    onChange: v => set("multilang", v)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "no"
+  }, "Nej"), /*#__PURE__*/React.createElement("option", {
+    value: "yes"
+  }, "Ja"))), f.s45001 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, {
+    tip: "\xA78(iv): Olyckshistorik, farliga \xE4mnen, allm\xE4nhet p\xE5 plats."
+  }, "OH&S-riskprofil (\xA78(iv))"), /*#__PURE__*/React.createElement(Sel, {
+    value: f.ohsRisk,
+    onChange: v => set("ohsRisk", v)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "medium"
+  }, "Normal"), /*#__PURE__*/React.createElement("option", {
+    value: "high"
+  }, "H\xF6g \u2014 olyckshistorik / farliga \xE4mnen")))))))), /*#__PURE__*/React.createElement(SLbl, SP(7), "Rabatt & Priss\xE4ttning"), /*#__PURE__*/React.createElement("div", { className: fold[7] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 14,
       background: "#fff",
@@ -10130,7 +10132,8 @@ ${exportedHTML}
         }, "\u26a0 L\xe5gt TB \u2014 kontrollera antaganden.")
       );
     })()))
-  )),
+  ))
+)),
 
   /*#__PURE__*/React.createElement("div", {
     style: {
@@ -10228,7 +10231,7 @@ ${exportedHTML}
         marginTop: 3
       }
     }, fmt(liveInit), " dag \xB7 exkl. moms \xB7 Generera f\xF6r fullst\xE4ndig offert"));
-  })(), /*#__PURE__*/React.createElement(SLbl, SP(8), "Offertinst\xE4llningar"), /*#__PURE__*/React.createElement("div", {
+  })(), /*#__PURE__*/React.createElement("button", { onClick: () => setPanelOpen(o => !o), style: { width: "100%", padding: "5px 8px", marginBottom: 8, background: "transparent", border: "1px solid " + C.border, borderRadius: 4, cursor: "pointer", fontFamily: MONO, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: C.muted, display: "flex", justifyContent: "space-between", alignItems: "center" } }, /*#__PURE__*/React.createElement("span", null, "Offertinst\xE4llningar"), /*#__PURE__*/React.createElement("span", null, panelOpen ? "\u25BE D\xF6lj" : "\u25B8 Visa")), panelOpen && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SLbl, SP(8), "Offertinst\xE4llningar"), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 6
     }
@@ -10299,7 +10302,7 @@ ${exportedHTML}
       resize: "vertical",
       lineHeight: 1.5
     }
-  })), /*#__PURE__*/React.createElement("button", {
+  }))), /*#__PURE__*/React.createElement("button", {
     onClick: generate,
     className: "btn-generate",
     style: {
