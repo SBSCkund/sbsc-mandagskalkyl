@@ -1067,6 +1067,23 @@ function calcMD5(f) {
   };
 }
 
+// Site-anslutning (siteext): anslutningsdagar — presentationshjälpare, anropar calcMD5 utan att ändra den
+function siteextAnslDays(f) {
+  const ansl = (f.kBolag || []).filter(b => (parseInt(b.fas) || 1) > 1);
+  const namn = ansl.map(b => b.namn || "[namn saknas]").join(", ");
+  if (ansl.length === 0) return { days: 0, inom: true, namn: "", missingFte: false };
+  const inom = ansl.every(b => b.withinExisting);
+  if (inom) {
+    const tim = ansl.reduce((s, b) => s + (parseFloat(b.withinHours) || 0), 0);
+    return { days: tim > 0 ? r2(tim / 8) : 0, inom: true, namn: namn, missingFte: false };
+  }
+  const fte = ansl.reduce((s, b) => s + (parseFloat(b.fte) || 0), 0);
+  if (fte <= 0) return { days: null, inom: false, namn: namn, missingFte: true };
+  const sc = calcMD5({ ...f, certType: "new", sites: String(Math.max(ansl.length, 1)), fte: String(fte) });
+  if (!sc || typeof sc.stage2 !== "number") return { days: null, inom: false, namn: namn, missingFte: false, noStd: true };
+  return { days: r2(Math.max(sc.stage2, 1)), inom: false, namn: namn, missingFte: false };
+}
+
 // ══════════════════════════════════════════
 // CALC — SS-EN ISO/IEC 27006-1:2024 — OMSKRIVEN
 // Normativ bas: §9.1.4.2 → Annex C
@@ -1249,6 +1266,14 @@ function cycleNodes(snap, prices, extC, md5n) {
       ["1", "Periodisk \u2014 samtliga", fmt(extC.surv) + " dgr", false],
       ["2", "Omcertifiering \u2014 samtliga", fmt(extC.recert) + " dgr", true]];
   }
+  if (snap.certType === "siteext") {
+    const a = siteextAnslDays(snap);
+    return [
+      ["0", "Anslutning: " + (a.namn || "site/bolag"), a.missingFte ? "FTE saknas!" : (a.days > 0 ? fmt(a.days) + " dgr" : "inom befintlig revision") + (a.inom ? "" : " (Steg 2, utan Steg 1)"), true],
+      ["1", "Periodisk — utökad org", fmt(prices.surv) + " dgr", false],
+      ["2", "Periodisk — utökad org", fmt(prices.surv) + " dgr", false],
+      ["3", "Omcertifiering — utökad org", fmt(prices.recert) + " dgr", true]];
+  }
   return [
     ["0", "Initial certifiering", fmt(prices.totalInit) + " dgr", true],
     ["1", "Periodisk revision", fmt(prices.surv) + " dgr", false],
@@ -1257,18 +1282,19 @@ function cycleNodes(snap, prices, extC, md5n) {
 }
 function buildMotiv(f, md5, iso27001, integration, extCombined) {
   const parts = [];
+  if (!md5 && !iso27001) { return "Ingen standard vald \u2014 v\xE4lj minst en ISO-standard f\xF6r att generera underlaget."; }
   const allStds = [...(md5?.stds || []), f.s27001 ? "ISO 27001" : null].filter(Boolean);
   // ── Teknisk ingress för handläggaren ──────────────────────────────────
   const _cName = f.cName || "Kunden";
   const _stds = allStds.join(" + ");
-  const _certLabel = f.certType === "surv" ? "Periodisk revision" : f.certType === "recert" ? "Omcertifiering" : f.certType === "transfer" ? "Transfer" : "Initial certifiering";
+  const _certLabel = f.certType === "surv" ? "Periodisk revision" : f.certType === "recert" ? "Omcertifiering" : f.certType === "transfer" ? "Transfer" : f.certType === "siteext" ? "Anslutning av site/bolag till befintligt certifikat" : "Initial certifiering";
   const _addr = [f.cStreet, [f.cZip, f.cCity].filter(Boolean).join(" ")].filter(Boolean).join(", ");
   const _org = f.cOrg ? ` (org.nr ${f.cOrg})` : "";
   parts.push(`TEKNISK BEDÖMNING — ${_cName}${_org} | ${_stds} | ${_certLabel}\n` +
     `Adress: ${_addr || "—"} | Handläggare: ${f.createdBy || "—"} | Datum: ${new Date().toLocaleDateString("sv-SE")}\n` +
     `Obs: Denna bedömning är SBSC:s interna underlag per IAF MD 5:2023 §4.3. Delas ej externt i detta format.`);
   // Certifieringstyp — formulering per IAF MD 2:2023
-  const certTypeLabel = f.certType === "transfer" ? `transfer från ${f.transferOrg || (f.ex27001cb && f.ex27001cb.trim()) || "annat certifieringsorgan"} per IAF MD 2:2023` : f.certType === "extension" ? "utökning av befintligt certifieringsscope" : f.ex27001 || Object.keys(md5?.existing || {}).length > 0 ? "utökning av befintlig certifiering" : "initial certifiering";
+  const certTypeLabel = f.certType === "transfer" ? `transfer från ${f.transferOrg || (f.ex27001cb && f.ex27001cb.trim()) || "annat certifieringsorgan"} per IAF MD 2:2023` : f.certType === "extension" ? "utökning av befintligt certifieringsscope" : f.certType === "siteext" ? "anslutning av ny site/bolag till befintligt certifikat per IAF MD 1:2023 §6.2.3" : f.ex27001 || Object.keys(md5?.existing || {}).length > 0 ? "utökning av befintlig certifiering" : "initial certifiering";
   parts.push(`SBSC har beräknat revisionstiden för ${f.cName || "kunden"} avseende ${certTypeLabel} mot ${allStds.join(", ")} i enlighet med tillämpliga regelverkskrav.` + (f.certType === "transfer" ? ` Certifieringscykeln fortsätter utan avbrott från utfärdande organ per IAF MD 2:2023 §2.3.` : ""));
   if (md5) {
     const fc = md5.fteCalc;
@@ -1324,7 +1350,7 @@ function buildMotiv(f, md5, iso27001, integration, extCombined) {
     if (f.qmsComment && f.s9001) parts.push(`ISO 9001 riskkategori — kommentar: ${f.qmsComment}`);
     if (f.emsComment && f.s14001) parts.push(`ISO 14001 miljökomplexitet — kommentar: ${f.emsComment}`);
     if (f.ohsComment && f.s45001) parts.push(`ISO 45001 OH&S-riskkategori — kommentar: ${f.ohsComment}`);
-    parts.push(`Steg 1 (${fmt(md5.stage1)} dag): dokumentationsgranskning och beredskapsanalys. Steg 2 (${fmt(md5.stage2)} dag): fullständig revision på plats.`);
+    if (f.certType !== "siteext") parts.push(`Steg 1 (${fmt(md5.stage1)} dag): dokumentationsgranskning och beredskapsanalys. Steg 2 (${fmt(md5.stage2)} dag): fullständig revision på plats.`);
     if (md5.onsite80) {
       parts.push(`80% planerad tid på plats (IAF MD 5:2023 §2.1.2): Den fullt beräknade audittiden är ${fmt(md5.totalInitFull)} dagar. Av dessa planeras ${fmt(md5.totalInit)} dagar som tid på plats (80%). Resterande ${fmt(md5.onsiteOffDays)} dagar (för-/efterarbete) ska schemaläggas i revisorns kalender och kunna styrkas vid tillsyn. De redovisade revisionsdagarna och priset baseras på det reducerade talet ${fmt(md5.totalInit)} dagar.`);
     }
@@ -1345,7 +1371,36 @@ function buildMotiv(f, md5, iso27001, integration, extCombined) {
     }
 
   }
-  if (f.koncernGuideOn) {
+if (f.certType === "siteext") {
+      const anslBolag = (f.kBolag || []).filter(b => (parseInt(b.fas) || 1) > 1);
+      const cykelText = f.seCyklePos === "recert" ? "omcertifieringsåret" : f.seCyklePos === "surv2" ? "periodisk revision år 2" : "periodisk revision år 1";
+      let s = "ANSLUTNING AV SITE/BOLAG TILL BEFINTLIGT CERTIFIKAT (IAF MD 1:2023 §6.2.3)\n";
+      s += "Befintligt certifikat: " + (f.seMainStd || "[standard]") + (f.seMainCb ? ", utfärdat av " + f.seMainCb : "") + (f.seMainSince ? ", certifierat sedan " + f.seMainSince : "") + ". Certifikatet löper i ordinarie cykel (för närvarande " + cykelText + "). ";
+      s += "Ledningssystemet är redan certifierat via centralfunktionen — ingen ny initial certifiering genomförs och Steg 1 (dokumentationsgranskning av ledningssystemet) utgår. ";
+      if (anslBolag.length > 0) {
+        const inom = anslBolag.every(b => b.withinExisting);
+        const namn = anslBolag.map(b => (b.namn || "[namn]") + (b.orgnr ? " (" + b.orgnr + ")" : "") + " [FTE " + (b.fte || "?") + ", " + ((b.anslType || "site") === "bolag" ? "nytt bolag/eget org.nr" : "ny plats/samma org.nr") + "]").join("; ");
+        s += "Anslutande enhet(er): " + namn + ". ";
+        const nyaBolag = anslBolag.filter(b => (b.anslType || "site") === "bolag");
+        if (nyaBolag.length > 0) {
+          const bekr = nyaBolag.filter(b => b.q5confirm);
+          s += "Anslutning av ny(a) juridisk(a) person(er) (" + nyaBolag.map(b => b.namn || "[namn]").join(", ") + "): certifikatet omfattar d\xE4rmed flera juridiska personer. \xA75-kvalificering av den anslutande parten (\xA75.1\u20135.3: ett ledningssystem, central funktion med mandat \xF6ver enheten) " + (bekr.length === nyaBolag.length ? "\xE4r bekr\xE4ftad av revisionsledaren." : "\u00c5TERST\xC5R att bekr\xE4fta f\xF6r: " + nyaBolag.filter(b => !b.q5confirm).map(b => b.namn || "[namn]").join(", ") + ".") + " ";
+        } else {
+          s += "Samtliga anslutande enheter \xE4r nya platser under befintlig juridisk person (ren multi-site, \xA76) \u2014 ingen ny \xA75-pr\xF6vning kr\xE4vs. ";
+        }
+        if (inom) {
+          const tim = anslBolag.reduce((a, b) => a + (parseFloat(b.withinHours) || 0), 0);
+          s += "Bedömning: ansluts inom befintlig revision — tillkommande verksamhet (FTE och aspekter) bedöms rymmas inom ordinarie periodisk revision" + (tim > 0 ? " (avsatt tillkommande tid: " + tim + " tim)" : ", ingen separat tillkommande revisionstid") + ". ";
+        } else {
+          const anslFte = anslBolag.reduce((a, b) => a + (parseFloat(b.fte) || 0), 0);
+          const sc = calcMD5({ ...f, certType: "new", sites: String(Math.max(anslBolag.length, 1)), fte: anslFte > 0 ? String(anslFte) : f.fte });
+          s += "Anslutningsrevision (Steg 2 på plats för anslutande enhet, dimensionerad på dess FTE, utan Steg 1): " + fmt(r2(Math.max(sc.stage2, 1))) + " dagar. Anslutande site revideras innan den tas upp i certifikatet (§6.2.3). ";
+        }
+      }
+      s += "Efter anslutning kumuleras enheten med övriga; den omräknade periodiska revisionstiden (" + fmt(md5 ? md5.surv : 0) + " dagar/år) och omcertifieringstiden (" + fmt(md5 ? md5.recert : 0) + " dagar) för den utökade organisationen gäller från och med nästa ordinarie revision (§6.2.3).";
+      parts.push(s);
+    }
+      if (f.koncernGuideOn) {
       const kv = koncernVerdict(f);
       const svar = v => v === "ja" ? "Ja" : v === "delvis" ? "Delvis" : v === "nej" ? "Nej" : "Ej besvarad";
       parts.push("KONCERNCERTIFIKAT \u2014 KVALIFICERINGSPROTOKOLL ENLIGT IAF MD 1:2023 \xA75");
@@ -1382,8 +1437,16 @@ function buildMotiv(f, md5, iso27001, integration, extCombined) {
             if (prev === null) {
               parts.push("Fas " + fs + " \u2014 initial certifiering: " + names + " (" + cum.length + " siter, " + (cumFte > 0 ? cumFte + " FTE" : "FTE enligt huvudberäkning") + "). Initial audittid " + fmt(ck.totalInit) + " dagar. Löpande därefter: periodisk revision " + fmt(ck.surv) + " dagar/år.");
             } else {
-              const ansl = r2(Math.max(ck.totalInit - prev.totalInit, 1));
-              parts.push("Fas " + fs + " \u2014 anslutning: " + names + ". Anslutningsrevision " + fmt(ansl) + " dagar \u2014 anslutande site revideras före upptagande i certifikatet (\xA76.2.3; vid sampling avgör certifieringsorganet aktiviteterna per \xA76.1.4.1 \u2014 SBSC:s praxis är att alltid revidera anslutande site; omfattning = tillkommande beräknad audittid för den utökade organisationen, minst 1 dag). Löpande efter fas " + fs + ": periodisk revision " + fmt(ck.surv) + " dagar/år, omcertifiering " + fmt(ck.recert) + " dagar.");
+              const fasBolag = bol.filter(b => (parseInt(b.fas) || 1) === fs);
+              const allWithin = fasBolag.length > 0 && fasBolag.every(b => b.withinExisting);
+              if (allWithin) {
+                const timmar = fasBolag.reduce((s, b) => s + (parseFloat(b.withinHours) || 0), 0);
+                const tidText = timmar > 0 ? fmt(r2(timmar / 8)) + " dagar (" + timmar + " tim)" : "ingen separat tillkommande tid";
+                parts.push("Fas " + fs + " \u2014 anslutning inom befintlig revision: " + names + ". Tillkommande revisionstid: " + tidText + ". Bedömning enligt IAF MD 1:2023 \xA76.2.3: anslutande site(r) omfattas av certifikatets etablerade ledningssystem och tas upp vid nästa ordinarie revision utan separat initial certifiering. Steg 1 utgår \u2014 ledningssystemet är redan certifierat via centralfunktionen. Motivering: tillkommande verksamhet (FTE och aspekter) bedöms rymmas inom ordinarie periodisk revision. Löpande revisionstid: periodisk " + fmt(ck.surv) + " dagar/år, omcertifiering " + fmt(ck.recert) + " dagar (beräknat på hela den utökade organisationen).");
+              } else {
+                const ansl = r2(Math.max(ck.totalInit - prev.totalInit, 1));
+                parts.push("Fas " + fs + " \u2014 anslutning: " + names + ". Anslutningsrevision " + fmt(ansl) + " dagar \u2014 anslutande site revideras före upptagande i certifikatet (\xA76.2.3; vid sampling avgör certifieringsorganet aktiviteterna per \xA76.1.4.1 \u2014 SBSC:s praxis är att alltid revidera anslutande site; omfattning = tillkommande beräknad audittid för den utökade organisationen, minst 1 dag). Steg 1 utgår \u2014 ledningssystemet är redan certifierat. Löpande efter fas " + fs + ": periodisk revision " + fmt(ck.surv) + " dagar/år, omcertifiering " + fmt(ck.recert) + " dagar.");
+              }
             }
             prev = ck;
           });
@@ -1553,8 +1616,16 @@ function buildCustomerMotiv(f, md5, iso27001, integration, extCombined) {
           if (prevK === null) {
             factLines.push("\u2022 Fas " + fs + ": " + names + " certifieras \u2014 initial revision " + fmt(ck.totalInit) + " dagar" + kr(ck.totalInit) + ". Årlig periodisk revision därefter: " + fmt(ck.surv) + " dagar/år" + kr(ck.surv) + ".");
           } else {
-            const ansl = r2(Math.max(ck.totalInit - prevK.totalInit, 1));
-            factLines.push("\u2022 Fas " + fs + ": " + names + " ansluts \u2014 anslutningsrevision " + fmt(ansl) + " dagar" + kr(ansl) + ". Årlig periodisk revision efter anslutning: " + fmt(ck.surv) + " dagar/år" + kr(ck.surv) + "; omcertifiering " + fmt(ck.recert) + " dagar" + kr(ck.recert) + ".");
+            const fasBolagK = bolK.filter(b => (parseInt(b.fas) || 1) === fs);
+            const allWithinK = fasBolagK.length > 0 && fasBolagK.every(b => b.withinExisting);
+            if (allWithinK) {
+              const timmarK = fasBolagK.reduce((s, b) => s + (parseFloat(b.withinHours) || 0), 0);
+              const tidTextK = timmarK > 0 ? fmt(r2(timmarK / 8)) + " dagar" : "ingen separat tillkommande revisionstid";
+              factLines.push("\u2022 Fas " + fs + ": " + names + " ansluts inom befintlig revision \u2014 " + tidTextK + kr(timmarK > 0 ? r2(timmarK / 8) : 0) + ". Siten omfattas av det redan certifierade ledningssystemet och tas upp vid nästa ordinarie revision (IAF MD 1:2023 \xA76.2.3) \u2014 ingen ny initial certifiering. Årlig periodisk revision för hela organisationen: " + fmt(ck.surv) + " dagar/år" + kr(ck.surv) + ".");
+            } else {
+              const ansl = r2(Math.max(ck.totalInit - prevK.totalInit, 1));
+              factLines.push("\u2022 Fas " + fs + ": " + names + " ansluts \u2014 anslutningsrevision " + fmt(ansl) + " dagar" + kr(ansl) + ". Årlig periodisk revision efter anslutning: " + fmt(ck.surv) + " dagar/år" + kr(ck.surv) + "; omcertifiering " + fmt(ck.recert) + " dagar" + kr(ck.recert) + ".");
+            }
           }
           prevK = ck;
         });
@@ -4046,6 +4117,12 @@ function App() {
     // procentrabatt, 0 = ingen rabatt
     stage1Pct: "25",
     // Steg 1-andel: 25% eller 33%
+    // Site-anslutning (siteext) — moderbolagets/certifikatets status
+    seMainStd: "",
+    seMainCb: "",
+    seMainSince: "",
+    seCyklePos: "surv1",
+    // var i cykeln: surv1 | surv2 | recert
     onsite80: false,
     // 80% planerad tid på plats (§2.1.2) — 20% schemaläggs som för-/efterarbete
     customerType: "",
@@ -4134,6 +4211,47 @@ function App() {
     const hasMD5 = f.s9001 || f.s14001 || f.s45001;
     const has27001 = f.s27001;
     // ── Utökningsvalidering (före generell standardkontroll) ─────────────
+    if (f.certType === "siteext") {
+      const bolS = f.kBolag || [];
+      const ansl = bolS.filter(b => (parseInt(b.fas) || 1) > 1);
+      const central = bolS.find(b => b.roll === "central");
+      if (!f.seMainStd || !f.seMainStd.trim()) {
+        alert("Site-anslutning: Ange det befintliga certifikatets standard(er) under 'Befintligt certifikat — centralfunktionens status'.");
+        return;
+      }
+      if (!central) {
+        alert("Site-anslutning: Markera vilket bolag som är centralfunktionen (bolaget med det befintliga certifikatet) i registret.");
+        return;
+      }
+      if ((parseInt(central.fas) || 1) !== 1) {
+        alert("Site-anslutning: Centralfunktionen (" + (central.namn || "bolaget med befintligt cert") + ") ska vara Fas 1 — den är redan certifierad. Anslutande enheter ska vara Fas 2.\n\nJust nu är centralfunktionen Fas " + (parseInt(central.fas) || 1) + ", vilket gör att verktyget behandlar FEL bolag som anslutande och räknar fel anslutningstid.");
+        return;
+      }
+      if (ansl.length === 0) {
+        alert("Site-anslutning: Lägg till minst en anslutande site/bolag i registret och sätt den som Fas 2 (Fas 1 = centralfunktionen med befintligt cert).");
+        return;
+      }
+      const anslNoFte = ansl.filter(b => !(parseFloat(b.fte) > 0));
+      if (anslNoFte.length > 0) {
+        alert("Site-anslutning: Ange FTE för anslutande enhet(er): " + anslNoFte.map(b => b.namn || "[namn saknas]").join(", ") + ".\n\nUtan FTE kan anslutningsrevisionen inte beräknas korrekt.");
+        return;
+      }
+      const nyaBolagAnsl = ansl.filter(b => (b.anslType || "site") === "bolag");
+      const bolagUtanOrgnr = nyaBolagAnsl.filter(b => !(b.orgnr && b.orgnr.trim()));
+      if (bolagUtanOrgnr.length > 0) {
+        alert("Site-anslutning: Ange org.nr för anslutande NYA bolag (eget org.nr): " + bolagUtanOrgnr.map(b => b.namn || "[namn saknas]").join(", ") + ".");
+        return;
+      }
+      const bolagUtanQ5 = nyaBolagAnsl.filter(b => !b.q5confirm);
+      if (bolagUtanQ5.length > 0) {
+        if (!confirm("§5-kvalificering ej bekräftad för anslutande nytt bolag: " + bolagUtanQ5.map(b => b.namn || "[namn]").join(", ") + ".\n\nEtt nytt bolag (eget org.nr) gör certifikatet till ett fler-parts-certifikat — §5.1–5.3 ska bekräftas (ett ledningssystem, central funktion med mandat över den nya enheten).\n\nGenerera ändå? (Underlaget kommer notera att bekräftelse återstår.)")) return;
+      }
+      const fas1Fte = bolS.filter(b => (parseInt(b.fas) || 1) === 1).reduce((s, b) => s + (parseFloat(b.fte) || 0), 0);
+      const anslFte = ansl.reduce((s, b) => s + (parseFloat(b.fte) || 0), 0);
+      if (fas1Fte > 0 && anslFte > fas1Fte) {
+        if (!confirm("Kontroll: Anslutande enhet(er) (" + anslFte + " FTE) är större än det befintliga certifikatets omfattning (" + fas1Fte + " FTE).\n\nDet är ovanligt — kontrollera att roller (centralfunktion/site) och faser (1/2) är rätt satta i registret. Anslutande enhet: " + ansl.map(b => b.namn || "[namn]").join(", ") + ".\n\nÄr detta korrekt?")) return;
+      }
+    }
     if (f.certType === "extension") {
       const dbl = [["s9001", "extHas9001", "ISO 9001"], ["s14001", "extHas14001", "ISO 14001"], ["s45001", "extHas45001", "ISO 45001"], ["s27001", "extHas27001", "ISO 27001"]]
         .filter(([s, e]) => f[s] && f[e]).map(x => x[2]);
@@ -4190,6 +4308,7 @@ function App() {
       }
     }
     // Mjuk kontroll: koncernbedömning aktiverad men ofullständig (IAF MD 1)
+
     if (f.koncernGuideOn) {
       const kv = koncernVerdict(f);
       const bol = f.kBolag || [];
@@ -4406,7 +4525,7 @@ function App() {
     const prices = getPrices(result, snap.rabatt, snap);
     const meta = `Offert-ID: ${snap.offertId}<br>Datum: ${ds}<br>Giltig till: ${new Date(snap.validTo).toLocaleDateString("sv-SE")}`;
     const allStds = [...(md5?.stds || []), snap.s27001 ? "ISO 27001" : null].filter(Boolean);
-    const certType = snap.s27001 && snap.ex27001 || Object.keys(md5?.existing || {}).length > 0 ? "Utökning / tilläggscertifiering" : "Initial certifiering";
+    const certType = snap.certType === "siteext" ? "Anslutning av site/bolag till befintligt certifikat" : snap.s27001 && snap.ex27001 || Object.keys(md5?.existing || {}).length > 0 ? "Utökning / tilläggscertifiering" : "Initial certifiering";
     const fteDesc = (() => {
       const c = md5?.fteCalc;
       const sim = md5?.similarFteInfo;
@@ -4537,7 +4656,7 @@ function App() {
           return parts.join(", ") + (snap.tempSites === "yes" ? " inkl. tillfälliga" : "");
         }
         return snap.sites + (snap.tempSites === "yes" ? " inkl. tillfälliga" : "") + ` st`;
-      })()], ["Typ av ans\xF6kan", snap.certType === "transfer" ? `Transfer från ${snap.transferOrg || "annat organ"} (IAF MD 2:2023)` : snap.certType === "extension" ? "Utökning av befintligt scope" : "Initial certifiering"], snap.certType === "transfer" && snap.transferCertNr && ["Certifikat-ID", snap.transferCertNr], snap.certType === "transfer" && snap.transferExpiry && ["Nuv. certifikat giltigt t.o.m.", new Date(snap.transferExpiry).toLocaleDateString("sv-SE")], snap.cContact && ["Kontakt", snap.cContact]]
+      })()], ["Typ av ans\xF6kan", snap.certType === "transfer" ? `Transfer från ${snap.transferOrg || "annat organ"} (IAF MD 2:2023)` : snap.certType === "extension" ? "Utökning av befintligt scope" : snap.certType === "siteext" ? "Anslutning av site/bolag till befintligt certifikat (IAF MD 1 §6.2.3)" : "Initial certifiering"], snap.certType === "transfer" && snap.transferCertNr && ["Certifikat-ID", snap.transferCertNr], snap.certType === "transfer" && snap.transferExpiry && ["Nuv. certifikat giltigt t.o.m.", new Date(snap.transferExpiry).toLocaleDateString("sv-SE")], snap.cContact && ["Kontakt", snap.cContact]]
     }), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
@@ -4611,7 +4730,22 @@ function App() {
         label: "Framtida omcert — samtliga",
         value: fmt(result.extCombined.recert),
         unit: "auditdagar"
-      }] : [{
+      }] : snap.certType === "siteext" ? (() => {
+        const a = siteextAnslDays(snap);
+        return [{
+          label: "Anslutning: " + (a.namn || "site/bolag"),
+          value: a.missingFte ? "FTE?" : (a.days > 0 ? fmt(a.days) : "0"),
+          unit: a.missingFte ? "saknas i registret" : a.inom ? "dagar (inom befintlig)" : "auditdagar (Steg 2)"
+        }, {
+          label: "Periodisk — utökad org",
+          value: fmt(prices.surv),
+          unit: "dag/år (från nästa revision)"
+        }, {
+          label: "Omcert — utökad org",
+          value: fmt(prices.recert),
+          unit: "auditdagar"
+        }];
+      })() : [{
         label: "Initial certifiering",
         value: fmt(prices.totalInit),
         unit: "auditdagar"
@@ -4659,7 +4793,7 @@ function App() {
     }, "Transfer \xB7 IAF MD 2:2023")), /*#__PURE__*/React.createElement(Tbl, {
       heads: ["Post", "Underlag & regelverksstöd", "Dagar"],
       rows: md5Rows
-    }), /*#__PURE__*/React.createElement(Sec, null, "Steg 1 / Steg 2 \u2014 ", md5.stds.join(", ")), /*#__PURE__*/React.createElement(Tbl, {
+    }), /*#__PURE__*/f.certType !== "siteext" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Sec, null, "Steg 1 / Steg 2 \u2014 ", md5.stds.join(", ")), /*#__PURE__*/React.createElement(Tbl, {
       heads: ["Fas", "Innehåll", "Dagar"],
       rows: [{
         cells: ["Steg 1", "Dokumentationsgranskning, beredskapsanalys (≤25% av total).", fmt(md5.stage1)],
@@ -4674,7 +4808,7 @@ function App() {
         _red: false,
         _tot: true
       }]
-    })), iso27001 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Sec, {
+    }))), iso27001 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Sec, {
       purple: true
     }, "Mandagsber\xE4kning \u2014 ISO 27001", /*#__PURE__*/React.createElement(RegTag, {
       purple: true
@@ -5025,7 +5159,12 @@ function App() {
         style: {
           textAlign: "right"
         }
-      }, "Dagar"), /*#__PURE__*/React.createElement("div", null, "Regelverksst\xF6d")), [["År 0", "Initial certifiering — Steg 1 (dokumentgranskning) + Steg 2 (revision på plats)", fmt(prices.totalInit), iso27001 ? "IAF MD 5:2023 §3 / 27006-1:2024 C.2" : "IAF MD 5:2023 §3", true], ["År 1", "Periodisk revision — ca 1/3 av initial audittid", fmt(prices.surv), survRef, false], ["År 2", "Periodisk revision — ca 1/3 av initial audittid", fmt(prices.surv), survRef, false], ["År 3", "Omcertifiering — förnyad fullständig revision, minst 2/3 av initial audittid", fmt(prices.recert), recertRef, false]].map(([yr, desc, days, ref, hl], i) => /*#__PURE__*/React.createElement("div", {
+      }, "Dagar"), /*#__PURE__*/React.createElement("div", null, "Regelverksst\xF6d")), (f.certType === "siteext" ? (() => {
+        const a = siteextAnslDays(f);
+        const anslDesc = (a.namn ? a.namn + " — " : "") + (a.inom ? "ansluts inom befintlig revision (ingen ny initial certifiering, Steg 1 utgår)" : "anslutningsrevision: Steg 2 på plats för anslutande enhet, utan Steg 1 (ledningssystemet redan certifierat)");
+        const anslDays = a.missingFte ? "FTE saknas!" : fmt(a.days);
+        return [["Anslutning", anslDesc, anslDays, "IAF MD 1:2023 §6.2.3", true], ["Löpande", "Periodisk revision — utökad organisation (gäller från nästa revision)", fmt(prices.surv), survRef, false], ["Omcert", "Omcertifiering — utökad organisation", fmt(prices.recert), recertRef, false]];
+      })() : [["År 0", "Initial certifiering — Steg 1 (dokumentgranskning) + Steg 2 (revision på plats)", fmt(prices.totalInit), iso27001 ? "IAF MD 5:2023 §3 / 27006-1:2024 C.2" : "IAF MD 5:2023 §3", true], ["År 1", "Periodisk revision — ca 1/3 av initial audittid", fmt(prices.surv), survRef, false], ["År 2", "Periodisk revision — ca 1/3 av initial audittid", fmt(prices.surv), survRef, false], ["År 3", "Omcertifiering — förnyad fullständig revision, minst 2/3 av initial audittid", fmt(prices.recert), recertRef, false]]).map(([yr, desc, days, ref, hl], i) => /*#__PURE__*/React.createElement("div", {
         key: i,
         style: {
           display: "grid",
@@ -5877,6 +6016,15 @@ function App() {
       }
 
       const rows=[];
+      if (f.certType === "siteext") {
+        const aH = siteextAnslDays(f);
+        const anslD = aH.missingFte ? 0 : aH.days;
+        const anslLbl = (aH.namn ? aH.namn + " \u2014 " : "") + (aH.inom ? "anslutning inom befintlig revision (Steg 1 utg\xE5r, \xA76.2.3)" : "anslutningsrevision: Steg 2 p\xE5 plats (Steg 1 utg\xE5r, \xA76.2.3)") + (aH.missingFte ? " [FTE SAKNAS \u2014 komplettera registret]" : "");
+        const dRate = prices.surv > 0 ? prices.pSurv/prices.surv : 0;
+        rows.push(mkRow("Ansl.",anslLbl,aH.missingFte ? "\u2014" : fmt(anslD),sek(Math.round(anslD*dRate)),sek(Math.round(anslD*dRate)),0,true,false));
+        rows.push(mkRow("L\xF6p.","Periodisk revision \u2014 ut\xF6kad organisation (g\xE4ller fr\xE5n n\xE4sta revision)",fmt(prices.surv),sek(prices.pSurv),sek(prices.pSurv1After),prices.rS1||0,false,false));
+        rows.push(mkRow("Omcert","Omcertifiering \u2014 ut\xF6kad organisation",fmt(prices.recert),sek(prices.pRecert),sek(prices.pRecertAfter),prices.rR||0,false,false));
+      } else {
       if(hasRabatt&&prices.useStegRabatt){
         rows.push(mkRow("0","Initial certifiering \u2014 Steg 1 + Steg 2",fmt(prices.totalInit),sek(prices.pInit),sek(prices.pInitAfter),0,true,false));
         rows.push(mkRow("","Steg 1 \u2014 dokumentationsgranskning och beredskapsanalys","",sek(prices.pSteg1),sek(prices.pSteg1After),prices.rSt1,false,true));
@@ -5886,10 +6034,20 @@ function App() {
       }
       rows.push(mkRow("1","Periodisk revision (ca 1/3 av initial audittid)",fmt(prices.surv),sek(prices.pSurv),sek(prices.pSurv1After),prices.rS1||0,false,false));
       rows.push(mkRow("2","Periodisk revision (ca 1/3 av initial audittid)",fmt(prices.surv),sek(prices.pSurv),sek(prices.pSurv2After),prices.rS2||0,false,false));
+      }
       rows.push(mkRow("3","Omcertifiering \u2014 f\xF6rnyad fullst\xE4ndig revision (minst 2/3 av initial)",fmt(prices.recert),sek(prices.pRecert),sek(prices.pRecertAfter),prices.rR||0,false,false));
 
-      const pOrd = prices.pInit+prices.pSurv*2+prices.pRecert;
-      const totDays = prices.totalInit+prices.surv*2+prices.recert;
+      let pOrd, totDays;
+      if (f.certType === "siteext") {
+        const aS = siteextAnslDays(f);
+        const aD = aS.missingFte ? 0 : aS.days;
+        const dR = prices.surv > 0 ? prices.pSurv/prices.surv : 0;
+        pOrd = Math.round(aD*dR) + prices.pSurv*2 + prices.pRecert;
+        totDays = aD + prices.surv*2 + prices.recert;
+      } else {
+        pOrd = prices.pInit+prices.pSurv*2+prices.pRecert;
+        totDays = prices.totalInit+prices.surv*2+prices.recert;
+      }
 
       const totalBar = hasRabatt
         ? /*#__PURE__*/React.createElement("div",{style:{borderTop:"2px solid "+C.brand,background:C.ink,padding:"14px 16px"}},
@@ -6947,7 +7105,7 @@ ${exportedHTML}
       marginBottom: 24,
       flexWrap: "wrap"
     }
-  }, [["\u2605", "SBSC-kundtyp (snabbval)", "V\xE4lj en eller flera verksamheter i steg 2 s\xE5 fylls risk-/komplexitetsniv\xE5erna f\xF6r ISO 9001/14001/45001 i automatiskt enligt SBSC:s validerade mappning. Vid blandverksamhet (t.ex. brandlarm + gassl\xE4ck) s\xE4tts varje niv\xE5 efter den mest kr\xE4vande verksamheten, och styrande verksamhet dokumenteras i mandagsber\xE4kningen. Markera en verksamhet som \"mindre del\" om den utg\xF6r en liten del av helheten \u2014 d\xE5 v\xE4gleder verktyget kring dokumenterad niv\xE5s\xE4nkning enligt MD 5, med utkastknapp f\xF6r motiveringen. Niv\xE5erna kan alltid justeras manuellt. P\xE5verkar inte ISO 27001."], ["\u23F1", "80% planerad tid p\xE5 plats", "Valfri reduktion (\xA72.1.2): mandagstal och pris ber\xE4knas p\xE5 80% av full audittid. Villkor: resterande 20% (f\xF6r-/efterarbete) M\xC5STE schemal\xE4ggas i revisorns kalender och kunna styrkas. B\xE5de fullt och reducerat tal redovisas i mandagsber\xE4kningen."], ["\uD83D\uDCC5", "J\xE4mn f\xF6rdelning \xF6ver cykeln", "Valfritt: samma antal dagar alla tre \xE5r ist\xE4llet f\xF6r standardmodellens tyngdpunkt p\xE5 omcertifieringen. Anv\xE4nds n\xE4r kunden \xF6nskar j\xE4mn planering/budget. Omcertifieringen ska fortfarande vara en fullst\xE4ndig systemgenomg\xE5ng."], ["\u270E", "S\xE4rskilda villkor", "Efter generering finns ett fritextf\xE4lt under flikarna. Det du skriver d\xE4r visas i en egen ruta i dokumentet och f\xF6ljer med till PDF. P\xE5verkar aldrig ber\xE4kningen \u2014 endast till\xE4gg av villkor och \xF6verenskommelser."], ["\uD83C\uDFE2", "Koncerncertifikat (IAF MD 1)", "N\xE4r flera bolag ska in under ETT certifikat: guiden pr\xF6var kvalificeringen mot \xA75.1\u20135.6 (sex skall-krav), avg\xF6r samplingmetodik (\xA76.1 sampling eller \xA76.2 alla siter) och dokumenterar bolagen med orgnr, FTE och befintliga cert. Kvalificeringsprotokollet f\xF6ljer med i mandagsber\xE4kningen \u2014 \xE5tg\xE4rdslistan vid Nej/Delvis \xE4r underlag i kunddialogen. Med Fas-kolumnen i bolagsregistret byggs certifikatet stegvis: Fas 1 certifieras f\xF6rst, senare faser ansluts via anslutningsrevision (\xA76.2.3) \u2014 fasplan med kostnad per \xE5r genereras i b\xE5de mandagsber\xE4kning och offert."], ["\uD83D\uDCBE", "Spara & ladda kalkyl", "Knapparna under Generera: Spara laddar ner hela kalkylen som JSON-fil (alla v\xE4rden inkl. kundtyper, koncernregister och faser) \u2014 arkivera i Certcore eller kundmappen. Ladda \xE5terst\xE4ller en sparad kalkyl f\xF6r justering eller f\xF6rnyad offert; \xE4ldre sparfiler fungerar och nya f\xE4lt f\xE5r standardv\xE4rden. Spara efter att underlaget \xE4r genererat och kontrollerat."]].map(([n, t, d]) => /*#__PURE__*/React.createElement("div", {
+  }, [["\u2605", "SBSC-kundtyp (snabbval)", "V\xE4lj en eller flera verksamheter i steg 2 s\xE5 fylls risk-/komplexitetsniv\xE5erna f\xF6r ISO 9001/14001/45001 i automatiskt enligt SBSC:s validerade mappning. Vid blandverksamhet (t.ex. brandlarm + gassl\xE4ck) s\xE4tts varje niv\xE5 efter den mest kr\xE4vande verksamheten, och styrande verksamhet dokumenteras i mandagsber\xE4kningen. Markera en verksamhet som \"mindre del\" om den utg\xF6r en liten del av helheten \u2014 d\xE5 v\xE4gleder verktyget kring dokumenterad niv\xE5s\xE4nkning enligt MD 5, med utkastknapp f\xF6r motiveringen. Niv\xE5erna kan alltid justeras manuellt. P\xE5verkar inte ISO 27001."], ["\u23F1", "80% planerad tid p\xE5 plats", "Valfri reduktion (\xA72.1.2): mandagstal och pris ber\xE4knas p\xE5 80% av full audittid. Villkor: resterande 20% (f\xF6r-/efterarbete) M\xC5STE schemal\xE4ggas i revisorns kalender och kunna styrkas. B\xE5de fullt och reducerat tal redovisas i mandagsber\xE4kningen."], ["\uD83D\uDCC5", "J\xE4mn f\xF6rdelning \xF6ver cykeln", "Valfritt: samma antal dagar alla tre \xE5r ist\xE4llet f\xF6r standardmodellens tyngdpunkt p\xE5 omcertifieringen. Anv\xE4nds n\xE4r kunden \xF6nskar j\xE4mn planering/budget. Omcertifieringen ska fortfarande vara en fullst\xE4ndig systemgenomg\xE5ng."], ["\u270E", "S\xE4rskilda villkor", "Efter generering finns ett fritextf\xE4lt under flikarna. Det du skriver d\xE4r visas i en egen ruta i dokumentet och f\xF6ljer med till PDF. P\xE5verkar aldrig ber\xE4kningen \u2014 endast till\xE4gg av villkor och \xF6verenskommelser."], ["\uD83C\uDFE2", "Koncerncertifikat (IAF MD 1)", "N\xE4r flera bolag ska in under ETT certifikat: guiden pr\xF6var kvalificeringen mot \xA75.1\u20135.6 (sex skall-krav), avg\xF6r samplingmetodik (\xA76.1 sampling eller \xA76.2 alla siter) och dokumenterar bolagen med orgnr, FTE och befintliga cert. Kvalificeringsprotokollet f\xF6ljer med i mandagsber\xE4kningen \u2014 \xE5tg\xE4rdslistan vid Nej/Delvis \xE4r underlag i kunddialogen. Med Fas-kolumnen i bolagsregistret byggs certifikatet stegvis: Fas 1 certifieras f\xF6rst, senare faser ansluts via anslutningsrevision (\xA76.2.3) \u2014 fasplan med kostnad per \xE5r genereras i b\xE5de mandagsber\xE4kning och offert."], ["\uD83D\uDD17", "Ut\xF6ka certifikat med site/bolag", "V\xE4lj detta under Typ av ans\xF6kan n\xE4r en ny site eller ett nytt bolag ansluter till ett certifikat SBSC redan utf\xE4rdat \u2014 samma standard, samma ledningssystem. Ingen ny initial certifiering: Steg 1 utg\xE5r eftersom ledningssystemet redan \xE4r certifierat via centralfunktionen (IAF MD 1:2023 \xA76.2.3). Ange certifikatets status, l\xE4gg anslutande enhet som Fas 2 och v\xE4lj om den ryms inom befintlig revision (f\xF6rsumbar FTE) eller kr\xE4ver egen platsrevision (Steg 2 p\xE5 sitens FTE). Den omr\xE4knade l\xF6pande tiden g\xE4ller fr\xE5n n\xE4sta revision."], ["\uD83D\uDCBE", "Spara & ladda kalkyl", "Knapparna under Generera: Spara laddar ner hela kalkylen som JSON-fil (alla v\xE4rden inkl. kundtyper, koncernregister och faser) \u2014 arkivera i Certcore eller kundmappen. Ladda \xE5terst\xE4ller en sparad kalkyl f\xF6r justering eller f\xF6rnyad offert; \xE4ldre sparfiler fungerar och nya f\xE4lt f\xE5r standardv\xE4rden. Spara efter att underlaget \xE4r genererat och kontrollerat."]].map(([n, t, d]) => /*#__PURE__*/React.createElement("div", {
     key: t,
     style: {
       flex: "1 1 210px",
@@ -7677,7 +7835,7 @@ ${exportedHTML}
       flexDirection: "column",
       gap: 5
     }
-  }, [["new", "Ny certifiering", "Kunden har inte tidigare haft denna certifiering"], ["transfer", "Övertagande / Transfer — flytt från annat certifieringsorgan", "Befintligt giltigt certifikat överlåts till SBSC per IAF MD 2:2023"], ["extension", "Utökning av befintligt certifikat", "Kunden är redan certifierad av SBSC och lägger till ny/fler standarder i certifikatet"]].map(([val, lbl, desc]) => /*#__PURE__*/React.createElement("div", {
+  }, [["new", "Ny certifiering", "Kunden har inte tidigare haft denna certifiering"], ["transfer", "Övertagande / Transfer — flytt från annat certifieringsorgan", "Befintligt giltigt certifikat överlåts till SBSC per IAF MD 2:2023"], ["extension", "Utökning av befintligt certifikat", "Kunden är redan certifierad av SBSC och lägger till ny/fler standarder i certifikatet"], ["siteext", "Utöka certifikat med site/bolag (befintligt cert)", "Ny site eller bolag ansluts till ett certifikat SBSC redan utfärdat — samma standard, samma ledningssystem. Ingen ny initial certifiering (IAF MD 1:2023 §6.2.3)."]].map(([val, lbl, desc]) => /*#__PURE__*/React.createElement("div", {
     key: val,
     onClick: () => {
       // Rensa relaterade fält när certifieringstyp ändras
@@ -7724,20 +7882,40 @@ ${exportedHTML}
       }
     },
     style: {
-      padding: "8px 10px",
-      border: `1px solid ${f.certType === val ? C.brand : C.border}`,
+      display: "flex",
+      alignItems: "flex-start",
+      gap: 10,
+      padding: "10px 12px",
+      border: f.certType === val ? `2px solid ${C.brand}` : `1px solid ${C.border}`,
+      borderLeft: f.certType === val ? `5px solid ${C.brand}` : `5px solid ${C.border}`,
       background: f.certType === val ? C.goldLt : C.bg,
+      borderRadius: 6,
       cursor: "pointer",
-      transition: "all .1s"
+      transition: "all .12s",
+      boxShadow: f.certType === val ? "0 1px 4px rgba(255,163,0,0.25)" : "none"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
+      flexShrink: 0,
+      width: 26,
+      height: 26,
+      borderRadius: "50%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: 14,
+      background: f.certType === val ? C.brand : "#EDE8E0",
+      color: f.certType === val ? "#101820" : "#8A8178",
+      marginTop: 1
+    }
+  }, { "new": "\uD83C\uDD95", "transfer": "\u21C4", "extension": "\u2795", "siteext": "\uD83D\uDD17" }[val] || "\u25CB"), /*#__PURE__*/React.createElement("div", { style: { flex: 1 } }, /*#__PURE__*/React.createElement("div", {
+    style: {
       fontFamily: MONO,
-      fontSize: 11,
-      fontWeight: f.certType === val ? 600 : 400,
+      fontSize: 11.5,
+      fontWeight: f.certType === val ? 700 : 500,
       color: f.certType === val ? C.ink : C.ink2
     }
-  }, f.certType === val ? "▶ " : "", lbl), /*#__PURE__*/React.createElement("div", {
+  }, f.certType === val ? "\u25B6 " : "", lbl), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
       fontSize: 11,
@@ -7745,7 +7923,15 @@ ${exportedHTML}
       color: C.ink,
       marginTop: 2
     }
-  }, desc))))), f.certType === "transfer" && /*#__PURE__*/React.createElement("div", {
+  }, desc)))))), f.certType === "siteext" ? /*#__PURE__*/React.createElement("div", {
+    style: { marginBottom: 14, padding: "13px 15px", background: "#EAF3FA", border: "1.5px solid #3D7EAA", borderLeft: "5px solid #3D7EAA", borderRadius: 6 }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 12.5, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "#1A3D52", marginBottom: 4 }
+  }, "Befintligt certifikat \u2014 centralfunktionens status"), /*#__PURE__*/React.createElement("div", {
+    style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11, color: "#2B4A5C", marginBottom: 10, lineHeight: 1.55 }
+  }, "Ny site/bolag ansluts till ett certifikat SBSC redan utf\xE4rdat. Ledningssystemet \xE4r redan certifierat via centralfunktionen \u2014 ingen ny initial certifiering (Steg 1 utg\xE5r). Ange certifikatets status f\xF6r sp\xE5rbarhet h\xE4r. L\xE4gg sedan till bolagen i bolagsregistret direkt nedan \u2014 centralfunktionen (befintligt cert) f\xF6rst, d\xE4refter anslutande enhet(er) med FTE. Fas, platsantal och FTE-total s\xE4tts automatiskt."), /*#__PURE__*/React.createElement("div", {
+    style: { display: "flex", gap: 8, flexWrap: "wrap" }
+  }, /*#__PURE__*/React.createElement("input", { type: "text", value: f.seMainStd, placeholder: "Standard(er), t.ex. ISO 9001", onChange: e => set("seMainStd", e.target.value), style: { flex: "2 1 160px", padding: "6px 9px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", border: "1px solid #B8CDD9", borderRadius: 4 } }), /*#__PURE__*/React.createElement("input", { type: "text", value: f.seMainCb, placeholder: "Certifieringsorgan (SBSC)", onChange: e => set("seMainCb", e.target.value), style: { flex: "1 1 120px", padding: "6px 9px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", border: "1px solid #B8CDD9", borderRadius: 4 } }), /*#__PURE__*/React.createElement("input", { type: "text", value: f.seMainSince, placeholder: "Certifierat sedan (\xE5r)", onChange: e => set("seMainSince", e.target.value), style: { flex: "1 1 110px", padding: "6px 9px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", border: "1px solid #B8CDD9", borderRadius: 4 } }), /*#__PURE__*/React.createElement("select", { value: f.seCyklePos, onChange: e => set("seCyklePos", e.target.value), style: { flex: "1 1 150px", padding: "6px 9px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", border: "1px solid #B8CDD9", borderRadius: 4 } }, /*#__PURE__*/React.createElement("option", { value: "surv1" }, "Periodisk revision \xE5r 1"), /*#__PURE__*/React.createElement("option", { value: "surv2" }, "Periodisk revision \xE5r 2"), /*#__PURE__*/React.createElement("option", { value: "recert" }, "Omcertifierings\xE5r")))) : null, f.certType === "transfer" && /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.goldLt,
       border: `1px solid ${C.goldBd}`,
@@ -8054,7 +8240,74 @@ ${exportedHTML}
       resize: "vertical",
       lineHeight: 1.7
     }
-  })))), /*#__PURE__*/React.createElement(SLbl, SP(2, { step: 2 }), "Verksamhetsbeskrivning & Risk"), /*#__PURE__*/React.createElement("div", { className: fold[2] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
+  })))), /*#__PURE__*/React.createElement(SLbl, SP(9), f.certType === "siteext" ? "\uD83D\uDD17 Bolagsregister \u2014 befintligt certifikat & anslutande enheter (\xA76.2.3)" : (f.koncernGuideOn ? "\uD83C\uDFE2 Multi-site / gemensamt certifikat \u2014 AKTIVERAT (IAF MD 1)" : "\uD83C\uDFE2 Multi-site / gemensamt certifikat \u2014 IAF MD 1 (valfritt, klicka f\xF6r att \xF6ppna)")), /*#__PURE__*/React.createElement("div", { className: f.certType === "siteext" ? "secb" : fold[9] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, f.certType !== "siteext" ? /*#__PURE__*/React.createElement("div", {
+    onClick: () => { const v = !f.koncernGuideOn; set("koncernGuideOn", v); if (v) setFold(p => ({ ...p, 9: false })); },
+    style: { display: "flex", alignItems: "flex-start", gap: 11, padding: "12px 14px", marginBottom: 4, border: f.koncernGuideOn ? "2px solid #FFA300" : "1px solid " + C.border, borderLeft: f.koncernGuideOn ? "5px solid #FFA300" : "5px solid " + C.border, background: f.koncernGuideOn ? C.goldLt : C.bg, borderRadius: 6, cursor: "pointer", transition: "all .12s", boxShadow: f.koncernGuideOn ? "0 1px 4px rgba(255,163,0,0.25)" : "none" }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { flexShrink: 0, width: 30, height: 30, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, background: f.koncernGuideOn ? "#FFA300" : "#EDE8E0", color: f.koncernGuideOn ? "#101820" : "#8A8178", marginTop: 1 }
+  }, "\uD83C\uDFE2"), /*#__PURE__*/React.createElement("div", { style: { flex: 1 } }, /*#__PURE__*/React.createElement("div", {
+    style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }
+  }, /*#__PURE__*/React.createElement("input", { type: "checkbox", checked: f.koncernGuideOn, onChange: () => {}, style: { width: 15, height: 15, accentColor: "#FFA300", flexShrink: 0, cursor: "pointer", pointerEvents: "none" } }), /*#__PURE__*/React.createElement("span", {
+    style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 12.5, fontWeight: 800, letterSpacing: "0.03em", textTransform: "uppercase", color: f.koncernGuideOn ? "#8A5A00" : "#101820" }
+  }, f.koncernGuideOn ? "\u2713 Koncernbed\xF6mning aktiverad" : "Aktivera koncernbed\xF6mning")), /*#__PURE__*/React.createElement("div", {
+    style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11, color: "#5A5048", lineHeight: 1.5 }
+  }, "Kryssa i n\xE4r flera bolag/siter ska omfattas av ETT gemensamt certifikat. Guiden pr\xF6var kvalificeringen mot skall-kraven i IAF MD 1:2023 \xA75, avg\xF6r samplingmetodik (\xA76.1 vs \xA76.2) och dokumenterar vilka bolag som omfattas. Bed\xF6mningsprinciperna \xE4r SBSC-praxis som fastst\xE4lls vid intern granskning."))) : /*#__PURE__*/React.createElement("div", {
+    style: { display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 13px", marginBottom: 4, background: "#F2F6F8", border: "1px solid #C9D6DE", borderLeft: "5px solid #3D7EAA", borderRadius: 6 }
+  }, /*#__PURE__*/React.createElement("div", { style: { flexShrink: 0, fontSize: 15, marginTop: 1 } }, "\u2139\uFE0F"), /*#__PURE__*/React.createElement("div", {
+    style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11, color: "#3D5A6C", lineHeight: 1.5 }
+  }, /*#__PURE__*/React.createElement("b", { style: { color: "#1A3D52" } }, "Anslutning till befintligt certifikat (\xA76.2.3). "), "Ange centralfunktion och anslutande enhet(er) i registret nedan. F\xF6r varje anslutande enhet v\xE4ljer du ", /*#__PURE__*/React.createElement("b", null, "Ny plats (samma org.nr)"), " \u2014 ren multi-site, ingen ny \xA75-pr\xF6vning \u2014 eller ", /*#__PURE__*/React.createElement("b", null, "Nytt bolag (eget org.nr)"), ", d\xE5 en \xA75-bekr\xE4ftelse kr\xE4vs f\xF6r att den nya juridiska personen omfattas av centralfunktionens ledningssystem.")),  (f.koncernGuideOn || f.certType === "siteext") && /*#__PURE__*/React.createElement("div", { style: { marginTop: 12 } },
+  /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, color: "#101820", marginBottom: 8 } }, "A. Kvalificering (\xA75.1\u20135.6 \u2014 samtliga \xE4r skall-krav)"), /*#__PURE__*/React.createElement("div", {
+    style: { display: "flex", gap: 9, fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11, color: "#2B4A5C", background: "#EAF3FA", border: "1px solid #B8CDD9", borderLeft: "5px solid #3D7EAA", borderRadius: 6, padding: "9px 12px", marginBottom: 12, lineHeight: 1.55 }
+  }, /*#__PURE__*/React.createElement("div", { style: { flexShrink: 0, fontSize: 15, marginTop: 1 } }, "\uD83D\uDEA6"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", { style: { fontWeight: 800, letterSpacing: "0.03em", textTransform: "uppercase", fontSize: 11, color: "#1A3D52", marginBottom: 2 } }, "Beh\xF6righetsfr\xE5gan \u2014 grinden till ETT gemensamt certifikat"), "Avg\xF6r om bolagen \xF6verhuvudtaget f\xE5r omfattas av ETT gemensamt certifikat f\xF6r en multi-site-organisation (IAF MD 1:2023). Alla sex \xE4r ", /*#__PURE__*/React.createElement("b", null, "skall-krav"), " \u2014 faller ett enda \xE4r ett gemensamt certifikat ej till\xE5tet (d\xE5 g\xE4ller separata certifikat). Detta beslut kommer ", /*#__PURE__*/React.createElement("b", null, "F\xD6RE"), " samplingfr\xE5gan nedan.")),
+  KONCERN_Q.map(q => /*#__PURE__*/React.createElement("div", {
+    key: q.id,
+    style: { display: "flex", gap: 10, alignItems: "flex-start", padding: "7px 10px", marginBottom: 4, background: (f[q.id] === "nej" || f[q.id] === "delvis") ? "#FFF4E0" : f[q.id] === "ja" ? "#EAF6EC" : "#FAFAF7", border: "1px solid " + (f[q.id] === "nej" ? "#CC7A00" : "#E0E0E0"), borderRadius: 6 }
+  }, /*#__PURE__*/React.createElement("select", {
+    value: f[q.id] || "",
+    onChange: e => set(q.id, e.target.value),
+    style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11.5, padding: "4px 6px", border: "1px solid #C5C5C5", borderRadius: 4, flexShrink: 0, width: 84 }
+  }, /*#__PURE__*/React.createElement("option", { value: "" }, "V\xE4lj\u2026"), /*#__PURE__*/React.createElement("option", { value: "ja" }, "Ja"), /*#__PURE__*/React.createElement("option", { value: "delvis" }, "Delvis"), /*#__PURE__*/React.createElement("option", { value: "nej" }, "Nej")), /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11.5, lineHeight: 1.5, color: "#101820" } }, /*#__PURE__*/React.createElement("strong", null, q.ref + " "), q.txt))),
+  (() => {
+    const v = koncernVerdict(f);
+    const col = v.qualified ? "#1B7A3D" : (v.tomma.length === KONCERN_Q.length ? "#6B5E52" : "#B25000");
+    const txt = v.qualified ? "\u2713 KVALIFICERAD f\xF6r koncerncertifikat \u2014 samtliga \xA75-krav uppfyllda." : v.tomma.length === KONCERN_Q.length ? "Besvara fr\xE5gorna ovan f\xF6r kvalificeringsbed\xF6mning." : "\u2717 EJ KVALIFICERAD \xC4NNU. \xC5tg\xE4rd kr\xE4vs: " + [...v.nej, ...v.delvis].map(q => q.ref).join(", ") + (v.tomma.length ? " \u00B7 Obesvarade: " + v.tomma.map(q => q.ref).join(", ") : "") + ". Skall-kraven m\xE5ste vara uppfyllda innan certifikat kan utf\xE4rdas \u2014 \xE5tg\xE4rdslistan \xE4r underlag i kunddialogen.";
+    return /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11.5, fontWeight: 700, color: col, padding: "9px 11px", background: "#fff", border: "1.5px solid " + col, borderRadius: 6, marginTop: 6, marginBottom: 14, lineHeight: 1.5 } }, txt);
+  })(),
+  /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, color: "#101820", marginBottom: 6 } }, "B. Samplingmetodik (\xA76.1 vs \xA76.2)"),
+  /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11, color: "#6B5E52", marginBottom: 6, lineHeight: 1.5 } }, "\xA76.1.1.1: Sampling f\xF6ruts\xE4tter att siterna utf\xF6r MYCKET likartade processer/aktiviteter. Konservativ SBSC-default: likartat = samma kundtyp/normomr\xE5de p\xE5 alla siter. Vid Nej till\xE4mpas \xA76.2: alla siter revideras vid initial och omcertifiering; periodiska revisioner ska t\xE4cka 30% av siterna per \xE5r."),
+  /*#__PURE__*/React.createElement("select", {
+    value: f.kSimilar || "",
+    onChange: e => set("kSimilar", e.target.value),
+    style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 12, padding: "6px 8px", border: "1px solid #C5C5C5", borderRadius: 4, marginBottom: 14, width: "100%" }
+  }, /*#__PURE__*/React.createElement("option", { value: "" }, "V\xE4lj\u2026"), /*#__PURE__*/React.createElement("option", { value: "ja" }, "Ja \u2014 mycket likartade processer \u2192 sampling per \xA76.1"), /*#__PURE__*/React.createElement("option", { value: "nej" }, "Nej \u2014 olikartade processer \u2192 alla siter revideras per \xA76.2")),
+  /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, color: "#101820", marginBottom: 6 } }, "C. Bolagsregister"),
+  /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11, color: "#6B5E52", marginBottom: 8, lineHeight: 1.5 } }, "Ett bolag/site per rad. Exakt ETT bolag ska vara centralfunktion (\xA75.2). Fas-kolumnen styr stegvis uppbyggnad: Fas 1 = med i initial certifiering, Fas 2+ = ansluts senare via anslutningsrevision (\xA76.2.3/\xA76.1.4.1). Befintliga certifikat med certorgan hanteras som transfer/historik och styr synkroniseringen till gemensam cykel. Ett bolag ansluts alltid i sin helhet i en fas."),
+  (f.kBolag || []).map((b, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: { display: "flex", gap: 6, marginBottom: 5, alignItems: "center", flexWrap: "wrap" }
+  }, /*#__PURE__*/React.createElement("input", { type: "text", value: b.namn, placeholder: "Bolagsnamn", onChange: e => { const prev = (f.kBolag[i] && f.kBolag[i].namn) || ""; const a = [...f.kBolag]; a[i] = { ...a[i], namn: e.target.value }; set("kBolag", a); if (f.certType === "siteext" && a[i].roll === "central" && (!f.cName || f.cName === prev)) set("cName", e.target.value); }, style: { flex: "2 1 130px", padding: "5px 7px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", border: "1px solid #C5C5C5", borderRadius: 4 } }), /*#__PURE__*/React.createElement("input", { type: "text", value: b.orgnr, placeholder: "Org.nr", onChange: e => { const a = [...f.kBolag]; a[i] = { ...a[i], orgnr: e.target.value }; set("kBolag", a); }, style: { flex: "1 1 90px", padding: "5px 7px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", border: "1px solid #C5C5C5", borderRadius: 4 } }), /*#__PURE__*/React.createElement("input", { type: "number", value: b.fte, placeholder: "FTE", min: "0", onChange: e => { const val = e.target.value; setF(prev => { const a = [...prev.kBolag]; a[i] = { ...a[i], fte: val }; const upd = { ...prev, kBolag: a }; if (prev.certType === "siteext") { const s = a.reduce((x, b) => x + (parseFloat(b.fte) || 0), 0); upd.fteFulltime = s > 0 ? String(s) : ""; } return upd; }); }, style: { flex: "0 1 62px", padding: "5px 7px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", border: "1px solid #C5C5C5", borderRadius: 4 } }), /*#__PURE__*/React.createElement("select", { value: b.roll, onChange: e => { const a = [...f.kBolag]; a[i] = { ...a[i], roll: e.target.value }; set("kBolag", a); }, style: { flex: "0 1 118px", padding: "5px 6px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", border: b.roll === "central" ? "1.5px solid #FFA300" : "1px solid #C5C5C5", borderRadius: 4 } }, /*#__PURE__*/React.createElement("option", { value: "site" }, "Site"), /*#__PURE__*/React.createElement("option", { value: "central" }, "Centralfunktion")), /*#__PURE__*/React.createElement("input", { type: "number", value: b.fas || "1", min: "1", max: "9", title: "Fas: 1 = initial certifiering, 2+ = ansluts stegvis senare", onChange: e => { const a = [...f.kBolag]; a[i] = { ...a[i], fas: e.target.value }; set("kBolag", a); }, style: { flex: "0 1 52px", padding: "5px 7px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", border: (parseInt(b.fas) || 1) > 1 ? "1.5px solid #3D7EAA" : "1px solid #C5C5C5", borderRadius: 4 } }), /*#__PURE__*/React.createElement("input", { type: "text", value: b.cert, placeholder: "Befintliga cert, t.ex. 9001+14001 (RISE, omcert 2027)", onChange: e => { const a = [...f.kBolag]; a[i] = { ...a[i], cert: e.target.value }; set("kBolag", a); }, style: { flex: "3 1 180px", padding: "5px 7px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", border: "1px solid #C5C5C5", borderRadius: 4 } }), /*#__PURE__*/React.createElement("button", { onClick: () => { setF(prev => { const a = [...prev.kBolag]; a.splice(i, 1); const upd = { ...prev, kBolag: a }; if (prev.certType === "siteext" || prev.koncernGuideOn) upd.sites = String(Math.max(a.length, 1)); if (prev.certType === "siteext") { const s = a.reduce((x, b) => x + (parseFloat(b.fte) || 0), 0); upd.fteFulltime = s > 0 ? String(s) : ""; } return upd; }); }, style: { padding: "4px 9px", fontSize: 12, background: "#fff", border: "1px solid #C5C5C5", borderRadius: 4, cursor: "pointer", color: "#B25000" } }, "\u2715"), (parseInt(b.fas) || 1) > 1 ? /*#__PURE__*/React.createElement("div", { style: { flexBasis: "100%", display: "flex", flexWrap: "wrap", alignItems: "center", gap: 7, marginTop: 3, paddingLeft: 2 } }, /*#__PURE__*/React.createElement("div", { style: { flexBasis: "100%", marginTop: 6, marginBottom: 2, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "8px 11px", background: "#F4F1EC", border: "1px solid #D8CFC2", borderLeft: "5px solid #8A7A66", borderRadius: 6 } }, /*#__PURE__*/React.createElement("span", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: "0.03em", textTransform: "uppercase", color: "#5A4E3E" } }, "\uD83C\uDFF7\uFE0F Typ av anslutning:"), [["site", "Ny plats (samma org.nr)"], ["bolag", "Nytt bolag (eget org.nr)"]].map(([sv, sl]) => /*#__PURE__*/React.createElement("button", { key: sv, onClick: () => { const a = [...f.kBolag]; a[i] = { ...a[i], anslType: sv }; set("kBolag", a); }, style: { padding: "5px 13px", fontSize: 11, fontFamily: "'Segoe UI', system-ui, sans-serif", fontWeight: (b.anslType || "site") === sv ? 800 : 500, border: (b.anslType || "site") === sv ? "2px solid #3D7EAA" : "1px solid #C5C5C5", background: (b.anslType || "site") === sv ? "#DCEBF5" : "#fff", color: (b.anslType || "site") === sv ? "#123040" : "#6B5E52", borderRadius: 5, cursor: "pointer", boxShadow: (b.anslType || "site") === sv ? "0 1px 3px rgba(61,126,170,0.3)" : "none" } }, (b.anslType || "site") === sv ? "\u25C9 " : "\u25CB ", sl))), (b.anslType || "site") === "bolag" ? /*#__PURE__*/React.createElement("div", { style: { flexBasis: "100%", padding: "8px 11px", marginBottom: 2, background: "#FFF7E8", border: "1px solid #F0C070", borderLeft: "4px solid #E0912F", borderRadius: 5 } }, /*#__PURE__*/React.createElement("label", { style: { display: "flex", alignItems: "flex-start", gap: 7, fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11, color: "#7A4E10", cursor: "pointer", lineHeight: 1.45 } }, /*#__PURE__*/React.createElement("input", { type: "checkbox", checked: !!b.q5confirm, onChange: e => { const a = [...f.kBolag]; a[i] = { ...a[i], q5confirm: e.target.checked }; set("kBolag", a); }, style: { marginTop: 1, width: 15, height: 15, flexShrink: 0, cursor: "pointer" } }), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "\xA75-bekr\xE4ftelse (nytt bolag): "), "Det anslutande bolaget omfattas av centralfunktionens ledningssystem och mandat (\xA75.1\u20135.3) \u2014 ett ledningssystem, central funktion med mandat \xF6ver enheten. Bekr\xE4ftas av revisionsledaren f\xF6re anslutning."))) : null, /*#__PURE__*/React.createElement("div", { style: { flexBasis: "100%", marginTop: 6, padding: "9px 12px", borderRadius: 6, border: b.withinExisting ? "2px solid #1E7B34" : "2px solid #FFA300", background: b.withinExisting ? "#EAF6EC" : "#FFF7E8" } }, /*#__PURE__*/React.createElement("label", { style: { display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontFamily: "'Segoe UI', system-ui, sans-serif", fontWeight: 800, letterSpacing: "0.04em", color: b.withinExisting ? "#1E7B34" : "#8A5A00", cursor: "pointer", textTransform: "uppercase" } }, /*#__PURE__*/React.createElement("input", { type: "checkbox", checked: !!b.withinExisting, onChange: e => { const a = [...f.kBolag]; a[i] = { ...a[i], withinExisting: e.target.checked }; set("kBolag", a); }, style: { cursor: "pointer", width: 16, height: 16 } }), "Ansluts inom befintlig revision (\xA76.2.3)"), /*#__PURE__*/React.createElement("div", { style: { fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", color: "#2B2620", marginTop: 4, lineHeight: 1.5 } }, b.withinExisting ? "\u2713 Ingen separat anslutningsrevision \u2014 enheten ryms inom ordinarie revision. Anslutning: " + ((parseFloat(b.withinHours) || 0) > 0 ? fmt(r2((parseFloat(b.withinHours) || 0) / 8)) + " dagar (angivna timmar)" : "0 dagar") + "." : (() => { const bf = parseFloat(b.fte) || 0; if (bf <= 0) return "\u26A0 Egen anslutningsrevision kr\xE4vs: Steg 2 p\xE5 plats \u2014 ange FTE p\xE5 raden ovan f\xF6r ber\xE4kning."; let sc = null; try { sc = calcMD5({ ...f, certType: "new", sites: "1", fte: String(bf) }); } catch (err) { sc = null; } if (!sc || typeof sc.stage2 !== "number") return "\u26A0 Egen anslutningsrevision kr\xE4vs: Steg 2 p\xE5 plats p\xE5 enhetens " + bf + " FTE (v\xE4lj ISO-standard nedan s\xE5 visas ber\xE4knade dagar h\xE4r)."; return "\u26A0 Egen anslutningsrevision: Steg 2 p\xE5 plats \u2248 " + fmt(r2(Math.max(sc.stage2, 1))) + " dagar (p\xE5 enhetens " + bf + " FTE, utan Steg 1). Kryssa i rutan om enheten ryms inom ordinarie revision."; })()), b.withinExisting ? /*#__PURE__*/React.createElement("input", { type: "number", value: b.withinHours == null ? "" : b.withinHours, min: "0", step: "0.5", placeholder: "tim", title: "Tillkommande timmar inom ordinarie revision (valfritt \u2014 l\xE4mna tomt f\xF6r 0)", onChange: e => { const a = [...f.kBolag]; a[i] = { ...a[i], withinHours: e.target.value }; set("kBolag", a); }, style: { width: 60, padding: "3px 6px", fontSize: 11, fontFamily: "'Segoe UI', system-ui, sans-serif", border: "1px solid #C5C5C5", borderRadius: 4 } }) : null)) : null)),
+  (f.certType === "siteext" || f.koncernGuideOn) && (f.kBolag || []).some(b => parseFloat(b.fte) > 0) ? /*#__PURE__*/React.createElement("div", {
+    style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 8, marginBottom: 4, padding: "9px 13px", background: "#EAF6EC", border: "1px solid #A8D5B0", borderLeft: "5px solid #1E7B34", borderRadius: 6 }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11.5, fontWeight: 700, color: "#1A5A2A" }
+  }, "\u03A3 Summerad FTE fr\xE5n registret (" + (f.kBolag || []).filter(b => parseFloat(b.fte) > 0).length + " bolag)"), /*#__PURE__*/React.createElement("span", {
+    style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 15, fontWeight: 800, color: "#1E7B34" }
+  }, fmt(r2((f.kBolag || []).reduce((x, b) => x + (parseFloat(b.fte) || 0), 0))) + " FTE")) : null,
+  /*#__PURE__*/React.createElement("button", {
+    onClick: () => { const nb = [...(f.kBolag || []), { namn: "", orgnr: "", fte: "", roll: (f.kBolag || []).length === 0 ? "central" : "site", cert: "", fas: f.certType === "siteext" && (f.kBolag || []).length > 0 ? "2" : "1" }]; set("kBolag", nb); if (f.certType === "siteext" || f.koncernGuideOn) set("sites", String(nb.length)); },
+    style: { padding: "6px 14px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", fontWeight: 600, background: "#101820", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer", marginTop: 4 }
+  }, "+ L\xE4gg till bolag"),
+  (() => {
+    const bol = f.kBolag || [];
+    if (bol.length === 0) return null;
+    const centrals = bol.filter(b => b.roll === "central").length;
+    const totFte = bol.reduce((s, b) => s + (parseFloat(b.fte) || 0), 0);
+    const warn = centrals !== 1;
+    return /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11.5, marginTop: 10, padding: "9px 11px", background: warn ? "#FFF4E0" : "#F7F8FA", border: "1px solid " + (warn ? "#FFA300" : "#E0E0E0"), borderRadius: 6, lineHeight: 1.6 } }, /*#__PURE__*/React.createElement("strong", null, bol.length + " bolag/siter \u00B7 totalt " + totFte + " FTE. "), warn ? "\u26A0 Exakt EN centralfunktion kr\xE4vs (\xA75.2) \u2014 nu " + centrals + " markerade. " : "", (() => {
+      const fasSet = [...new Set(bol.map(b => Math.max(1, parseInt(b.fas) || 1)))].sort((x, y) => x - y);
+      return fasSet.length > 1 ? ((f.s9001 || f.s14001 || f.s45001) ? "\u2713 Stegvis uppbyggnad i " + fasSet.length + " faser \u2014 fasplan med kostnad per \xE5r genereras i mandagsber\xE4kningen och offerten. " : "\u26A0 Stegvis fasber\xE4kning kr\xE4ver minst en MD 5-standard (9001/14001/45001) \u2014 f\xF6r ren 27001-koncern planeras faserna manuellt. ") : "Alla bolag i Fas 1 (certifieras samtidigt) \u2014 f\xF6r stegvis uppbyggnad: s\xE4tt Fas 2+ p\xE5 bolag som ansluts senare, s\xE5 genereras fasplanen. ";
+    })(), "Ange totala FTE-underlaget under steg 4 (Verksamhet & Ber\xE4kningsunderlag). ", /*#__PURE__*/React.createElement("button", { onClick: () => set("sites", String(bol.length)), style: { padding: "3px 10px", fontSize: 11, fontWeight: 600, background: "#FFA300", color: "#101820", border: "none", borderRadius: 4, cursor: "pointer", marginLeft: 4 } }, "S\xE4tt antal platser = " + bol.length));
+  })()))), /*#__PURE__*/React.createElement(SLbl, SP(2, { step: 2 }), "Verksamhetsbeskrivning & Risk"), /*#__PURE__*/React.createElement("div", { className: fold[2] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 18,
       padding: "16px 18px",
@@ -9397,7 +9650,13 @@ ${exportedHTML}
     min: "1",
     value: f.sites,
     onChange: v => set("sites", v)
-  }), parseInt(f.sites) > 1 && (() => {
+  }), (f.certType === "siteext" || f.koncernGuideOn) && (() => {
+    const bolCount = (f.kBolag || []).length;
+    const match = parseInt(f.sites) === bolCount;
+    return bolCount > 0 ? /*#__PURE__*/React.createElement("div", {
+      style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11, color: match ? "#1E7B34" : "#B25000", background: match ? "#EAF6EC" : "#FFF0E6", border: "1px solid " + (match ? "#A8D5B0" : "#F0B080"), borderRadius: 4, padding: "6px 9px", marginTop: 6, lineHeight: 1.5 }
+    }, match ? "\u2713 Antal platser (" + f.sites + ") \u00E4r synkat med bolagsregistret nedan (" + bolCount + " enheter) \u2014 s\xE4tts automatiskt." : "\u26A0 Antal platser (" + f.sites + ") st\xE4mmer inte med bolagsregistret (" + bolCount + " enheter). I detta l\xE4ge b\xF6r platsantalet motsvara antalet enheter i registret. ", !match ? /*#__PURE__*/React.createElement("button", { onClick: () => set("sites", String(bolCount)), style: { padding: "2px 9px", fontSize: 10.5, fontWeight: 700, background: "#FFA300", color: "#101820", border: "none", borderRadius: 3, cursor: "pointer", marginLeft: 2 } }, "S\xE4tt = " + bolCount) : null) : null;
+  })(), parseInt(f.sites) > 1 && (() => {
     const x = parseInt(f.sites) || 1;
     const init = md1Sample(x, "initial");
     const surv = md1Sample(x, "surv");
@@ -9495,7 +9754,7 @@ ${exportedHTML}
     style: { accentColor: C.accent, marginTop: 1, cursor: "pointer" }
   }), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("strong", null, "Koncerncertifikat \u2014 platserna tillh\xF6r olika juridiska enheter"), /*#__PURE__*/React.createElement("div", {
     style: { fontSize: 10, color: C.muted, marginTop: 2, lineHeight: 1.5, fontWeight: 400 }
-  }, "IAF MD 1:2023 \xA73.3.1: en multi-site-organisation beh\xF6ver inte vara en juridisk enhet, men alla enheter ska ha juridisk/avtalsm\xE4ssig koppling till centralfunktionen och ing\xE5 i ett enda ledningssystem. G\xE4ller \xC4KTA koncernstruktur \u2014 inte frist\xE5ende bolag under konstgjort paraply (\xA71)."))), /*#__PURE__*/React.createElement(SiteDetailsPanel, {
+  }, "IAF MD 1:2023 \xA73.3.1: en multi-site-organisation beh\xF6ver inte vara en juridisk enhet, men alla enheter ska ha juridisk/avtalsm\xE4ssig koppling till centralfunktionen och ing\xE5 i ett enda ledningssystem. G\xE4ller \xC4KTA koncernstruktur \u2014 inte frist\xE5ende bolag under konstgjort paraply (\xA71)."))), f.certType !== "siteext" && /*#__PURE__*/React.createElement(SiteDetailsPanel, {
     sites: f.sites,
     siteDetails: f.siteDetails || [],
     onChange: v => set("siteDetails", v),
@@ -9503,10 +9762,11 @@ ${exportedHTML}
   }), parseInt(f.sites) > 1 && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 8,
-      background: C.s2,
-      border: `1px solid ${C.border}`,
-      borderLeft: "3px solid " + C.teal,
-      padding: "9px 11px"
+      background: "#EAF5F3",
+      border: `1px solid ${C.tealBd}`,
+      borderLeft: "5px solid " + C.teal,
+      borderRadius: 6,
+      padding: "10px 12px"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9527,7 +9787,7 @@ ${exportedHTML}
       marginBottom: 8,
       lineHeight: 1.6
     }
-  }, "Besvara fr\xE5gorna f\xF6r att dokumentera om sampling \xE4r l\xE4mpligt. Sparas i arbetsunderlaget."), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", { style: { display: "flex", gap: 9 } }, /*#__PURE__*/React.createElement("div", { style: { flexShrink: 0, fontSize: 15, marginTop: 1 } }, "\uD83D\uDCCF"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", { style: { display: "block", fontWeight: 800, letterSpacing: "0.03em", textTransform: "uppercase", fontSize: 11, color: C.teal, marginBottom: 2 } }, "Volymfr\xE5gan \u2014 f\xF6ruts\xE4tter att \xA75 \xE4r uppfyllt"), "F\xE5r ett URVAL av platserna revideras, eller m\xE5ste alla bes\xF6kas? Alla Ja \u2192 sampling till\xE5ts (\xA76.1, kvadratrotsurval). N\xE5got Nej \u2192 ", /*#__PURE__*/React.createElement("b", null, "samtliga platser revideras"), " (\xA76.2), fler mandagar. Besvara fr\xE5gorna f\xF6r att dokumentera om sampling \xE4r l\xE4mpligt. Sparas i arbetsunderlaget."))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexDirection: "column",
@@ -9647,7 +9907,9 @@ ${exportedHTML}
       lineHeight: 1.6,
       marginTop: 4
     }
-  }))), (f.s9001 || f.s14001 || f.s45001) && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(FteHelper, {
+  }))), (f.s9001 || f.s14001 || f.s45001) && /*#__PURE__*/React.createElement(React.Fragment, null, f.certType === "siteext" ? /*#__PURE__*/React.createElement("div", {
+    style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "12px 15px", marginBottom: 10, background: "#EAF6EC", border: "1px solid #A8D5B0", borderLeft: "5px solid #1E7B34", borderRadius: 6 }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 12.5, fontWeight: 800, color: "#1A5A2A" } }, "Effektivt antal anst\xE4llda \u2014 FTE (\xA72.3)"), /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11, color: "#2B6B3A", marginTop: 2 } }, "Summeras automatiskt fr\xE5n bolagsregistret ovan \u2014 ingen manuell inmatning i detta fl\xF6de.")), /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 22, fontWeight: 800, color: "#1E7B34", whiteSpace: "nowrap" } }, fmt(r2((f.kBolag || []).reduce((x, b) => x + (parseFloat(b.fte) || 0), 0))) + " FTE")) : /*#__PURE__*/React.createElement(FteHelper, {
     f: f,
     set: set
   }), f.s9001 && /*#__PURE__*/React.createElement("div", {
@@ -10318,57 +10580,7 @@ ${exportedHTML}
       marginTop: 8,
       lineHeight: 1.5
     }
-  }, /*#__PURE__*/React.createElement("span", { style: { fontWeight: 700 } }, "\u2139 Regelverksnotering: "), "Omcertifieringen (år 3) ska fortfarande utgöra en fullständig systemgenomgång enligt IAF MD 5. Den jämna fördelningen påverkar tidsallokeringen, inte omfattningen av omcertifieringen. Säkerställ att detta är förenligt med er ackrediteringsomfattning.")), /*#__PURE__*/React.createElement(SLbl, SP(9), "Koncerncertifikat \u2014 IAF MD 1 (valfritt)"), /*#__PURE__*/React.createElement("div", { className: fold[9] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
-    style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11, color: "#6B5E52", marginBottom: 10, lineHeight: 1.55 }
-  }, "Anv\xE4nds n\xE4r flera bolag/siter ska omfattas av ETT gemensamt certifikat. Guiden pr\xF6var koncernens kvalificering mot skall-kraven i IAF MD 1:2023 \xA75, avg\xF6r samplingmetodik (\xA76.1 vs \xA76.2) och dokumenterar vilka bolag som omfattas. Bed\xF6mningsprinciperna \xE4r SBSC-praxis som fastst\xE4lls vid intern granskning."), /*#__PURE__*/React.createElement(Chk, {
-    checked: f.koncernGuideOn,
-    onChange: v => { set("koncernGuideOn", v); if (v) setFold(p => ({ ...p, 9: false })); },
-    label: "Aktivera koncernbed\xF6mning",
-    color: "#FFA300"
-  }), f.koncernGuideOn && /*#__PURE__*/React.createElement("div", { style: { marginTop: 12 } },
-  /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, color: "#101820", marginBottom: 8 } }, "A. Kvalificering (\xA75.1\u20135.6 \u2014 samtliga \xE4r skall-krav)"),
-  KONCERN_Q.map(q => /*#__PURE__*/React.createElement("div", {
-    key: q.id,
-    style: { display: "flex", gap: 10, alignItems: "flex-start", padding: "7px 10px", marginBottom: 4, background: (f[q.id] === "nej" || f[q.id] === "delvis") ? "#FFF4E0" : f[q.id] === "ja" ? "#EAF6EC" : "#FAFAF7", border: "1px solid " + (f[q.id] === "nej" ? "#CC7A00" : "#E0E0E0"), borderRadius: 6 }
-  }, /*#__PURE__*/React.createElement("select", {
-    value: f[q.id] || "",
-    onChange: e => set(q.id, e.target.value),
-    style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11.5, padding: "4px 6px", border: "1px solid #C5C5C5", borderRadius: 4, flexShrink: 0, width: 84 }
-  }, /*#__PURE__*/React.createElement("option", { value: "" }, "V\xE4lj\u2026"), /*#__PURE__*/React.createElement("option", { value: "ja" }, "Ja"), /*#__PURE__*/React.createElement("option", { value: "delvis" }, "Delvis"), /*#__PURE__*/React.createElement("option", { value: "nej" }, "Nej")), /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11.5, lineHeight: 1.5, color: "#101820" } }, /*#__PURE__*/React.createElement("strong", null, q.ref + " "), q.txt))),
-  (() => {
-    const v = koncernVerdict(f);
-    const col = v.qualified ? "#1B7A3D" : (v.tomma.length === KONCERN_Q.length ? "#6B5E52" : "#B25000");
-    const txt = v.qualified ? "\u2713 KVALIFICERAD f\xF6r koncerncertifikat \u2014 samtliga \xA75-krav uppfyllda." : v.tomma.length === KONCERN_Q.length ? "Besvara fr\xE5gorna ovan f\xF6r kvalificeringsbed\xF6mning." : "\u2717 EJ KVALIFICERAD \xC4NNU. \xC5tg\xE4rd kr\xE4vs: " + [...v.nej, ...v.delvis].map(q => q.ref).join(", ") + (v.tomma.length ? " \u00B7 Obesvarade: " + v.tomma.map(q => q.ref).join(", ") : "") + ". Skall-kraven m\xE5ste vara uppfyllda innan certifikat kan utf\xE4rdas \u2014 \xE5tg\xE4rdslistan \xE4r underlag i kunddialogen.";
-    return /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11.5, fontWeight: 700, color: col, padding: "9px 11px", background: "#fff", border: "1.5px solid " + col, borderRadius: 6, marginTop: 6, marginBottom: 14, lineHeight: 1.5 } }, txt);
-  })(),
-  /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, color: "#101820", marginBottom: 6 } }, "B. Samplingmetodik (\xA76.1 vs \xA76.2)"),
-  /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11, color: "#6B5E52", marginBottom: 6, lineHeight: 1.5 } }, "\xA76.1.1.1: Sampling f\xF6ruts\xE4tter att siterna utf\xF6r MYCKET likartade processer/aktiviteter. Konservativ SBSC-default: likartat = samma kundtyp/normomr\xE5de p\xE5 alla siter. Vid Nej till\xE4mpas \xA76.2: alla siter revideras vid initial och omcertifiering; periodiska revisioner ska t\xE4cka 30% av siterna per \xE5r."),
-  /*#__PURE__*/React.createElement("select", {
-    value: f.kSimilar || "",
-    onChange: e => set("kSimilar", e.target.value),
-    style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 12, padding: "6px 8px", border: "1px solid #C5C5C5", borderRadius: 4, marginBottom: 14, width: "100%" }
-  }, /*#__PURE__*/React.createElement("option", { value: "" }, "V\xE4lj\u2026"), /*#__PURE__*/React.createElement("option", { value: "ja" }, "Ja \u2014 mycket likartade processer \u2192 sampling per \xA76.1"), /*#__PURE__*/React.createElement("option", { value: "nej" }, "Nej \u2014 olikartade processer \u2192 alla siter revideras per \xA76.2")),
-  /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 12.5, fontWeight: 700, color: "#101820", marginBottom: 6 } }, "C. Bolagsregister"),
-  /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11, color: "#6B5E52", marginBottom: 8, lineHeight: 1.5 } }, "Ett bolag/site per rad. Exakt ETT bolag ska vara centralfunktion (\xA75.2). Fas-kolumnen styr stegvis uppbyggnad: Fas 1 = med i initial certifiering, Fas 2+ = ansluts senare via anslutningsrevision (\xA76.2.3/\xA76.1.4.1). Befintliga certifikat med certorgan hanteras som transfer/historik och styr synkroniseringen till gemensam cykel. Ett bolag ansluts alltid i sin helhet i en fas."),
-  (f.kBolag || []).map((b, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    style: { display: "flex", gap: 6, marginBottom: 5, alignItems: "center", flexWrap: "wrap" }
-  }, /*#__PURE__*/React.createElement("input", { type: "text", value: b.namn, placeholder: "Bolagsnamn", onChange: e => { const a = [...f.kBolag]; a[i] = { ...a[i], namn: e.target.value }; set("kBolag", a); }, style: { flex: "2 1 130px", padding: "5px 7px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", border: "1px solid #C5C5C5", borderRadius: 4 } }), /*#__PURE__*/React.createElement("input", { type: "text", value: b.orgnr, placeholder: "Org.nr", onChange: e => { const a = [...f.kBolag]; a[i] = { ...a[i], orgnr: e.target.value }; set("kBolag", a); }, style: { flex: "1 1 90px", padding: "5px 7px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", border: "1px solid #C5C5C5", borderRadius: 4 } }), /*#__PURE__*/React.createElement("input", { type: "number", value: b.fte, placeholder: "FTE", min: "0", onChange: e => { const a = [...f.kBolag]; a[i] = { ...a[i], fte: e.target.value }; set("kBolag", a); }, style: { flex: "0 1 62px", padding: "5px 7px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", border: "1px solid #C5C5C5", borderRadius: 4 } }), /*#__PURE__*/React.createElement("select", { value: b.roll, onChange: e => { const a = [...f.kBolag]; a[i] = { ...a[i], roll: e.target.value }; set("kBolag", a); }, style: { flex: "0 1 118px", padding: "5px 6px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", border: b.roll === "central" ? "1.5px solid #FFA300" : "1px solid #C5C5C5", borderRadius: 4 } }, /*#__PURE__*/React.createElement("option", { value: "site" }, "Site"), /*#__PURE__*/React.createElement("option", { value: "central" }, "Centralfunktion")), /*#__PURE__*/React.createElement("input", { type: "number", value: b.fas || "1", min: "1", max: "9", title: "Fas: 1 = initial certifiering, 2+ = ansluts stegvis senare", onChange: e => { const a = [...f.kBolag]; a[i] = { ...a[i], fas: e.target.value }; set("kBolag", a); }, style: { flex: "0 1 52px", padding: "5px 7px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", border: (parseInt(b.fas) || 1) > 1 ? "1.5px solid #3D7EAA" : "1px solid #C5C5C5", borderRadius: 4 } }), /*#__PURE__*/React.createElement("input", { type: "text", value: b.cert, placeholder: "Befintliga cert, t.ex. 9001+14001 (RISE, omcert 2027)", onChange: e => { const a = [...f.kBolag]; a[i] = { ...a[i], cert: e.target.value }; set("kBolag", a); }, style: { flex: "3 1 180px", padding: "5px 7px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", border: "1px solid #C5C5C5", borderRadius: 4 } }), /*#__PURE__*/React.createElement("button", { onClick: () => { const a = [...f.kBolag]; a.splice(i, 1); set("kBolag", a); }, style: { padding: "4px 9px", fontSize: 12, background: "#fff", border: "1px solid #C5C5C5", borderRadius: 4, cursor: "pointer", color: "#B25000" } }, "\u2715"))),
-  /*#__PURE__*/React.createElement("button", {
-    onClick: () => set("kBolag", [...(f.kBolag || []), { namn: "", orgnr: "", fte: "", roll: (f.kBolag || []).length === 0 ? "central" : "site", cert: "", fas: "1" }]),
-    style: { padding: "6px 14px", fontSize: 11.5, fontFamily: "'Segoe UI', system-ui, sans-serif", fontWeight: 600, background: "#101820", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer", marginTop: 4 }
-  }, "+ L\xE4gg till bolag"),
-  (() => {
-    const bol = f.kBolag || [];
-    if (bol.length === 0) return null;
-    const centrals = bol.filter(b => b.roll === "central").length;
-    const totFte = bol.reduce((s, b) => s + (parseFloat(b.fte) || 0), 0);
-    const warn = centrals !== 1;
-    return /*#__PURE__*/React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 11.5, marginTop: 10, padding: "9px 11px", background: warn ? "#FFF4E0" : "#F7F8FA", border: "1px solid " + (warn ? "#FFA300" : "#E0E0E0"), borderRadius: 6, lineHeight: 1.6 } }, /*#__PURE__*/React.createElement("strong", null, bol.length + " bolag/siter \u00B7 totalt " + totFte + " FTE. "), warn ? "\u26A0 Exakt EN centralfunktion kr\xE4vs (\xA75.2) \u2014 nu " + centrals + " markerade. " : "", (() => {
-      const fasSet = [...new Set(bol.map(b => Math.max(1, parseInt(b.fas) || 1)))].sort((x, y) => x - y);
-      return fasSet.length > 1 ? ((f.s9001 || f.s14001 || f.s45001) ? "\u2713 Stegvis uppbyggnad i " + fasSet.length + " faser \u2014 fasplan med kostnad per \xE5r genereras i mandagsber\xE4kningen och offerten. " : "\u26A0 Stegvis fasber\xE4kning kr\xE4ver minst en MD 5-standard (9001/14001/45001) \u2014 f\xF6r ren 27001-koncern planeras faserna manuellt. ") : "Alla bolag i Fas 1 (certifieras samtidigt) \u2014 f\xF6r stegvis uppbyggnad: s\xE4tt Fas 2+ p\xE5 bolag som ansluts senare, s\xE5 genereras fasplanen. ";
-    })(), "Ange totala FTE-underlaget under steg 4 (Verksamhet & Ber\xE4kningsunderlag). ", /*#__PURE__*/React.createElement("button", { onClick: () => set("sites", String(bol.length)), style: { padding: "3px 10px", fontSize: 11, fontWeight: 600, background: "#FFA300", color: "#101820", border: "none", borderRadius: 4, cursor: "pointer", marginLeft: 4 } }, "S\xE4tt antal platser = " + bol.length));
-  })()))), /*#__PURE__*/React.createElement(SLbl, SP(0, { step: 5 }), "Kunduppgifter"), /*#__PURE__*/React.createElement("div", { className: fold[0] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", { style: { fontWeight: 700 } }, "\u2139 Regelverksnotering: "), "Omcertifieringen (år 3) ska fortfarande utgöra en fullständig systemgenomgång enligt IAF MD 5. Den jämna fördelningen påverkar tidsallokeringen, inte omfattningen av omcertifieringen. Säkerställ att detta är förenligt med er ackrediteringsomfattning.")), /*#__PURE__*/React.createElement(SLbl, SP(0, { step: 5 }), "Kunduppgifter"), /*#__PURE__*/React.createElement("div", { className: fold[0] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 14
     }
@@ -11167,7 +11379,7 @@ ${exportedHTML}
     const persOk = hasStd && (!needMD5 || effectiveFte > 0) && (!f.s27001 || parseInt(f.imsPersons) > 0);
     const kundOk = !!(f.cName && f.cName.trim());
     const sdet = (f.siteDetails || []).filter(d => d && d.city);
-    const sitesOk = parseInt(f.sites) <= 1 || sdet.length >= parseInt(f.sites);
+    const sitesOk = f.certType === "siteext" || parseInt(f.sites) <= 1 || sdet.length >= parseInt(f.sites);
     const entOk = !f.koncern || (f.siteDetails || []).filter(d => d && d.entity).length >= parseInt(f.sites || "1");
     const allReady = hasStd && persOk && certTypeOk;
     const openSec = idxs => setFold(p => { const n = { ...p }; idxs.forEach(i => { n[i] = false; }); return n; });
@@ -11876,6 +12088,12 @@ const DEFAULT_STATE = {
     // procentrabatt, 0 = ingen rabatt
     stage1Pct: "25",
     // Steg 1-andel: 25% eller 33%
+    // Site-anslutning (siteext) — moderbolagets/certifikatets status
+    seMainStd: "",
+    seMainCb: "",
+    seMainSince: "",
+    seCyklePos: "surv1",
+    // var i cykeln: surv1 | surv2 | recert
     onsite80: false,
     // 80% planerad tid på plats (§2.1.2) — 20% schemaläggs som för-/efterarbete
     customerType: "",
