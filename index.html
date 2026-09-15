@@ -1589,7 +1589,7 @@ function buildCustomerMotiv(f, md5, iso27001, integration, extCombined) {
     const d4bizLabel = iso27001.annexD?.bizCat === "high" ? "hög" : iso27001.annexD?.bizCat === "low" ? "låg" : "medel";
     const d4itLabel = iso27001.annexD?.itCat === "high" ? "hög" : iso27001.annexD?.itCat === "low" ? "låg" : "medel";
     factLines.push(`Verksamhetskomplexitet (ISMS): ${d4bizLabel} — IT-miljökomplexitet: ${d4itLabel}.`);
-    const smLabel = f.imsSoaMaturity === "high" ? "Välmognat ISMS med komplett SoA — beaktat positivt." : f.imsSoaMaturity === "low" ? "ISMS under uppbyggnad — beaktat i beräkningen." : "Etablerat ISMS.";
+    const smLabel = f.imsD2mgmt === "1" ? "Välmognat ISMS med komplett SoA — beaktat positivt." : f.imsD2mgmt === "3" ? "ISMS under uppbyggnad — beaktat i beräkningen." : "Etablerat ISMS.";
     factLines.push(`ISMS-mognad: ${smLabel}`);
   }
   if (parseInt(f.sites) > 1) {
