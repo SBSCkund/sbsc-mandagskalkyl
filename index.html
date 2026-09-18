@@ -1295,6 +1295,56 @@ function cycleNodes(snap, prices, extC, md5n) {
     ["2", "Periodisk revision", fmt(prices.surv) + " dgr", false],
     ["3", "Omcertifiering", fmt(prices.recert) + " dgr", true]];
 }
+// ── Resonemangstexter: kopplar valt värde till bedömningsgrunden, inklusive vad angränsande
+// nivåer hade krävt. Kriterietexterna är hämtade ordagrant från formulärets egna hjälptexter
+// (SelHelp-komponenterna) för att inte introducera nya, ogrundade formuleringar. Neutral ton —
+// ingen hänvisning till "handläggaren"; det är en beskrivning av bedömningen, inte av personen.
+function maturityReasoning(level) {
+  const crit = {
+    high: "ISO-certifierat i mer än 3 år, med regelbunden intern revision och ledningsgenomgång och utan allvarliga avvikelser",
+    medium: "certifierat 1–3 år, eller ett nytt ISO-system med etablerade rutiner via SSF/SBF men utan lång ISO-historik",
+    low: "första certifieringen, dokumentation under uppbyggnad, ingen intern revisionshistorik"
+  };
+  const delta = { high: "−1,0 dag", medium: "−0,5 dag", low: "ingen reduktion" };
+  const label = { high: "HÖG", medium: "NORMAL", low: "LÅG" };
+  const lvl = level === "high" ? "high" : level === "low" ? "low" : "medium";
+  let s = `Mognadsnivån (§8(v)c) är bedömd till ${label[lvl]} (${delta[lvl]}): ${crit[lvl]}.`;
+  if (lvl === "low") s += ` En NORMAL-nivå (${delta.medium}) kräver ${crit.medium}, och en HÖG-nivå (${delta.high}) kräver därutöver ${crit.high} — inget av detta är uppfyllt i det här fallet.`;
+  else if (lvl === "medium") s += ` En HÖG-nivå (${delta.high}) hade krävt därutöver ${crit.high}, vilket inte är uppfyllt.`;
+  else s += ` Detta är den högsta mognadsnivån verktyget tillämpar.`;
+  return s;
+}
+
+function qmsRiskReasoning(risk, comment, sug) {
+  const delta = { high: "+1,0 dag", medium: "ingen justering", low: "−0,5 dag" };
+  const label = { high: "HÖG", medium: "MEDEL", low: "LÅG" };
+  const lvl = risk === "high" ? "high" : risk === "low" ? "low" : "medium";
+  const header = `ISO 9001-riskkategorin (Tabell QMS 2, Note 1) är bedömd som ${label[lvl]} (${delta[lvl]}).`;
+  if (comment && comment.trim()) return `${header} Grund: ${comment.trim()}`;
+  if (sug && sug.qmsBy && sug.qms === lvl) return `${header} Grund: verksamhetstypen "${sug.qmsBy.label}".`;
+  return header;
+}
+
+function emsComplexityReasoning(level, comment, sug) {
+  const label = { high: "HÖG", medium: "MEDEL", low: "LÅG", limited: "BEGRÄNSAD" };
+  const lvl = ["high", "medium", "low", "limited"].includes(level) ? level : "medium";
+  const header = `ISO 14001-miljökomplexiteten (Tabell EMS 2) är bedömd som ${label[lvl]}.`;
+  if (comment && comment.trim()) return `${header} Grund: ${comment.trim()}`;
+  if (sug && sug.emsBy && sug.ems === lvl) return `${header} Grund: verksamhetstypen "${sug.emsBy.label}".`;
+  return header;
+}
+
+function ohsRiskReasoning(level, comment, sug) {
+  const label = { high: "HÖG", medium: "MEDEL", low: "LÅG" };
+  const lvl = level === "high" ? "high" : level === "low" ? "low" : "medium";
+  const header = `ISO 45001-riskkategorin (Tabell OH&SMS 2) är bedömd som ${label[lvl]}.`;
+  if (comment && comment.trim()) return `${header} Grund: ${comment.trim()}`;
+  if (sug && sug.ohsBy && sug.ohs === lvl) return `${header} Grund: verksamhetstypen "${sug.ohsBy.label}".`;
+  return header;
+}
+
+
+
 function buildMotiv(f, md5, iso27001, integration, extCombined) {
   const parts = [];
   if (!md5 && !iso27001) { return "Ingen standard vald \u2014 v\xE4lj minst en ISO-standard f\xF6r att generera underlaget."; }
@@ -1325,13 +1375,18 @@ function buildMotiv(f, md5, iso27001, integration, extCombined) {
     const reds = md5.adj.filter(r => r.red).map(r => r.label).join("; ");
     const adds = md5.adj.filter(r => !r.red).map(r => r.label).join("; ");
     // Beskrivande bedömningstexter för motiveringstexten
-    const maturityDesc = f.maturity === "high" ? "välestablerat ledningssystem med dokumenterad revisionshistorik (>3 år)" : f.maturity === "low" ? "nytt ledningssystem utan ISO-historik" : "etablerat ledningssystem (1–3 år)";
     const autoDesc = f.automation === "high" ? "hög automatiseringsgrad (majoriteten maskinellt styrd)" : f.automation === "medium" ? "viss automatisering i administrativa processer" : "låg automatiseringsgrad, manuella processer";
     const offsiteDesc = f.offsite === "yes" ? "stor andel fältpersonal som primärt arbetar på kundanläggningar" : "personal primärt på fast anläggning";
     const complexDesc = f.complexity === "high" ? "hög processkomplexitet med många unika processer" : f.complexity === "low" ? "låg processkomplexitet med enkla standardiserade processer" : "normal processkomplexitet";
     const regDesc = f.regulatory === "high" ? "höga regulatoriska krav (säkerhetsskyddslagen/NIS2/MSB)" : f.regulatory === "low" ? "inga eller få branschspecifika regulatoriska krav" : "normala regulatoriska krav via branschcertifikat";
-    const factorDesc = `Bedömningen grundas på: ${maturityDesc}, ${autoDesc}, ${offsiteDesc}, ${complexDesc} och ${regDesc}.`;
-    parts.push(`För ${md5.stds.join(", ")} tillämpas IAF MD 5:2023 (Issue 4, V3). Effektivt antal anställda per §2.3: ${fteDesc}, intervall ${fteRange(md5.fte)}. Basnivå: ${stdDescs}. Summa okorrigerat: ${fmt(md5.sumBases)} dag.` + (reds ? ` Reduktioner: ${reds}.` : "") + (adds ? ` Tillägg: ${adds}.` : "") + ` IAF MD 5:2023 §3.9: max 30% reduktion per standard. ${factorDesc}`);
+    const factorDesc = `Övriga bedömningsfaktorer: ${autoDesc}, ${offsiteDesc}, ${complexDesc} och ${regDesc}.`;
+    parts.push(`För ${md5.stds.join(", ")} tillämpas IAF MD 5:2023 (Issue 4, V3). Effektivt antal anställda per §2.3: ${fteDesc}, intervall ${fteRange(md5.fte)}. Basnivå: ${stdDescs}. Summa okorrigerat: ${fmt(md5.sumBases)} dag.` + (reds ? ` Reduktioner: ${reds}.` : "") + (adds ? ` Tillägg: ${adds}.` : "") + ` IAF MD 5:2023 §3.9: max 30% reduktion per standard.`);
+    parts.push(maturityReasoning(f.maturity));
+    const _sugForReasoning = ctSuggestion(f);
+    if (f.s9001) parts.push(qmsRiskReasoning(f.qmsRisk, f.qmsComment, _sugForReasoning));
+    if (f.s14001) parts.push(emsComplexityReasoning(f.emsComplexity, f.emsComment, _sugForReasoning));
+    if (f.s45001) parts.push(ohsRiskReasoning(f.ohsComplexity, f.ohsComment, _sugForReasoning));
+    parts.push(factorDesc);
     if (md5.stds.length > 1) {
       // IAF MD 11:2023 Annex 1 — alla 7 integrationskriterier (krit. 7 tillagt v1.2)
       const intCriteria = [["imsInt1", "Ledningssystemet är ett och samma"], ["imsInt2", "Ledningens genomgång sker övergripande"], ["imsInt3", "Interna revisioner utförs på ett snarlikt sätt"], ["imsInt4", "Policy och mål utförs på ett snarlikt sätt"], ["imsInt5", "Processer utförs på ett snarlikt sätt"], ["imsInt6", "Förbättringsarbetet utförs på ett snarlikt sätt"], ["imsInt7", "Ledningens ansvar och roller är integrerade"]];
@@ -1339,7 +1394,7 @@ function buildMotiv(f, md5, iso27001, integration, extCombined) {
       const helts = intCriteria.filter(([k]) => f[k] === "helt").map(([, l]) => l);
       const delvis = intCriteria.filter(([k]) => f[k] === "delvis").map(([, l]) => l);
       const nejs = intCriteria.filter(([k]) => f[k] === "nej").map(([, l]) => l);
-      const intDesc = bedömda.length > 0 ? (helts.length > 0 ? ` Fullt integrerade kriterier: ${helts.join("; ")}.` : "") + (delvis.length > 0 ? ` Delvis integrerade kriterier: ${delvis.join("; ")}.` : "") + (nejs.length > 0 ? ` Ej integrerade kriterier: ${nejs.join("; ")}.` : "") : " Integrationsnivå uppskattad av handläggaren utan fullständig kriterieanalys.";
+      const intDesc = bedömda.length > 0 ? (helts.length > 0 ? ` Fullt integrerade kriterier: ${helts.join("; ")}.` : "") + (delvis.length > 0 ? ` Delvis integrerade kriterier: ${delvis.join("; ")}.` : "") + (nejs.length > 0 ? ` Ej integrerade kriterier: ${nejs.join("; ")}.` : "") : " Integrationsnivå uppskattad utan fullständig kriterieanalys.";
       parts.push(`Integrerat ledningssystem — IAF MD 11:2023 §2.1.2: integrationsnivå ${md5.intLevel}%, revisorskompetens ${md5.combPct}% → reduktion ${md5.imsPct} (max 20% av T).${intDesc} Integrationsnivån ska bekräftas vid Steg 1 per §2.1.1(iv).`);
     }
     if (md5.siteExtra > 0) {
@@ -1362,9 +1417,6 @@ function buildMotiv(f, md5, iso27001, integration, extCombined) {
       }
     }
     if (f.prevRevComment) parts.push(`Erfarenhet från tidigare revisioner: ${f.prevRevComment}`);
-    if (f.qmsComment && f.s9001) parts.push(`ISO 9001 riskkategori — kommentar: ${f.qmsComment}`);
-    if (f.emsComment && f.s14001) parts.push(`ISO 14001 miljökomplexitet — kommentar: ${f.emsComment}`);
-    if (f.ohsComment && f.s45001) parts.push(`ISO 45001 OH&S-riskkategori — kommentar: ${f.ohsComment}`);
     if (f.certType !== "siteext") parts.push(`Steg 1 (${fmt(md5.stage1)} dag): dokumentationsgranskning och beredskapsanalys. Steg 2 (${fmt(md5.stage2)} dag): fullständig revision på plats.`);
     if (md5.onsite80) {
       parts.push(`80% planerad tid på plats (IAF MD 5:2023 §2.1.2): Den fullt beräknade audittiden är ${fmt(md5.totalInitFull)} dagar. Av dessa planeras ${fmt(md5.totalInit)} dagar som tid på plats (80%). Resterande ${fmt(md5.onsiteOffDays)} dagar (för-/efterarbete) ska schemaläggas i revisorns kalender och kunna styrkas vid tillsyn. De redovisade revisionsdagarna och priset baseras på det reducerade talet ${fmt(md5.totalInit)} dagar.`);
@@ -3716,7 +3768,7 @@ const RiskDescHelp = () => {
       color: "#555",
       letterSpacing: "0.04em"
     }
-  }, "Paraplybeskrivning \u2014 speglas i motiveringstexten"), /*#__PURE__*/React.createElement("button", {
+  }, "Paraplybeskrivning \u2014 obligatorisk, visas som egen sektion i underlaget, f\xF6re den detaljerade motiveringen"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setShow(s => !s),
     style: {
       background: show ? "#e8d88a" : "#c8352a",
@@ -3980,7 +4032,7 @@ function App() {
   const [showSecurity, setShowSecurity] = useState(false);
 
   // Läs sparad dagskostnad från localStorage (skrivs aldrig till GitHub-källkod)
-  const [fold, setFold] = useState({ 0: false, 1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false });
+  const [fold, setFold] = useState({ 0: false, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 9: true });
   const [panelOpen, setPanelOpen] = useState(false);
   const SP = (i, extra) => ({ sec: i, folded: !!fold[i], onToggle: () => setFold(p => ({ ...p, [i]: !p[i] })), ...(extra || {}) });
   const [revCost, setRevCost] = useState(() => { try { const s = localStorage.getItem(SBSC_REV_KEY); return s && parseInt(s) > 0 ? parseInt(s) : 0; } catch(e) { return 0; } });
@@ -7845,7 +7897,168 @@ ${exportedHTML}
       padding: "6px 12px", borderRadius: 12, cursor: "pointer",
       border: `1px solid ${C.border2}`, background: C.surface, color: C.ink
     }
-  }, lbl))), /*#__PURE__*/React.createElement(MigrationsBanner, null), /*#__PURE__*/React.createElement(SLbl, SP(1, { step: 1 }), "Typ av ans\xF6kan"), /*#__PURE__*/React.createElement("div", { className: fold[1] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
+  }, lbl))), /*#__PURE__*/React.createElement(MigrationsBanner, null), /*#__PURE__*/React.createElement(SLbl, SP(0, { step: 1 }), "Kunduppgifter"), /*#__PURE__*/React.createElement("div", { className: fold[0] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement(Lbl, null, "Organisation"), /*#__PURE__*/React.createElement(Inp, {
+    value: f.cName,
+    onChange: v => set("cName", v),
+    placeholder: "Bolaget AB"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement(Lbl, null, "Organisationsnummer (valfritt)"), /*#__PURE__*/React.createElement(Inp, {
+    value: f.cOrg,
+    onChange: v => set("cOrg", v),
+    placeholder: "556199-0143"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement(Lbl, {
+    tip: "Gatuadress till certifieringsplatsen. Visas i arbetsunderlag och offert, och anv\xE4nds av revisorn f\xF6r bes\xF6ksplanering per IAF MD 1:2023 \u00a77.1.1."
+  }, "Gatuadress"), /*#__PURE__*/React.createElement(Inp, {
+    value: f.cStreet,
+    onChange: v => set("cStreet", v),
+    placeholder: "Storgatan 1"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: { display: "grid", gridTemplateColumns: "100px 1fr", gap: 8, marginBottom: 9 }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Postnummer"), /*#__PURE__*/React.createElement(Inp, {
+    value: f.cZip,
+    onChange: v => set("cZip", v),
+    placeholder: "111 22"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Ort"), /*#__PURE__*/React.createElement(Inp, {
+    value: f.cCity,
+    onChange: v => set("cCity", v),
+    placeholder: "Stockholm"
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement(Lbl, null, "Bransch / Verksamhet"), /*#__PURE__*/React.createElement(Inp, {
+    value: f.cIndustry,
+    onChange: v => set("cIndustry", v),
+    placeholder: "t.ex. IT-tj\xE4nster, tillverkning..."
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement(Lbl, null, "Kontaktperson (valfritt)"), /*#__PURE__*/React.createElement(Inp, {
+    value: f.cContact,
+    onChange: v => set("cContact", v),
+    placeholder: "Namn, roll"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 8,
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, {
+    tip: "Handl\xE4ggaren som uppr\xE4ttat kalkylen och offerten."
+  }, "Uppr\xE4ttad av"), /*#__PURE__*/React.createElement(Inp, {
+    value: f.createdBy,
+    onChange: v => set("createdBy", v),
+    placeholder: "Namn, titel"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, {
+    tip: "Revisor eller annan beh\xF6rig som granskat mandagsber\xE4kningen. Visas i underlag och offert."
+  }, "Granskad och godk\xE4nd av"), /*#__PURE__*/React.createElement(Inp, {
+    value: f.approvedBy,
+    onChange: v => set("approvedBy", v),
+    placeholder: "Namn, titel (valfritt)"
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 8,
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, offertIdLocked ? "Offert-ID (låst — klicka Ändra för att redigera)" : "Offert-ID"), offertIdLocked ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      background: "#f0f0f0",
+      border: "1.5px solid " + C.border,
+      color: C.ink,
+      fontFamily: MONO,
+      fontSize: 12,
+      padding: "7px 9px",
+      borderRadius: 6,
+      letterSpacing: "0.03em"
+    }
+  }, f.offertId), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setOffertIdLocked(false),
+    style: {
+      padding: "6px 10px",
+      background: C.s2,
+      border: "1px solid " + C.border,
+      fontFamily: MONO,
+      fontSize: 11,
+      cursor: "pointer",
+      borderRadius: 4,
+      color: C.ink
+    },
+    title: "L\xE5s upp Offert-ID"
+  }, "Ändra")) : /*#__PURE__*/React.createElement(Inp, {
+    value: f.offertId,
+    onChange: v => set("offertId", v)
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Giltig till"), /*#__PURE__*/React.createElement(Inp, {
+    type: "date",
+    value: f.validTo,
+    onChange: v => set("validTo", v)
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement(Lbl, {
+    tip: "Kundens \xF6nskem\xE5l om n\xE4r certifieringen ska p\xE5b\xF6rjas (Steg 1). Visas i arbetsunderlaget \u2014 anv\xE4nds vid planering."
+  }, "\xD6nskad certifieringstidpunkt (valfritt)"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement(Inp, {
+    type: "number",
+    placeholder: "\xC5r (t.ex. 2027)",
+    min: "2024",
+    max: "2040",
+    value: f.cDesiredDate ? f.cDesiredDate.split("-")[0] : "",
+    onChange: v => {
+      const q = f.cDesiredDate && f.cDesiredDate.includes("-") ? f.cDesiredDate.split("-")[1] : "Q2";
+      set("cDesiredDate", v ? v + "-" + q : "");
+    }
+  }), /*#__PURE__*/React.createElement(Sel, {
+    value: f.cDesiredDate ? f.cDesiredDate.split("-")[1] : "",
+    onChange: v => {
+      const yr = f.cDesiredDate ? f.cDesiredDate.split("-")[0] : new Date().getFullYear();
+      set("cDesiredDate", v ? yr + "-" + v : "");
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "\u2014 V\xE4lj kvartal \u2014"), /*#__PURE__*/React.createElement("option", {
+    value: "Q1"
+  }, "Q1 (jan\u2013mar)"), /*#__PURE__*/React.createElement("option", {
+    value: "Q2"
+  }, "Q2 (apr\u2013jun)"), /*#__PURE__*/React.createElement("option", {
+    value: "Q3"
+  }, "Q3 (jul\u2013sep)"), /*#__PURE__*/React.createElement("option", {
+    value: "Q4"
+  }, "Q4 (okt\u2013dec)"))), f.cDesiredDate && f.cDesiredDate.includes("-") && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: MONO,
+      fontSize: 11,
+      color: C.teal,
+      marginTop: 3
+    }
+  }, f.cDesiredDate.split("-")[1], " ", f.cDesiredDate.split("-")[0])))), /*#__PURE__*/React.createElement(SLbl, SP(1, { step: 2 }), "Typ av ans\xF6kan"), /*#__PURE__*/React.createElement("div", { className: fold[1] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 14
     }
@@ -8329,7 +8542,7 @@ ${exportedHTML}
       const fasSet = [...new Set(bol.map(b => Math.max(1, parseInt(b.fas) || 1)))].sort((x, y) => x - y);
       return fasSet.length > 1 ? ((f.s9001 || f.s14001 || f.s45001) ? "\u2713 Stegvis uppbyggnad i " + fasSet.length + " faser \u2014 fasplan med kostnad per \xE5r genereras i mandagsber\xE4kningen och offerten. " : "\u26A0 Stegvis fasber\xE4kning kr\xE4ver minst en MD 5-standard (9001/14001/45001) \u2014 f\xF6r ren 27001-koncern planeras faserna manuellt. ") : "Alla bolag i Fas 1 (certifieras samtidigt) \u2014 f\xF6r stegvis uppbyggnad: s\xE4tt Fas 2+ p\xE5 bolag som ansluts senare, s\xE5 genereras fasplanen. ";
     })(), "Ange totala FTE-underlaget under steg 4 (Verksamhet & Ber\xE4kningsunderlag). ", /*#__PURE__*/React.createElement("button", { onClick: () => set("sites", String(bol.length)), style: { padding: "3px 10px", fontSize: 11, fontWeight: 600, background: "#FFA300", color: "#101820", border: "none", borderRadius: 4, cursor: "pointer", marginLeft: 4 } }, "S\xE4tt antal platser = " + bol.length));
-  })()))), /*#__PURE__*/React.createElement(SLbl, SP(2, { step: 2 }), "Verksamhetsbeskrivning & Risk"), /*#__PURE__*/React.createElement("div", { className: fold[2] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
+  })()))), /*#__PURE__*/React.createElement(SLbl, SP(2, { step: 3 }), "Verksamhetsbeskrivning & Risk"), /*#__PURE__*/React.createElement("div", { className: fold[2] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 18,
       padding: "16px 18px",
@@ -8472,7 +8685,7 @@ ${exportedHTML}
     style: {
       width: "100%",
       background: C.bg,
-      border: `1px solid ${C.border}`,
+      border: "1.5px solid " + (f.riskDesc && f.riskDesc.trim() ? C.border : "#BF0D3E"),
       color: C.ink,
       fontFamily: MONO,
       fontSize: 12,
@@ -8483,7 +8696,9 @@ ${exportedHTML}
       minHeight: 60,
       lineHeight: 1.7
     }
-  })))), /*#__PURE__*/React.createElement(SLbl, SP(3, { step: 3 }), "ISO 9001 / 14001 / 45001 \u2014 IAF MD 5:2023"), /*#__PURE__*/React.createElement("div", { className: fold[3] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
+  }), !(f.riskDesc && f.riskDesc.trim()) && /*#__PURE__*/React.createElement("div", {
+    style: { color: "#BF0D3E", fontSize: 10.5, marginTop: 4, fontWeight: 600 }
+  }, "Obligatoriskt \u2014 m\xE5ste fyllas i innan offertunderlag kan genereras.")))), /*#__PURE__*/React.createElement(SLbl, SP(3, { step: 4 }), "ISO 9001 / 14001 / 45001 \u2014 IAF MD 5:2023"), /*#__PURE__*/React.createElement("div", { className: fold[3] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 14
     }
@@ -8584,7 +8799,7 @@ ${exportedHTML}
       }
     }, /*#__PURE__*/React.createElement(Chk, {
       checked: f[sKey],
-      onChange: v => { if (isExisting && v) return; set(sKey, v); },
+      onChange: v => { if (isExisting && v) return; set(sKey, v); if (v) setFold(p => ({ ...p, 5: false })); },
       label: /*#__PURE__*/React.createElement("span", {
         title: isExisting ? "Markerad som befintligt certifikat i ut\xF6kningspanelen \u2014 ing\xE5r inte i ut\xF6kningsber\xE4kningen" : undefined,
         style: {
@@ -9651,7 +9866,7 @@ ${exportedHTML}
       color: C.teal,
       marginTop: 3
     }
-  }, "Steg 1 = 33% \u2014 mer tid f\xF6r dokumentgranskning och beredskapsanalys.")), /*#__PURE__*/React.createElement(SLbl, SP(5, { step: 4 }), "Verksamhet & Ber\xE4kningsunderlag"), /*#__PURE__*/React.createElement("div", { className: fold[5] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
+  }, "Steg 1 = 33% \u2014 mer tid f\xF6r dokumentgranskning och beredskapsanalys.")))), /*#__PURE__*/React.createElement(SLbl, SP(5, { step: 5 }), "Verksamhet & Ber\xE4kningsunderlag"), /*#__PURE__*/React.createElement("div", { className: fold[5] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 14
     }
@@ -10754,168 +10969,7 @@ ${exportedHTML}
   }), !(f.evenCycleMotivering && f.evenCycleMotivering.trim()) && /*#__PURE__*/React.createElement("div", {
     style: { color: "#BF0D3E", fontSize: 10, marginTop: 3, fontWeight: 600 }
   }, "Måste fyllas i innan offertunderlag kan genereras med jämn fördelning aktiverad."))));
-  })()), /*#__PURE__*/React.createElement(SLbl, SP(0, { step: 5 }), "Kunduppgifter"), /*#__PURE__*/React.createElement("div", { className: fold[0] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, null, "Organisation"), /*#__PURE__*/React.createElement(Inp, {
-    value: f.cName,
-    onChange: v => set("cName", v),
-    placeholder: "Bolaget AB"
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, null, "Organisationsnummer (valfritt)"), /*#__PURE__*/React.createElement(Inp, {
-    value: f.cOrg,
-    onChange: v => set("cOrg", v),
-    placeholder: "556199-0143"
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, {
-    tip: "Gatuadress till certifieringsplatsen. Visas i arbetsunderlag och offert, och anv\xE4nds av revisorn f\xF6r bes\xF6ksplanering per IAF MD 1:2023 \u00a77.1.1."
-  }, "Gatuadress"), /*#__PURE__*/React.createElement(Inp, {
-    value: f.cStreet,
-    onChange: v => set("cStreet", v),
-    placeholder: "Storgatan 1"
-  })), /*#__PURE__*/React.createElement("div", {
-    style: { display: "grid", gridTemplateColumns: "100px 1fr", gap: 8, marginBottom: 9 }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Postnummer"), /*#__PURE__*/React.createElement(Inp, {
-    value: f.cZip,
-    onChange: v => set("cZip", v),
-    placeholder: "111 22"
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Ort"), /*#__PURE__*/React.createElement(Inp, {
-    value: f.cCity,
-    onChange: v => set("cCity", v),
-    placeholder: "Stockholm"
-  }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, null, "Bransch / Verksamhet"), /*#__PURE__*/React.createElement(Inp, {
-    value: f.cIndustry,
-    onChange: v => set("cIndustry", v),
-    placeholder: "t.ex. IT-tj\xE4nster, tillverkning..."
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, null, "Kontaktperson (valfritt)"), /*#__PURE__*/React.createElement(Inp, {
-    value: f.cContact,
-    onChange: v => set("cContact", v),
-    placeholder: "Namn, roll"
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 8,
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, {
-    tip: "Handl\xE4ggaren som uppr\xE4ttat kalkylen och offerten."
-  }, "Uppr\xE4ttad av"), /*#__PURE__*/React.createElement(Inp, {
-    value: f.createdBy,
-    onChange: v => set("createdBy", v),
-    placeholder: "Namn, titel"
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, {
-    tip: "Revisor eller annan beh\xF6rig som granskat mandagsber\xE4kningen. Visas i underlag och offert."
-  }, "Granskad och godk\xE4nd av"), /*#__PURE__*/React.createElement(Inp, {
-    value: f.approvedBy,
-    onChange: v => set("approvedBy", v),
-    placeholder: "Namn, titel (valfritt)"
-  }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 8,
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, offertIdLocked ? "Offert-ID (låst — klicka Ändra för att redigera)" : "Offert-ID"), offertIdLocked ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 6
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      background: "#f0f0f0",
-      border: "1.5px solid " + C.border,
-      color: C.ink,
-      fontFamily: MONO,
-      fontSize: 12,
-      padding: "7px 9px",
-      borderRadius: 6,
-      letterSpacing: "0.03em"
-    }
-  }, f.offertId), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setOffertIdLocked(false),
-    style: {
-      padding: "6px 10px",
-      background: C.s2,
-      border: "1px solid " + C.border,
-      fontFamily: MONO,
-      fontSize: 11,
-      cursor: "pointer",
-      borderRadius: 4,
-      color: C.ink
-    },
-    title: "L\xE5s upp Offert-ID"
-  }, "Ändra")) : /*#__PURE__*/React.createElement(Inp, {
-    value: f.offertId,
-    onChange: v => set("offertId", v)
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Giltig till"), /*#__PURE__*/React.createElement(Inp, {
-    type: "date",
-    value: f.validTo,
-    onChange: v => set("validTo", v)
-  }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement(Lbl, {
-    tip: "Kundens \xF6nskem\xE5l om n\xE4r certifieringen ska p\xE5b\xF6rjas (Steg 1). Visas i arbetsunderlaget \u2014 anv\xE4nds vid planering."
-  }, "\xD6nskad certifieringstidpunkt (valfritt)"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 6
-    }
-  }, /*#__PURE__*/React.createElement(Inp, {
-    type: "number",
-    placeholder: "\xC5r (t.ex. 2027)",
-    min: "2024",
-    max: "2040",
-    value: f.cDesiredDate ? f.cDesiredDate.split("-")[0] : "",
-    onChange: v => {
-      const q = f.cDesiredDate && f.cDesiredDate.includes("-") ? f.cDesiredDate.split("-")[1] : "Q2";
-      set("cDesiredDate", v ? v + "-" + q : "");
-    }
-  }), /*#__PURE__*/React.createElement(Sel, {
-    value: f.cDesiredDate ? f.cDesiredDate.split("-")[1] : "",
-    onChange: v => {
-      const yr = f.cDesiredDate ? f.cDesiredDate.split("-")[0] : new Date().getFullYear();
-      set("cDesiredDate", v ? yr + "-" + v : "");
-    }
-  }, /*#__PURE__*/React.createElement("option", {
-    value: ""
-  }, "\u2014 V\xE4lj kvartal \u2014"), /*#__PURE__*/React.createElement("option", {
-    value: "Q1"
-  }, "Q1 (jan\u2013mar)"), /*#__PURE__*/React.createElement("option", {
-    value: "Q2"
-  }, "Q2 (apr\u2013jun)"), /*#__PURE__*/React.createElement("option", {
-    value: "Q3"
-  }, "Q3 (jul\u2013sep)"), /*#__PURE__*/React.createElement("option", {
-    value: "Q4"
-  }, "Q4 (okt\u2013dec)"))), f.cDesiredDate && f.cDesiredDate.includes("-") && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: MONO,
-      fontSize: 11,
-      color: C.teal,
-      marginTop: 3
-    }
-  }, f.cDesiredDate.split("-")[1], " ", f.cDesiredDate.split("-")[0])))), /*#__PURE__*/React.createElement(SLbl, SP(7), "Rabatt & Priss\xE4ttning"), /*#__PURE__*/React.createElement("div", { className: fold[7] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
+  })()), /*#__PURE__*/React.createElement(SLbl, SP(7), "Rabatt & Priss\xE4ttning"), /*#__PURE__*/React.createElement("div", { className: fold[7] ? "secb folded" : "secb" }, /*#__PURE__*/React.createElement("div", { className: "seci" }, /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 14,
       background: "#fff",
@@ -11245,7 +11299,6 @@ ${exportedHTML}
         }, "\u26a0 L\xe5gt TB \u2014 kontrollera antaganden.")
       );
     })()))
-  ))
 )),
 
   /*#__PURE__*/React.createElement("div", {
@@ -11556,13 +11609,15 @@ ${exportedHTML}
     const sitesOk = f.certType === "siteext" || parseInt(f.sites) <= 1 || sdet.length >= parseInt(f.sites);
     const entOk = !f.koncern || (f.siteDetails || []).filter(d => d && d.entity).length >= parseInt(f.sites || "1");
     const evenCycleOk = !f.evenCycle || !!(f.evenCycleMotivering && f.evenCycleMotivering.trim());
-    const allReady = hasStd && persOk && certTypeOk && evenCycleOk;
+    const riskDescOk = !!(f.riskDesc && f.riskDesc.trim());
+    const allReady = hasStd && persOk && certTypeOk && evenCycleOk && riskDescOk;
     const openSec = idxs => setFold(p => { const n = { ...p }; idxs.forEach(i => { n[i] = false; }); return n; });
     const goSec = (i, match) => { openSec([i]); setTimeout(() => { const el = [...document.querySelectorAll(".slbl")].find(e => (e.textContent || "").indexOf(match) === 0); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 80); };
     const qs = (patch, opens) => { Object.entries(patch).forEach(([k, v]) => set(k, v)); openSec(opens); };
     const items = [
       ["Kunduppgifter", kundOk, () => goSec(0, "Kunduppgifter"), false],
       ["Typ av ans\xF6kan", certTypeOk, () => goSec(1, "Typ av ans\xF6kan"), true],
+      ["Verksamhetsbeskrivning", riskDescOk, () => goSec(2, "Verksamhetsbeskrivning"), true],
       ["Standarder valda", hasStd, () => goSec(3, "ISO 9001"), true],
       ["Personal (FTE / ISMS-personer)", persOk, () => needMD5 || !f.s27001 ? goSec(5, "Verksamhet & Ber\xE4kningsunderlag") : goSec(4, "ISO 27001"), true]
     ];
@@ -11598,12 +11653,13 @@ ${exportedHTML}
       style: { fontFamily: SANS, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.muted, marginBottom: 10, textAlign: "left" }
     }, "Snabbstart"), /*#__PURE__*/React.createElement("div", {
       style: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 30 }
-    }, [["Ny: ISO 9001", () => qs({ certType: "new", s9001: true }, [0, 3, 5])], ["Ny: ISO 27001", () => qs({ certType: "new", s27001: true }, [0, 4])], ["Ny: 9001 + 27001", () => qs({ certType: "new", s9001: true, s27001: true }, [0, 3, 4, 5])], ["Ut\xF6kning (14001/45001/27001)", () => qs({ certType: "extension" }, [1, 3, 4])], ["Koncerncertifikat", () => qs({ koncern: true, sites: parseInt(f.sites) > 1 ? f.sites : "2" }, [5])], ["Visa exempel", () => qs({
+    }, [["Ny: ISO 9001", () => qs({ certType: "new", s9001: true }, [0, 1, 2, 3, 5])], ["Ny: ISO 27001", () => qs({ certType: "new", s27001: true }, [0, 1, 2, 4])], ["Ny: 9001 + 27001", () => qs({ certType: "new", s9001: true, s27001: true }, [0, 1, 2, 3, 4, 5])], ["Ut\xF6kning (14001/45001/27001)", () => qs({ certType: "extension" }, [1, 2, 3, 4])], ["Koncerncertifikat", () => qs({ koncern: true, sites: parseInt(f.sites) > 1 ? f.sites : "2" }, [1, 2, 5])], ["Visa exempel", () => qs({
       certType: "new", s9001: true,
       cName: "Nordlarm AB", cOrgNr: "556321-7845",
       cStreet: "Industrigatan 12", cZip: "169 03", cCity: "Solna",
       cIndustry: "Larmcentral \u2014 certifierad larmmottagning och \xE5tg\xE4rdsstyrning",
       scope: "Larmcentralsverksamhet med dygnet-runt-bemanning: mottagning, verifiering och \xE5tg\xE4rdsstyrning av inbrotts-, brand- och tekniska larm. Cirka 120 anst\xE4llda varav majoriteten larmoperat\xF6rer i skiftg\xE5ng.",
+      riskDesc: "Larmcentralsverksamhet med dygnet-runt-bemanning: mottagning, verifiering och \xE5tg\xE4rdsstyrning av inbrotts-, brand- och tekniska larm. Cirka 120 anst\xE4llda varav majoriteten larmoperat\xF6rer i skiftg\xE5ng. Inga installations- eller f\xE4ltmoment \u2014 verksamheten \xE4r renodlad \xF6vervaknings-/larmmottagningstj\xE4nst.",
       fteFulltime: "110", ftePart: "20", ftePartPct: "50",
       qmsRisk: "medium", maturity: "low",
       similar: "larmcentral", shifts: "yes",
