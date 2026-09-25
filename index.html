@@ -889,20 +889,11 @@ function calcMD5(f) {
     });
   }
   const hasTransfer = existingKeys.some(s => stds.includes("ISO " + s) && existing[s]?.body?.trim());
-  if (hasTransfer && !imsActive) adj.push({
-    label: "Transferreduktion — prior knowledge/client preparedness",
-    ref: "IAF MD 2:2023 §2.3.4 (transferprocess) + IAF MD 5:2023 §8(v)e (client preparedness)",
-    delta: -0.5,
-    red: true,
-    transfer: true
-  });
-  if (hasTransfer && imsActive) adj.push({
-    label: "Transfer — ej separat reduktion vid IMS-revision",
-    ref: "IAF MD 5:2023 §8(v) Note: ogiltig vid MD 11-revision. IMS-reduktionen täcker detta.",
-    delta: 0,
-    red: false,
-    imsNote: true
-  });
+  // 2026-09-25 (SBSC-beslut): "Transferreduktion" (−0,5 dag) BORTTAGEN. IAF MD 2:2023 innehåller ingen
+  // reduktion av revisionstid — §2.3.4 anger endast att cykeln baseras på föregående cykel. IAF MD 5:2023
+  // §8(v)d avser förkunskap hos SAMMA certifieringsorgan och §8(v)e exemplifierar certifiering i en ANNAN
+  // tredjepartsordning — inget av dem ger explicit stöd för avdrag vid övertagande av samma standard.
+  // hasTransfer behålls endast som informationsflagga (påverkar inga dagtal).
   if (f.complexity === "high") adj.push({
     label: "Komplexitetstillägg — många unika processer",
     ref: "IAF MD 5:2023 §8(i)e — faktor; +1,0 d är SBSC:s kalibrerade kvantifiering per §3.4",
@@ -1186,18 +1177,14 @@ function calc27006(f) {
     red: false
   });
 
-  // IAF MD 2:2023: Transfer
-  if (f.ex27001 && f.ex27001cb?.trim()) { adj.push({
-    label: "Transferreduktion — befintligt ISO 27001-certifikat",
-    ref: "IAF MD 2:2023 §2.3 — certcykel fortsätter från utfärdande organ",
-    delta: -0.5,
-    red: true,
-    transfer: true
-  }); }else if (f.ex27001) {
+  // 2026-09-25 (SBSC-beslut): "Transferreduktion" (−0,5 dag) BORTTAGEN — IAF MD 2:2023 innehåller ingen
+  // reduktion av revisionstid. När annat certifieringsorgan anges ges ingen reduktion (oförändrat: ingen
+  // historikreduktion i det fallet). Historikreduktionen nedan gäller som tidigare endast utan angivet organ.
+  if (f.ex27001 && !(f.ex27001cb && f.ex27001cb.trim())) {
     const bonus = parseInt(f.ex27001y) >= 3 ? -0.5 : parseInt(f.ex27001y) >= 2 ? -0.25 : 0;
     if (bonus < 0) adj.push({
       label: "Mognadsreduktion — befintlig 27001-historik",
-      ref: "27006-1:2024 C.3.5(c) + IAF MD 2:2023",
+      ref: "27006-1:2024 C.3.5 (prior knowledge / client preparedness)",
       delta: bonus,
       red: true
     });
@@ -1279,8 +1266,84 @@ function calcMD11Integration(md5, iso27001, f) {
   };
 }
 
+// ══════════════════════════════════════════
+// ÖVERTAGANDE AV CERTIFIERING — IAF MD 2:2023 (SBSC-beslut 2026-09-25)
+// §2.2.2 Not: förhandsgranskningen är inte en revision → ingen initial revision/revisionstid.
+// §2.3.4: cykeln baseras på föregående cykel; mottagande organ fastställer revisionsprogrammet
+// för ÅTERSTODEN av cykeln. §2.3.5: beslut fattas innan periodisk revision/omcertifiering påbörjas.
+// Förutsättningar och förhandsgranskning prövas enligt SBSC:s rutin för övertagande (ej i verktyget).
+// ══════════════════════════════════════════
+const TRANSFER_POS_LABEL = { surv1: "periodisk revision \xE5r 1", surv2: "periodisk revision \xE5r 2", recert: "omcertifiering" };
+function transferPos(f) {
+  if (!f || f.certType !== "transfer") return null;
+  return f.transferCycle === "surv2" || f.transferCycle === "recert" ? f.transferCycle : "surv1";
+}
+// Antal revisionstillfällen som ingår i offerten. Normal cykel: initial + 2 periodiska + omcertifiering.
+// Övertagande: endast återstående revisioner i pågående cykel (ingen initial revision).
+function cycleCounts(f) {
+  const pos = transferPos(f);
+  if (!pos) return { nInit: 1, nSurv: 2, nRecert: 1, transfer: false, pos: null };
+  return { nInit: 0, nSurv: pos === "surv1" ? 2 : pos === "surv2" ? 1 : 0, nRecert: 1, transfer: true, pos: pos };
+}
+// Återstående revisioner vid övertagande, i ordning. Dagtalen tas oförändrade från beräkningen (MD 5 §5–6).
+function transferRemaining(f, surv, recert) {
+  const pos = transferPos(f);
+  if (!pos) return [];
+  const s1 = { id: "surv1", yr: "1", label: "Periodisk revision \xE5r 1", days: surv, kind: "surv" };
+  const s2 = { id: "surv2", yr: "2", label: "Periodisk revision \xE5r 2", days: surv, kind: "surv" };
+  const rc = { id: "recert", yr: "3", label: "Omcertifiering", days: recert, kind: "recert" };
+  return pos === "recert" ? [rc] : pos === "surv2" ? [s2, rc] : [s1, s2, rc];
+}
+// Beräkningsinput (tidigare inline i generate()). Övertagande: övertagna standarder ger varken
+// historik- eller transferreduktion — IAF MD 5:2023 §8(v)d avser förkunskap hos SAMMA organ.
+// Kundens historik hos tidigare organ beaktas i mognadsbedömningen (§8(v)c), inte som separat avdrag.
+function buildCalcInput(f, effectiveFte) {
+  const fCalc = { ...f, fte: String(effectiveFte) };
+  if (f.certType === "transfer") {
+    [["9001", "transferHas9001"], ["14001", "transferHas14001"], ["45001", "transferHas45001"], ["27001", "transferHas27001"]].forEach(([std, k]) => {
+      if (f[k]) {
+        fCalc["ex" + std] = false;
+        fCalc["ex" + std + "cb"] = "";
+      }
+    });
+    fCalc.transferCycle = transferPos(f);
+  }
+  if (f.certType === "extension") {
+    if (f.extHas9001) {
+      fCalc.ex9001 = true;
+      fCalc.ex9001y = f.ext9001y;
+      fCalc.ex9001cb = "SBSC";
+    }
+    if (f.extHas14001) {
+      fCalc.ex14001 = true;
+      fCalc.ex14001y = f.ext14001y;
+      fCalc.ex14001cb = "SBSC";
+    }
+    if (f.extHas45001) {
+      fCalc.ex45001 = true;
+      fCalc.ex45001y = f.ext45001y;
+      fCalc.ex45001cb = "SBSC";
+    }
+    if (f.extHas27001) {
+      fCalc.ex27001 = true;
+      fCalc.ex27001y = f.ext27001y;
+      fCalc.ex27001cb = "SBSC";
+    }
+  }
+  return fCalc;
+}
+const TRANSFER_NEXT_STEPS = [
+  ["1", "Signera offerten", "via SBSC:s e-tj\xE4nst. B\xE5da parter f\xE5r en bekr\xE4ftelse per e-post."],
+  ["2", "Medgivande och underlag", "ni ger ert medgivande till att ert nuvarande certifieringsorgan l\xE4mnar ut underlag till SBSC och skickar ert certifikat med bilagor samt senaste revisionsrapporter."],
+  ["3", "F\xF6rhandsgranskning och beslut", "SBSC granskar er certifiering och fattar beslut om \xF6vertagande innan n\xE4sta revision. Om granskningen visar hinder f\xF6r \xF6vertagande kontaktar vi er innan n\xE5got annat sker."],
+  ["4", "Bokning av n\xE4sta revision", "n\xE4r beslutet \xE4r fattat bokar SBSC n\xE4sta revision i er p\xE5g\xE5ende certifieringscykel. Ni kontaktas av kund- och f\xF6rs\xE4ljningsansvarig inom en arbetsdag efter signerad offert."]
+];
 // ── Motiveringstext ──
 function cycleNodes(snap, prices, extC, md5n) {
+  if (snap && snap.certType === "transfer") {
+    const rem = transferRemaining(snap, prices.surv, prices.recert);
+    return [["\xD6", "Beslut om \xF6vertagande", "ej revision \xB7 0 dgr", true]].concat(rem.map(r => [r.yr, r.label, fmt(r.days) + " dgr", r.kind === "recert"]));
+  }
   // Utökningsvariant: noder byggs från cykelpositionen för befintliga certifikat.
   // Alla dagtal läses från redan beräknade objekt (md5n = nya standarder, extC = samordnad cykel).
   if (snap && snap.certType === "extension" && extC && md5n) {
@@ -1428,7 +1491,7 @@ function buildMotiv(f, md5, iso27001, integration, extCombined) {
       }
     }
     if (f.prevRevComment) parts.push(`Erfarenhet från tidigare revisioner: ${f.prevRevComment}`);
-    if (f.certType !== "siteext") parts.push(`Steg 1 (${fmt(md5.stage1)} dag): dokumentationsgranskning och beredskapsanalys. Steg 2 (${fmt(md5.stage2)} dag): fullständig revision på plats.`);
+    if (f.certType !== "siteext" && f.certType !== "transfer") parts.push(`Steg 1 (${fmt(md5.stage1)} dag): dokumentationsgranskning och beredskapsanalys. Steg 2 (${fmt(md5.stage2)} dag): fullständig revision på plats.`);
     if (md5.onsite80) {
       parts.push(`80% planerad tid på plats (IAF MD 5:2023 §2.1.2): Den fullt beräknade audittiden är ${fmt(md5.totalInitFull)} dagar. Av dessa planeras ${fmt(md5.totalInit)} dagar som tid på plats (80%). Resterande ${fmt(md5.onsiteOffDays)} dagar (för-/efterarbete) ska schemaläggas i revisorns kalender och kunna styrkas vid tillsyn. De redovisade revisionsdagarna och priset baseras på det reducerade talet ${fmt(md5.totalInit)} dagar.`);
     }
@@ -1560,7 +1623,7 @@ if (f.certType === "siteext") {
     const d4desc = iso27001.annexD.pctMin === 0 && iso27001.annexD.pctMax === 0 ? d4base + "Ingen D.4-justering tillämpas för denna kombination." : f.imsD4choice === "conservative" ? d4base + "SBSC tillämpar den nedre gränsen (" + d4choiceStr + ") baserat på att organisationens förutsättningar — ledningssystemets mognad, verksamhetskomplexitet och IT-miljö — sammantaget bedöms som gynnsamma för en effektiv revision." + (f.imsD4reason ? " Motivering: " + f.imsD4reason : "") : f.imsD4choice === "extended" ? d4base + "SBSC tillämpar den övre gränsen (" + d4choiceStr + ") baserat på att organisationens förutsättningar kräver utökad revisionstid." + (f.imsD4reason ? " Motivering: " + f.imsD4reason : "") : d4base + "SBSC tillämpar intervallmittpunkten (" + d4choiceStr + ") som bedöms representera en balanserad uppskattning av revisionsbördan för denna organisation.";
     parts.push(`För ISO 27001 tillämpas SS-EN ISO/IEC 27006-1:2024 §9.1.4.2 (normativt krav att använda Annex C).${c34desc} Bastal Table C.1: ${fmt(iso27001.base)} dag för ${iso27001.persons} pers. inom scope (intervall ${personsRange(iso27001.persons)}). ${d4desc} Justerat bastal: ${fmt(iso27001.afterAnnexD)} dag.` + (reds27 ? ` Ytterligare reduktioner per C.3.5: ${reds27}.` : "") + (adds27 ? ` Tillägg per C.3.5: ${adds27}.` : "") + ` C.3.6: max 30% avvikelse mot Table C.1 (golv ${fmt(iso27001.floor)} dag).`);
     if (iso27001.scopeExt > 0) parts.push(`Scopeutökning per C.7: +${fmt(iso27001.scopeExt)} dag (${f.imsScopeExt === "combined" ? "kombinerat med surveillance/omcertifiering" : "separat audit"}).`);
-    parts.push(`Steg 1 (${fmt(iso27001.stage1)} dag): granskning av ISMS-dokumentation, riskbedömning, Statement of Applicability (SoA) och riskbehandlingsplan. Steg 2 (${fmt(iso27001.stage2)} dag): fullständig revision på plats av ISMS-implementering och kontroller.`);
+    if (f.certType !== "transfer") parts.push(`Steg 1 (${fmt(iso27001.stage1)} dag): granskning av ISMS-dokumentation, riskbedömning, Statement of Applicability (SoA) och riskbehandlingsplan. Steg 2 (${fmt(iso27001.stage2)} dag): fullständig revision på plats av ISMS-implementering och kontroller.`);
     parts.push(`C.3.7: Faktisk tid på plats ska inte understiga 70% av beräknad total audittid (off-site planering och rapportskrivning inräknat). Restid ingår inte i beräknade revisionsdagar (SS-EN ISO/IEC 17021-1:2015 §9.1.4.2 Not 1).`);
     if (parseInt(f.sites) > 1) {
       const q1 = f.iso27001SitesQ1 || "ej bedömt";
@@ -1581,13 +1644,27 @@ if (f.certType === "siteext") {
   const survRef = iso27001 ? "IAF MD 5:2023 §5 / 27006-1:2024 C.4" : "IAF MD 5:2023 §5";
   const recertRef = iso27001 ? "IAF MD 5:2023 §6 / 27006-1:2024 C.5" : "IAF MD 5:2023 §6";
   parts.push(`Periodisk revision (år 1 & 2): ${fmt(survForParts)} dag per tillfälle — beräknat som ${fmt(combinedInit)} ÷ 3 = ${(combinedInit / 3).toFixed(2).replace(".", ",")} → avrundat till ${fmt(survForParts)} dag per ${survRef}. Omcertifiering år 3: ${fmt(recertForParts)} dag — beräknat som ${fmt(combinedInit)} × 2/3 = ${(combinedInit * 2 / 3).toFixed(2).replace(".", ",")} → avrundat till ${fmt(recertForParts)} dag per ${recertRef}.`);
+  // ── Övertagande (IAF MD 2:2023) — 2026-09-25 ──
+  if (f.certType === "transfer") {
+    const trPos = transferPos(f);
+    const trStds = [f.transferHas9001 && "ISO 9001", f.transferHas14001 && "ISO 14001", f.transferHas45001 && "ISO 45001", f.transferHas27001 && "ISO 27001"].filter(Boolean);
+    const trRem = transferRemaining(f, 0, 0).map(r => r.label.toLowerCase());
+    parts.push("\xD6VERTAGANDE AV CERTIFIERING (IAF MD 2:2023)\n" +
+      "\xD6vertagna standarder: " + (trStds.join(", ") || "\u2014") + " fr\xE5n " + (f.transferOrg || "[certifieringsorgan saknas]") + (f.transferCertNr ? " (certifikat " + f.transferCertNr + ")" : "") + ". " +
+      "F\xF6ruts\xE4ttningar, f\xF6rhandsgranskning och beslut hanteras enligt SBSC:s rutin f\xF6r \xF6vertagande av certifiering och Checklista f\xF6r \xF6vertagande, som sparas i certifierings\xE4rendet. " +
+      "F\xF6rhandsgranskningen \xE4r inte en revision och ing\xE5r inte i revisionstiden (\xA72.2.2 Not). Beslut om \xF6vertagande fattas innan n\xE5gon periodisk revision eller omcertifiering p\xE5b\xF6rjas (\xA72.3.5). " +
+      "Certifieringscykeln baseras p\xE5 f\xF6reg\xE5ende cykel och SBSC fastst\xE4ller revisionsprogrammet f\xF6r \xE5terstoden av cykeln (\xA72.3.4). N\xE4sta revision: " + TRANSFER_POS_LABEL[trPos] + ". \xC5terst\xE5ende revisioner i cykeln: " + trRem.join(", ") + " (dagtal enligt revisionsplanen). " +
+      "Den ber\xE4knade initiala audittiden ovan anv\xE4nds endast som underlag f\xF6r periodisk revision och omcertifiering (IAF MD 5:2023 \xA75\u20136) \u2014 ingen initial certifieringsrevision genomf\xF6rs. " +
+      "Ingen reduktion av revisionstid till\xE4mpas f\xF6r \xF6vertagandet och ingen historikreduktion f\xF6r de \xF6vertagna standarderna: IAF MD 2:2023 inneh\xE5ller ingen reduktion av revisionstid, och IAF MD 5:2023 \xA78(v)d avser f\xF6rkunskap hos samma certifieringsorgan. Kundens revisionshistorik hos tidigare organ beaktas i mognadsbed\xF6mningen (\xA78(v)c). " +
+      "Om f\xF6rhandsgranskningen visar hinder f\xF6r \xF6vertagande ska kunden behandlas som ny kund med ny certifieringscykel fr\xE5n beslutet (\xA72.3.2, \xA72.3.4) \u2014 mandagsber\xE4kningen g\xF6rs d\xE5 om som ny certifiering.");
+  }
   // Regelverksmening — bara inkludera relevanta standarder
   const regelverk = [];
   if (iso27001) regelverk.push("SS-EN ISO/IEC 27006-1:2024 (Annex C normativ, Annex D informativ)");
   if (md5) regelverk.push("IAF MD 5:2023 (Issue 4, V3)");
   if (md5 && md5.stds.length > 1) regelverk.push("IAF MD 11:2023 (Issue 3)");
   if (parseInt(f.sites) > 1) regelverk.push("IAF MD 1:2023 (Issue 3)");
-  if (md5?.hasTransfer || f.ex27001) regelverk.push("IAF MD 2:2023 (Issue 2, V2)");
+  if (f.certType === "transfer") regelverk.push("IAF MD 2:2023 (Issue 2, V2)");
   // IAF MD 5:2023 §8(v) Note: prior knowledge-reduktion ogiltig vid IMS-revision per MD 11
   const imsActiveInMotiv = md5 && iso27001 && !f.iso27001separate && parseInt(f.imsIntLevel || "0") > 0;
   if (imsActiveInMotiv && md5?.existingKeys?.length > 0) {
@@ -1757,7 +1834,11 @@ function buildCustomerMotiv(f, md5, iso27001, integration, extCombined) {
     if (_floorHit) {
       calcLines.push("Viktigt att veta: De internationella reglerna till\xE5ter aldrig att revisionstiden reduceras med mer \xE4n 30 % fr\xE5n grundtiden \u2014 det garanterar att revisionen alltid h\xE5ller full kvalitet. Den gr\xE4nsen har till\xE4mpats i er ber\xE4kning.");
     }
-    calcLines.push("Resultat: " + fmt(md5.totalInit) + " revisionsdagar f\xF6r initial certifiering" + (f.s27001 && iso27001 ? " (ut\xF6ver informationss\xE4kerheten nedan)" : "") + ".");
+    if (f.certType === "transfer") {
+      calcLines.push("Ber\xE4knad grundtid: " + fmt(md5.totalInit) + " revisionsdagar" + (f.s27001 && iso27001 ? " (ut\xF6ver informationss\xE4kerheten nedan)" : "") + ". Vid \xF6vertagande genomf\xF6rs ingen ny initial certifiering \u2014 grundtiden anv\xE4nds f\xF6r att fastst\xE4lla tiden f\xF6r periodisk revision (ca 1/3) och omcertifiering (ca 2/3).");
+    } else {
+      calcLines.push("Resultat: " + fmt(md5.totalInit) + " revisionsdagar f\xF6r initial certifiering" + (f.s27001 && iso27001 ? " (ut\xF6ver informationss\xE4kerheten nedan)" : "") + ".");
+    }
   }
   if (iso27001) {
     const p27 = iso27001.persons || iso27001.totalPersons;
@@ -1786,8 +1867,19 @@ function buildCustomerMotiv(f, md5, iso27001, integration, extCombined) {
     );
   }
 
+  // ── Övertagande: revisionsplan för återstående cykel (IAF MD 2:2023 §2.3.4) ──
+  if ((md5 || iso27001) && f.certType === "transfer") {
+    const posT = transferPos(f);
+    const remT = transferRemaining(f, 0, 0).map(r => r.label.toLowerCase());
+    parts.push(
+      "REVISIONSPLAN\n" +
+      "\u2022 F\xF6rhandsgranskning: Vi g\xE5r igenom er nuvarande certifiering \u2014 certifikat, senaste revisionsrapporter och status p\xE5 eventuella avvikelser \u2014 och fattar beslut om \xF6vertagande. Det \xE4r inte en revision och ing\xE5r inte i revisionstiden.\n" +
+      "\u2022 Er certifieringscykel forts\xE4tter \u2014 n\xE4sta revision \xE4r " + TRANSFER_POS_LABEL[posT] + ".\n" +
+      "\u2022 \xC5terst\xE5ende revisioner i cykeln: " + remT.join(", ") + ". D\xE4refter forts\xE4tter certifieringen i ordinarie tre\xE5rscykel."
+    );
+  }
   // ── Steg 1 och Steg 2 ─────────────────────────────────────────────────
-  if (md5 || iso27001) {
+  if ((md5 || iso27001) && f.certType !== "transfer") {
     const s1 = md5 ? md5.stage1 : iso27001?.stage1 || 0;
     const s2 = md5 ? md5.stage2 : iso27001?.stage2 || 0;
     const distans = f.imsSteg1Distans === "yes";
@@ -2558,7 +2650,7 @@ const Ref = ({
     }
   }, "Regelverksbas:"), " ", refs.join(" · "), " \xB7 SBSC ackrediteras av SWEDAC");
 };
-const TOOL_VERSION = "1.10";
+const TOOL_VERSION = "1.11";
 const DocFoot = ({
   ds,
   internal
@@ -3895,98 +3987,44 @@ const MotivExamples = () => {
     style: { fontSize: 11.5, color: "#333", lineHeight: 1.6 }
   }, motiv)))))));
 };
-const TransferChecklist = () => {
-  const items = [
-  // §2.2.4(i): scope-kontroll
-  "Certifikatet är giltigt och utfärdat under ackreditering av IAF MLA-signatory (nivå 3+)",
-  // §2.2.4(i)+(iv): giltighet
-  "Certifikatet är inte suspenderat, indraget eller föremål för pågående indragning",
-  // §2.2.4(i): SBSC:s scope
-  "Certifieringen ligger inom SBSC:s ackrediterade scope",
-  // §2.2.4(ii): utfärdande organs ackreditering
-  "Utfärdande organs ackrediterade scope ligger inom ackrediteringsorganets MLA-scope (IAF MD 2:2023 §2.2.4 ii)",
-  // §2.2.4(v): revisionsrapporter
-  "Senaste certifierings-/recertifieringsrapport och senaste surveillance-rapport är tillgängliga — status för alla öppna avvikelser dokumenterad",
-  // §2.2.4(v): om rapporter saknas → behandla som ny kund
-  "Om revisionsrapporter ej kan erhållas: kunden behandlas som ny kund (IAF MD 2:2023 §2.2.2)",
-  // §2.2.4(vi): klagomål
-  "Klagomål mottagna hos utfärdande organ och vidtagna åtgärder är klarlagda (IAF MD 2:2023 §2.2.4 vi)",
-  // §2.2.4(vii): revisionsplan
-  "Utfärdande organs revisionsprogram är granskat som underlag för SBSC:s planering (IAF MD 2:2023 §2.2.4 vii)",
-  // §2.2.4(viii): regulatorisk kontakt
-  "Eventuell regulatorisk kontakt relevant för certifieringsscopet är klarlagd (IAF MD 2:2023 §2.2.4 viii)",
-  // §2.3.1: avvikelser
-  "Öppna större avvikelser är verifierat åtgärdade — plan för minderavvikelser är accepterad (IAF MD 2:2023 §2.3.1)"];
-  const [checked, setChecked] = useState({});
-  const allOk = items.every((_, i) => checked[i]);
-  const anyChecked = Object.values(checked).some(Boolean);
+// Övertagande: förutsättningsprövningen görs enligt SBSC:s rutin och Checklista för övertagande
+// (sparas i certifieringsärendet) — verktyget upprepar inte kraven (2026-09-25).
+const TransferRutinRef = () => /*#__PURE__*/React.createElement("div", {
+  style: {
+    background: "white",
+    border: "1px solid #e8d88a",
+    borderLeft: "3px solid #c8a800",
+    padding: "9px 12px",
+    fontFamily: MONO,
+    fontSize: 11,
+    lineHeight: 1.7,
+    color: C.ink,
+    marginBottom: 6
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: { fontWeight: 700, color: "#7a5c1e", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 5 }
+}, "F\xF6ruts\xE4ttningar \u2014 enligt rutin"), "F\xF6ruts\xE4ttningar, f\xF6rhandsgranskning och beslut hanteras enligt SBSC:s ", /*#__PURE__*/React.createElement("strong", null, "rutin f\xF6r \xF6vertagande av certifiering"), " och ", /*#__PURE__*/React.createElement("strong", null, "Checklista f\xF6r \xF6vertagande"), " i ledningssystemet. Checklistan fylls i och sparas i certifierings\xE4rendet \u2014 kalkylatorn g\xF6r ingen f\xF6ruts\xE4ttningspr\xF6vning.", /*#__PURE__*/React.createElement("div", {
+  style: { marginTop: 5 }
+}, "Visar f\xF6rhandsgranskningen hinder (se rutinens hindertabell) ska kunden behandlas som ny kund (IAF MD 2:2023 \xA72.3.2) \u2014 v\xE4lj d\xE5 ", /*#__PURE__*/React.createElement("strong", null, "Ny certifiering"), ". \xD6vertagandet ska vara beslutat innan n\xE4sta revision p\xE5b\xF6rjas (\xA72.3.5)."));
+// Cykelposition vid övertagande (IAF MD 2:2023 §2.3.4) — styr vilka revisioner som återstår i cykeln
+const TransferCyclePos = ({ f, set }) => {
+  const expiry = f.transferExpiry ? new Date(f.transferExpiry) : null;
+  const monthsLeft = expiry ? Math.round((expiry - new Date()) / (1000 * 60 * 60 * 24 * 30)) : null;
+  const hint = monthsLeft === null ? null : monthsLeft > 24 ? "surv1" : monthsLeft > 12 ? "surv2" : "recert";
+  const pos = transferPos(f) || "surv1";
+  const rem = transferRemaining({ ...f, certType: "transfer" }, 0, 0).map(r => r.label.toLowerCase());
   return /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "white",
-      border: "1px solid #e8d88a",
-      borderLeft: "3px solid #c8a800",
-      padding: "9px 12px",
-      fontFamily: "monospace",
-      fontSize: 9,
-      marginBottom: 6
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      color: "#7a5c1e",
-      letterSpacing: "0.08em",
-      textTransform: "uppercase",
-      marginBottom: 7
-    }
-  }, "F\xF6ruts\xE4ttningskontroll \u2014 transfer m\xF6jlig?"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 5
-    }
-  }, items.map((item, i) => /*#__PURE__*/React.createElement("label", {
-    key: i,
-    style: {
-      display: "flex",
-      alignItems: "flex-start",
-      gap: 7,
-      cursor: "pointer",
-      color: checked[i] ? "#265c3a" : "#444",
-      lineHeight: 1.5
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: !!checked[i],
-    onChange: e => setChecked(p => ({
-      ...p,
-      [i]: e.target.checked
-    })),
-    style: {
-      marginTop: 1,
-      accentColor: "#265c3a",
-      flexShrink: 0,
-      cursor: "pointer"
-    }
-  }), /*#__PURE__*/React.createElement("span", {
-    style: {
-      textDecoration: checked[i] ? "none" : "none"
-    }
-  }, item)))), anyChecked && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 7,
-      padding: "5px 8px",
-      background: allOk ? "#edf7ed" : "#fff8e8",
-      border: "1px solid " + (allOk ? "#7bc47b" : "#e8d88a"),
-      fontWeight: 600,
-      color: allOk ? "#265c3a" : "#7a5c1e"
-    }
-  }, allOk ? "✓ Alla förutsättningar uppfyllda — transfer kan genomföras" : "⚠ Kontrollera ej ikryssade punkter innan offert skickas"), !anyChecked && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 6,
-      color: "#aaa",
-      fontStyle: "italic"
-    }
-  }, "Kryssa i punkterna n\xE4r du bekr\xE4ftat dem med kunden."));
+    style: { marginTop: 10, background: "white", border: "1.5px solid " + C.goldBd, borderLeft: "3px solid " + C.accent, borderRadius: 4, padding: "8px 12px" }
+  }, /*#__PURE__*/React.createElement(Lbl, {
+    tip: "N\xE4sta revision i kundens p\xE5g\xE5ende cykel efter beslut om \xF6vertagande. H\xE4mtas ur f\xF6rhandsgranskningen (certifikat och senaste revisionsrapport). Styr vilka revisioner som ing\xE5r i underlag och offert (IAF MD 2:2023 \xA72.3.4)."
+  }, "N\xE4sta revision i p\xE5g\xE5ende cykel"), /*#__PURE__*/React.createElement(Sel, {
+    value: pos,
+    onChange: v => set("transferCycle", v)
+  }, /*#__PURE__*/React.createElement("option", { value: "surv1" }, "Periodisk revision \xE5r 1"), /*#__PURE__*/React.createElement("option", { value: "surv2" }, "Periodisk revision \xE5r 2"), /*#__PURE__*/React.createElement("option", { value: "recert" }, "Omcertifiering (\xE5r 3)")), /*#__PURE__*/React.createElement("div", {
+    style: { fontFamily: MONO, fontSize: 11, color: C.ink, marginTop: 5, lineHeight: 1.7 }
+  }, "\xC5terst\xE5r i cykeln: ", /*#__PURE__*/React.createElement("strong", null, rem.join(", ")), ". Ingen initial revision \u2014 f\xF6rhandsgranskningen \xE4r inte en revision (\xA72.2.2 Not)."), hint && hint !== pos && /*#__PURE__*/React.createElement("div", {
+    style: { fontFamily: MONO, fontSize: 11, color: "#7A4800", marginTop: 4, fontStyle: "italic" }
+  }, "Obs: utifr\xE5n certifikatets utg\xE5ngsdatum (", monthsLeft, " m\xE5n kvar) ser n\xE4sta revision ut att vara ", TRANSFER_POS_LABEL[hint], " \u2014 kontrollera mot revisionsrapporterna."));
 };
 const MigrationsBanner = () => {
   const [open, setOpen] = React.useState(false);
@@ -4156,6 +4194,8 @@ function App() {
     transferHas14001: false,
     transferHas45001: false,
     transferHas27001: false,
+    transferCycle: "surv1",
+    // Övertagande: nästa revision i pågående cykel — surv1 | surv2 | recert (IAF MD 2:2023 §2.3.4)
     sites: "1",
     tempSites: "no",
     tempSiteDesc: "",
@@ -4331,7 +4371,7 @@ function App() {
         marginTop: 5
       }
     }, /*#__PURE__*/React.createElement(Lbl, {
-      tip: "Fyll i f\xF6r IAF MD 2:2023 transferreduktion"
+      tip: "Dokumentation \u2014 ger ingen egen reduktion"
     }, "Certifieringsorgan"), /*#__PURE__*/React.createElement(Inp, {
       value: f[`ex${std}cb`],
       onChange: v => set(`ex${std}cb`, v),
@@ -4466,51 +4506,8 @@ function App() {
         if (!window.confirm("Koncernbedömningen är ofullständig:\n\u2022 " + brister.join("\n\u2022 ") + "\n\nKvalificeringsprotokollet i mandagsberäkningen blir ofullständigt.\n\nGenerera ändå?")) return;
       }
     }
-    // Synka transfer/utökning till ex-fält
-    let fCalc = {
-      ...f,
-      fte: String(effectiveFte)
-    };
-    if (f.certType === "transfer" && f.transferOrg) {
-      if (f.transferHas9001) {
-        fCalc.ex9001 = true;
-        fCalc.ex9001cb = f.transferOrg;
-      }
-      if (f.transferHas14001) {
-        fCalc.ex14001 = true;
-        fCalc.ex14001cb = f.transferOrg;
-      }
-      if (f.transferHas45001) {
-        fCalc.ex45001 = true;
-        fCalc.ex45001cb = f.transferOrg;
-      }
-      if (f.transferHas27001) {
-        fCalc.ex27001 = true;
-        fCalc.ex27001cb = f.transferOrg;
-      }
-    }
-    if (f.certType === "extension") {
-      if (f.extHas9001) {
-        fCalc.ex9001 = true;
-        fCalc.ex9001y = f.ext9001y;
-        fCalc.ex9001cb = "SBSC";
-      }
-      if (f.extHas14001) {
-        fCalc.ex14001 = true;
-        fCalc.ex14001y = f.ext14001y;
-        fCalc.ex14001cb = "SBSC";
-      }
-      if (f.extHas45001) {
-        fCalc.ex45001 = true;
-        fCalc.ex45001y = f.ext45001y;
-        fCalc.ex45001cb = "SBSC";
-      }
-      if (f.extHas27001) {
-        fCalc.ex27001 = true;
-        fCalc.ex27001y = f.ext27001y;
-        fCalc.ex27001cb = "SBSC";
-      }
-    }
+    // Synka transfer/utökning till ex-fält (se buildCalcInput — övertagna standarder ger ingen historikreduktion)
+    const fCalc = buildCalcInput(f, effectiveFte);
     const md5 = hasMD5 ? calcMD5(fCalc) : null;
     const iso27001 = has27001 ? calc27006(fCalc) : null;
     const integration = md5 && iso27001 && !fCalc.iso27001separate ? calcMD11Integration(md5, iso27001, fCalc) : null;
@@ -4601,18 +4598,22 @@ function App() {
     }
     // IAF MD 5:2023 §2.1.2 (SBSC alt B): pris på tid på plats — dagtalen (totalInit/surv/recert) förblir fulla
     const onsiteBilling = onsiteBillingActive(snap, md5, iso27001);
+    // Övertagande (IAF MD 2:2023 §2.2.2 Not/§2.3.4): ingen initial revision — endast återstående revisioner prissätts
+    const cc = cycleCounts(snap);
+    const inclS1 = cc.nSurv >= 2,
+      inclS2 = cc.nSurv >= 1;
     const bInit = onsiteBilling ? onsiteDays(totalInit) : totalInit;
     const bSurv = onsiteBilling ? onsiteDays(surv) : surv;
     const bRecert = onsiteBilling ? onsiteDays(recert) : recert;
-    const pInit = Math.round(bInit * DAY_RATE);
+    const pInit = cc.nInit ? Math.round(bInit * DAY_RATE) : 0;
     // Steg 1 / Steg 2 separat
     const stage1days = md5 ? md5.stage1 : iso27001?.stage1 || 0;
     const bStage1 = onsiteBilling ? Math.min(onsiteDays(stage1days), bInit) : stage1days;
-    const pSteg1 = Math.round(bStage1 * DAY_RATE);
+    const pSteg1 = cc.nInit ? Math.round(bStage1 * DAY_RATE) : 0;
     const pSteg2 = pInit - pSteg1;
     const pSurv = Math.round(bSurv * DAY_RATE);
     const pRecert = Math.round(bRecert * DAY_RATE);
-    const pTotalFore = pInit + pSurv * 2 + pRecert;
+    const pTotalFore = pInit + pSurv * cc.nSurv + pRecert;
     // Rabatter
     const rI = Math.max(0, Math.min(100, parseFloat(snap?.rabattInit || rabattPct || 0)));
     const rSt1 = Math.max(0, Math.min(100, parseFloat(snap?.rabattSteg1 || 0)));
@@ -4629,9 +4630,12 @@ function App() {
     const pSurv2After = Math.round(pSurv * (1 - rS2 / 100));
     const pRecertAfter = Math.round(pRecert * (1 - rR / 100));
     const rabatt = Math.max(0, Math.min(100, parseFloat(rabattPct) || 0));
-    const rabattBeloppTotal = usePerFas ? pInit - pInitAfter + (pSurv - pSurv1After) + (pSurv - pSurv2After) + (pRecert - pRecertAfter) : Math.round(pTotalFore * (rabatt / 100));
-    const pTotal = usePerFas ? pInitAfter + pSurv1After + pSurv2After + pRecertAfter : pTotalFore - rabattBeloppTotal;
+    const rabattBeloppTotal = usePerFas ? pInit - pInitAfter + (inclS1 ? pSurv - pSurv1After : 0) + (inclS2 ? pSurv - pSurv2After : 0) + (pRecert - pRecertAfter) : Math.round(pTotalFore * (rabatt / 100));
+    const pTotal = usePerFas ? pInitAfter + (inclS1 ? pSurv1After : 0) + (inclS2 ? pSurv2After : 0) + pRecertAfter : pTotalFore - rabattBeloppTotal;
     return {
+      transfer: cc.transfer,
+      transferPos: cc.pos,
+      nSurv: cc.nSurv,
       onsiteBilling,
       bInit,
       bSurv,
@@ -4847,7 +4851,7 @@ function App() {
           background: C.s2,
           color: C.ink
         }
-      }, "Ny: ", s);
+      }, snap.certType === "transfer" && snap["transferHas" + n] ? "\u2194 \xD6vertas: " : "Ny: ", s);
     }), snap.s27001 && !snap.ex27001 && /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: MONO,
@@ -4857,7 +4861,7 @@ function App() {
         background: C.s2,
         color: C.ink
       }
-    }, "Ny: ISO 27001")), snap.riskDesc && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Sec, null, "Verksamhetsbeskrivning & Riskprofil"), /*#__PURE__*/React.createElement("div", {
+    }, snap.certType === "transfer" && snap.transferHas27001 ? "\u2194 \xD6vertas: ISO 27001" : "Ny: ISO 27001")), snap.riskDesc && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Sec, null, "Verksamhetsbeskrivning & Riskprofil"), /*#__PURE__*/React.createElement("div", {
       style: {
         background: "#e8eef4",
         border: "1px solid #b8cfe0",
@@ -4870,7 +4874,22 @@ function App() {
         whiteSpace: "pre-wrap"
       }
     }, snap.riskDesc)), /*#__PURE__*/React.createElement(Sec, null, "Sammanfattning"), /*#__PURE__*/React.createElement(KpiRow, {
-      items: snap.certType === "extension" && result.extCombined ? [{
+      items: snap.certType === "transfer" ? (() => {
+        const ccK = cycleCounts(snap);
+        return [{
+          label: "N\xE4sta revision \u2014 " + TRANSFER_POS_LABEL[ccK.pos],
+          value: fmt(ccK.pos === "recert" ? prices.recert : prices.surv),
+          unit: "auditdagar"
+        }, {
+          label: "Periodisk revision",
+          value: fmt(prices.surv),
+          unit: "dag/tillf\xE4lle \xB7 " + ccK.nSurv + " kvar i cykeln"
+        }, {
+          label: "Omcertifiering",
+          value: fmt(prices.recert),
+          unit: "auditdagar"
+        }];
+      })() : snap.certType === "extension" && result.extCombined ? [{
         label: "Utökning — Steg 1 + 2",
         value: fmt(prices.totalInit),
         unit: "auditdagar"
@@ -4916,7 +4935,7 @@ function App() {
     }, /*#__PURE__*/React.createElement("div", {
       style: { fontFamily: SANS, fontSize: 9.5, fontWeight: 700, letterSpacing: "0.12em",
         textTransform: "uppercase", color: C.muted, marginBottom: 16 }
-    }, snap.certType === "extension" && result.extCombined ? "Samordnad certifieringscykel \u2014 ut\xF6kning" : "Certifieringscykel — 3 år"), /*#__PURE__*/React.createElement("div", {
+    }, snap.certType === "transfer" ? "\xC5terst\xE5ende certifieringscykel \u2014 \xF6vertagande (IAF MD 2:2023 \xA72.3.4)" : snap.certType === "extension" && result.extCombined ? "Samordnad certifieringscykel \u2014 ut\xF6kning" : "Certifieringscykel — 3 år"), /*#__PURE__*/React.createElement("div", {
       style: { display: "flex", alignItems: "flex-start", position: "relative" }
     }, /*#__PURE__*/React.createElement("div", {
       className: "tl-line",
@@ -5259,12 +5278,12 @@ function App() {
         style: {
           color: "rgba(255,255,255,0.6)"
         }
-      }, "Initial ", fmt(initDays), " + Surv ", fmt(prices.surv), "\xD72 + Omcert ", fmt(prices.recert)), /*#__PURE__*/React.createElement("span", {
+      }, ...(snap.certType === "transfer" ? ["\xC5terst\xE5r: Surv ", fmt(prices.surv), "\xD7" + cycleCounts(snap).nSurv + " + Omcert ", fmt(prices.recert)] : ["Initial ", fmt(initDays), " + Surv ", fmt(prices.surv), "\xD72 + Omcert ", fmt(prices.recert)])), /*#__PURE__*/React.createElement("span", {
         style: {
           color: C.accent,
           fontWeight: 700
         }
-      }, "= ", fmt(initDays + prices.surv * 2 + prices.recert), " dag totalt / 3-\xE5rig cykel")));
+      }, ...(snap.certType === "transfer" ? ["= ", fmt(r2(prices.surv * cycleCounts(snap).nSurv + prices.recert)), " dag totalt / \xE5terst\xE5ende cykel"] : ["= ", fmt(initDays + prices.surv * 2 + prices.recert), " dag totalt / 3-\xE5rig cykel"]))));
     })(), snap.certType !== "extension" && prices.totalInit > 0 && (() => {
       const q = snap.cDesiredDate && snap.cDesiredDate.includes("-") ? snap.cDesiredDate.split("-")[1] : "";
       const yr = snap.cDesiredDate && snap.cDesiredDate.includes("-") ? snap.cDesiredDate.split("-")[0] : "";
@@ -5311,7 +5330,7 @@ function App() {
         style: {
           textAlign: "right"
         }
-      }, "Dagar"), /*#__PURE__*/React.createElement("div", null, "Regelverksst\xF6d")), (f.certType === "siteext" ? (() => {
+      }, "Dagar"), /*#__PURE__*/React.createElement("div", null, "Regelverksst\xF6d")), (snap.certType === "transfer" ? [["Beslut", "F\xF6rhandsgranskning och beslut om \xF6vertagande \u2014 ingen revision och ingen revisionstid (IAF MD 2:2023 \xA72.2.2 Not). Beslut fattas innan n\xE4sta revision p\xE5b\xF6rjas (\xA72.3.5).", "0", "IAF MD 2:2023 \xA72.2\u20132.3", true]].concat(transferRemaining(snap, prices.surv, prices.recert).map(r => ["\xC5r " + r.yr, r.kind === "recert" ? "Omcertifiering \u2014 f\xF6rnyad fullst\xE4ndig revision, minst 2/3 av ber\xE4knad initial audittid" : r.label + " \u2014 ca 1/3 av ber\xE4knad initial audittid (cykeln forts\xE4tter, \xA72.3.4)", fmt(r.days), r.kind === "recert" ? recertRef : survRef, false])) : f.certType === "siteext" ? (() => {
         const a = siteextAnslDays(f);
         const anslDesc = (a.namn ? a.namn + " — " : "") + (a.inom ? "ansluts inom befintlig revision (ingen ny initial certifiering, Steg 1 utgår)" : "anslutningsrevision: Steg 2 på plats för anslutande enhet, utan Steg 1 (ledningssystemet redan certifierat)");
         const anslDays = a.missingFte ? "FTE saknas!" : fmt(a.days);
@@ -5379,7 +5398,7 @@ function App() {
           fontSize: 11,
           color: "rgba(255,255,255,0.6)"
         }
-      }, "3-\xE5rig certifieringscykel"), /*#__PURE__*/React.createElement("div", {
+      }, snap.certType === "transfer" ? "\xC5terst\xE5ende certifieringscykel" : "3-\xE5rig certifieringscykel"), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: MONO,
           fontSize: 11,
@@ -5387,7 +5406,7 @@ function App() {
           color: C.accent,
           textAlign: "right"
         }
-      }, fmt(prices.totalInit + prices.surv * 2 + prices.recert)), /*#__PURE__*/React.createElement("div", null))));
+      }, fmt(snap.certType === "transfer" ? r2(prices.surv * cycleCounts(snap).nSurv + prices.recert) : prices.totalInit + prices.surv * 2 + prices.recert)), /*#__PURE__*/React.createElement("div", null))));
     })(), snap.certType === "extension" && (() => {
       const extStds = [snap.extHas9001 && "ISO 9001", snap.extHas14001 && "ISO 14001", snap.extHas45001 && "ISO 45001"].filter(Boolean);
       const newStds = [snap.s9001 && !snap.extHas9001 && "ISO 9001", snap.s14001 && !snap.extHas14001 && "ISO 14001", snap.s45001 && !snap.extHas45001 && "ISO 45001"].filter(Boolean);
@@ -6094,7 +6113,7 @@ function App() {
         style: {
           marginBottom: 20
         }
-      }, /*#__PURE__*/React.createElement(Sec, null, snap.certType === "extension" && result.extCombined ? "Certifieringskostnad \u2014 Del 1: Ut\xF6kningen" : "Certifieringskostnad \u2014 3-\xE5rig certifieringscykel"), (() => {
+      }, /*#__PURE__*/React.createElement(Sec, null, snap.certType === "transfer" ? "Certifieringskostnad \u2014 \xE5terst\xE5ende certifieringscykel (\xF6vertagande)" : snap.certType === "extension" && result.extCombined ? "Certifieringskostnad \u2014 Del 1: Ut\xF6kningen" : "Certifieringskostnad \u2014 3-\xE5rig certifieringscykel"), (() => {
         const q = snap.cDesiredDate && snap.cDesiredDate.includes("-") ? snap.cDesiredDate.split("-")[1] : "";
         const yr = snap.cDesiredDate && snap.cDesiredDate.includes("-") ? snap.cDesiredDate.split("-")[0] : "";
         if (!q || !yr) return null;
@@ -6176,6 +6195,12 @@ function App() {
         rows.push(mkRow("Ansl.",anslLbl,aH.missingFte ? "\u2014" : fmt(anslD),sek(Math.round(anslD*dRate)),sek(Math.round(anslD*dRate)),0,true,false));
         rows.push(mkRow("L\xF6p.","Periodisk revision \u2014 ut\xF6kad organisation (g\xE4ller fr\xE5n n\xE4sta revision)",fmt(prices.surv),sek(prices.pSurv),sek(prices.pSurv1After),prices.rS1||0,false,false));
         rows.push(mkRow("Omcert","Omcertifiering \u2014 ut\xF6kad organisation",fmt(prices.recert),sek(prices.pRecert),sek(prices.pRecertAfter),prices.rR||0,false,false));
+      } else if (snap.certType === "transfer") {
+        // Övertagande: ingen initial revision — beslutsraden (0 dagar) följs av återstående periodiska revisioner; omcertifiering läggs till nedan
+        rows.push(mkRow("","F\xF6rhandsgranskning och beslut om \xF6vertagande \u2014 ingen revision (IAF MD 2:2023 \xA72.2.2)","0",sek(0),sek(0),0,true,false));
+        transferRemaining(snap, prices.surv, prices.recert).filter(r => r.kind === "surv").forEach(r => {
+          rows.push(mkRow(r.yr,r.label + " (ca 1/3 av ber\xE4knad initial audittid)",fmt(r.days),sek(prices.pSurv),sek(r.id === "surv1" ? prices.pSurv1After : prices.pSurv2After),(r.id === "surv1" ? prices.rS1 : prices.rS2)||0,false,false));
+        });
       } else {
       if(hasRabatt&&prices.useStegRabatt){
         rows.push(mkRow("0","Initial certifiering \u2014 Steg 1 + Steg 2",fmt(prices.totalInit),sek(prices.pInit),sek(prices.pInitAfter),0,true,false));
@@ -6196,6 +6221,9 @@ function App() {
         const dR = prices.surv > 0 ? prices.pSurv/prices.surv : 0;
         pOrd = Math.round(aD*dR) + prices.pSurv*2 + prices.pRecert;
         totDays = aD + prices.surv*2 + prices.recert;
+      } else if (snap.certType === "transfer") {
+        pOrd = prices.pSurv*prices.nSurv + prices.pRecert;
+        totDays = r2(prices.surv*prices.nSurv + prices.recert);
       } else {
         pOrd = prices.pInit+prices.pSurv*2+prices.pRecert;
         totDays = prices.totalInit+prices.surv*2+prices.recert;
@@ -6204,7 +6232,7 @@ function App() {
       const totalBar = hasRabatt
         ? /*#__PURE__*/React.createElement("div",{style:{borderTop:"2px solid "+C.brand,background:C.ink,padding:"14px 16px"}},
             /*#__PURE__*/React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}},
-              /*#__PURE__*/React.createElement("div",{style:{fontFamily:MONO,fontSize:11,color:"rgba(255,255,255,0.5)"}},"Ordinarie totalpris (3-\xE5rig certifieringscykel)"),
+              /*#__PURE__*/React.createElement("div",{style:{fontFamily:MONO,fontSize:11,color:"rgba(255,255,255,0.5)"}},(snap.certType === "transfer" ? "Ordinarie totalpris (\xE5terst\xE5ende certifieringscykel)" : "Ordinarie totalpris (3-\xE5rig certifieringscykel)")),
               /*#__PURE__*/React.createElement("div",{style:{fontFamily:SERIF,fontSize:12,color:"rgba(255,255,255,0.5)",textDecoration:"line-through"}},sek(pOrd))),
             /*#__PURE__*/React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}},
               /*#__PURE__*/React.createElement("div",{style:{fontFamily:MONO,fontSize:11,color:C.green}},"Er kampanjrabatt"),
@@ -6214,7 +6242,7 @@ function App() {
               /*#__PURE__*/React.createElement("div",{style:{fontFamily:SERIF,fontSize:16,fontWeight:700,color:C.accent}},sek(prices.pTotal))))
         : /*#__PURE__*/React.createElement("div",{style:{display:"grid",gridTemplateColumns:cols,gap:8,background:C.ink,padding:"10px 16px",borderTop:"2px solid "+C.brand,alignItems:"center"}},
             /*#__PURE__*/React.createElement("div",{style:{fontFamily:MONO,fontSize:11,color:"rgba(255,255,255,0.5)"}},"Totalt"),
-            /*#__PURE__*/React.createElement("div",{style:{fontFamily:MONO,fontSize:11,color:"rgba(255,255,255,0.7)"}},"3-\xE5rig certifieringscykel"),
+            /*#__PURE__*/React.createElement("div",{style:{fontFamily:MONO,fontSize:11,color:"rgba(255,255,255,0.7)"}},snap.certType === "transfer" ? "\xC5terst\xE5ende certifieringscykel" : "3-\xE5rig certifieringscykel"),
             /*#__PURE__*/React.createElement("div",{style:{fontFamily:MONO,fontSize:11,fontWeight:600,color:C.accent,textAlign:"right"}},fmt(totDays)," dag"),
             /*#__PURE__*/React.createElement("div",{style:{fontFamily:SERIF,fontSize:14,fontWeight:700,color:C.accent,textAlign:"right"}},sek(prices.pTotal)));
 
@@ -6289,7 +6317,7 @@ function App() {
     }, /*#__PURE__*/React.createElement("div", {
       style: { fontFamily: SANS, fontSize: 9.5, fontWeight: 700, letterSpacing: "0.12em",
         textTransform: "uppercase", color: C.muted, marginBottom: 16 }
-    }, snap.certType === "extension" && result.extCombined ? "Er samordnade certifieringscykel \u2014 ut\xF6kning" : "Er certifieringscykel \u2014 3 \xE5r"), /*#__PURE__*/React.createElement("div", {
+    }, snap.certType === "transfer" ? "Er \xE5terst\xE5ende certifieringscykel \u2014 \xF6vertagande" : snap.certType === "extension" && result.extCombined ? "Er samordnade certifieringscykel \u2014 ut\xF6kning" : "Er certifieringscykel \u2014 3 \xE5r"), /*#__PURE__*/React.createElement("div", {
       style: { display: "flex", alignItems: "flex-start", position: "relative" }
     }, /*#__PURE__*/React.createElement("div", {
       className: "tl-line",
@@ -6319,7 +6347,16 @@ function App() {
       const distans = snap.imsSteg1Distans === "yes";
       const initText = `Revisionen genomf\xF6rs i tv\xE5 steg: Steg 1 (${fmt(s1d)} dag) \u2014 dokumentationsgranskning och beredskapsanalys${distans ? " p\xE5 distans via digitalt m\xF6te" : ""}. Steg 2 (${fmt(s2d)} dag) \u2014 fullst\xE4ndig revision p\xE5 plats.`;
       const isExt = snap.certType === "extension" && result.extCombined;
-      const items = isExt ? [
+      const isTr = snap.certType === "transfer";
+      const ccI = cycleCounts(snap);
+      const items = isTr ? [
+        ["\xD6vertagande av certifiering (ingen revisionstid)", "Innan vi tar \xF6ver ert certifikat g\xE5r vi igenom er certifiering hos nuvarande certifieringsorgan \u2014 certifikat, senaste revisionsrapporter och status p\xE5 eventuella avvikelser. F\xF6rhandsgranskningen \xE4r inte en revision (IAF MD 2:2023 \xA72.2.2). Beslut om \xF6vertagande fattas innan n\xE4sta revision."],
+        ["Er certifieringscykel forts\xE4tter", "Ni beh\xE5ller er nuvarande certifieringscykel. N\xE4sta revision \xE4r " + TRANSFER_POS_LABEL[ccI.pos] + " (IAF MD 2:2023 \xA72.3.4)."],
+        ...(prices.onsiteBilling ? [["Tid p\xE5 plats och f\xF6r-/efterarbete", `Minst 80\xA0% av revisionstiden genomf\xF6rs hos er (IAF MD 5:2023 \xA72.1.2) \u2014 ${fmt(prices.bSurv)} av ${fmt(prices.surv)} dagar vid periodisk revision och ${fmt(prices.bRecert)} av ${fmt(prices.recert)} dagar vid omcertifiering. Resterande tid \xE4r revisorns f\xF6r- och efterarbete (planering, dokumentgranskning och rapportskrivning), som ing\xE5r i priset utan separat debitering.`]] : []),
+        ...(ccI.nSurv > 0 ? [[`Periodisk revision (${fmt(prices.surv)} revisionsdagar/tillf\xE4lle, ${ccI.nSurv} kvar i cykeln)`, "Uppf\xF6ljande revision som s\xE4kerst\xE4ller att certifieringen h\xE5lls aktiv och att er verksamhet forts\xE4tt uppfyller standardens krav."]] : []),
+        [`Omcertifiering (${fmt(prices.recert)} revisionsdagar)`, "F\xF6rnyad certifiering som avslutar p\xE5g\xE5ende cykel. Nytt certifikat utf\xE4rdas f\xF6r ytterligare tre \xE5r."],
+        ["SWEDAC-ackrediterad certifiering", "SBSC \xE4r ackrediterat av SWEDAC. Certifikaten \xE4r internationellt erk\xE4nda i \xF6ver 90 l\xE4nder via IAF MLA."]
+      ] : isExt ? [
         [`Del 1 \u2014 Ut\xF6kningen: Steg 1 + Steg 2 (${fmt(prices.totalInit)} revisionsdagar)`, initText + " Steg 2 samordnas med ordinarie revision av era befintliga certifikat."],
         ...(distans ? [["Steg 1 genomf\xF6rs p\xE5 distans", "Dokumentgranskning och beredskapsanalys via digitalt m\xF6te \u2014 ingen resa till er anl\xE4ggning f\xF6r Steg 1. Distansformen f\xF6ruts\xE4tter att vi \xE4r \xF6verens om den och att b\xE5da parter har fungerande teknik f\xF6r m\xF6tet (IAF MD 4:2025)."]] : []),
         [`Del 2 \u2014 Gemensam periodisk revision (${fmt(result.extCombined.surv)} revisionsdagar/\xE5r)`, "Efter samordningen revideras samtliga certifikat vid ett och samma tillf\xE4lle per \xE5r \u2014 en revision, en faktura. Ers\xE4tter nuvarande separata revisionsuppl\xE4gg."],
@@ -6463,7 +6500,7 @@ function App() {
         letterSpacing: "0.06em",
         textTransform: "uppercase"
       }
-    }, "Vad h\xE4nder nu?"), [["1", "Signera offerten", "via SBSC:s e-tjänst. Båda parter får en bekräftelse per e-post."], ["2", "Ansökan", "SBSC registrerar er ansökan om certifiering i kundportalen utifrån den accepterade offerten — ni behöver inte ansöka separat."], ["3", "Komplettering", "SBSC kontaktar dig för att gå igenom eventuella handlingar som behövs inför revisionen, exempelvis ert ledningssystem."], ...(snap.s27001 && snap.ext27001reviewer && (snap.s9001 || snap.s14001 || snap.s45001) ? [["4a", "Bokning av revision — övriga standarder", "SBSC bokar Steg 1 och Steg 2 för er certifiering mot " + [snap.s9001 && "ISO 9001", snap.s14001 && "ISO 14001", snap.s45001 && "ISO 45001"].filter(Boolean).join(", ") + "."], ["4b", "Bokning av ISO 27001-revision", "ISO 27001-revisionen bokas separat i dialog med ansvarig revisor och planeras oberoende av övriga revisioner."]] : [["4", "Bokning av revision", snap.s27001 && snap.ext27001reviewer ? "ISO 27001-revisionen bokas i dialog med ansvarig revisor. Ni kontaktas av kund- och försäljningsansvarig inom en arbetsdag efter signerad offert." : "när ni är redo bokar SBSC Steg 1 (dokumentgranskning) och Steg 2 (revision på plats). Ni kontaktas av kund- och försäljningsansvarig inom en arbetsdag efter signerad offert."]])].map(([num, bold, text], i) => /*#__PURE__*/React.createElement("div", {
+    }, "Vad h\xE4nder nu?"), (snap.certType === "transfer" ? TRANSFER_NEXT_STEPS : [["1", "Signera offerten", "via SBSC:s e-tjänst. Båda parter får en bekräftelse per e-post."], ["2", "Ansökan", "SBSC registrerar er ansökan om certifiering i kundportalen utifrån den accepterade offerten — ni behöver inte ansöka separat."], ["3", "Komplettering", "SBSC kontaktar dig för att gå igenom eventuella handlingar som behövs inför revisionen, exempelvis ert ledningssystem."], ...(snap.s27001 && snap.ext27001reviewer && (snap.s9001 || snap.s14001 || snap.s45001) ? [["4a", "Bokning av revision — övriga standarder", "SBSC bokar Steg 1 och Steg 2 för er certifiering mot " + [snap.s9001 && "ISO 9001", snap.s14001 && "ISO 14001", snap.s45001 && "ISO 45001"].filter(Boolean).join(", ") + "."], ["4b", "Bokning av ISO 27001-revision", "ISO 27001-revisionen bokas separat i dialog med ansvarig revisor och planeras oberoende av övriga revisioner."]] : [["4", "Bokning av revision", snap.s27001 && snap.ext27001reviewer ? "ISO 27001-revisionen bokas i dialog med ansvarig revisor. Ni kontaktas av kund- och försäljningsansvarig inom en arbetsdag efter signerad offert." : "när ni är redo bokar SBSC Steg 1 (dokumentgranskning) och Steg 2 (revision på plats). Ni kontaktas av kund- och försäljningsansvarig inom en arbetsdag efter signerad offert."]])]).map(([num, bold, text], i) => /*#__PURE__*/React.createElement("div", {
       key: i,
       style: {
         display: "flex",
@@ -6670,6 +6707,7 @@ function App() {
     showTitle = true
   }) => {
     const singles = [];
+    const cc = cycleCounts(snap);
     const obCmp = onsiteBillingActive(snap, md5, iso27001);
     const bd = v => obCmp ? onsiteDays(v) : v;
     if (md5) md5.perStdAdj.forEach(ps => {
@@ -6679,7 +6717,7 @@ function App() {
         rc = Math.round(bd(r2(Math.max(d * (2 / 3), 1))) * DAY_RATE);
       singles.push({
         std: ps.std,
-        total: p + sv * 2 + rc,
+        total: p * cc.nInit + sv * cc.nSurv + rc,
         pInit: p,
         pSurv: sv,
         pRecert: rc
@@ -6692,7 +6730,7 @@ function App() {
         rc = Math.round(r2(Math.max(d * (2 / 3), 1)) * DAY_RATE);
       singles.push({
         std: "ISO 27001",
-        total: p + sv * 2 + rc,
+        total: p * cc.nInit + sv * cc.nSurv + rc,
         pInit: p,
         pSurv: sv,
         pRecert: rc,
@@ -6763,7 +6801,7 @@ function App() {
       color: C.ink,
         margin: "3px 0 12px"
       }
-    }, "Totalt 3 \xE5r exkl. moms"), [["Initial", sek(t.pInit)], ["Periodisk revision ×2", sek(t.pSurv * 2)], ["Omcertifiering", sek(t.pRecert)], ["Totalt", sek(t.total)]].map(([k, v], j) => /*#__PURE__*/React.createElement("div", {
+    }, cc.transfer ? "\xC5terst\xE5ende cykel exkl. moms" : "Totalt 3 \xE5r exkl. moms"), [...(cc.nInit ? [["Initial", sek(t.pInit)]] : []), ["Periodisk revision ×" + cc.nSurv, sek(t.pSurv * cc.nSurv)], ["Omcertifiering", sek(t.pRecert)], ["Totalt", sek(t.total)]].map(([k, v], j) => /*#__PURE__*/React.createElement("div", {
       key: j,
       style: {
         display: "flex",
@@ -6824,7 +6862,7 @@ function App() {
       color: C.ink,
         margin: "3px 0 12px"
       }
-    }, "Totalt 3 \xE5r exkl. moms"), [["Initial", sek(prices.pInit)], ["Periodisk revision ×2", sek(prices.pSurv * 2)], ["Omcertifiering", sek(prices.pRecert)], ["Totalt", sek(prices.pTotal)]].map(([k, v], j) => /*#__PURE__*/React.createElement("div", {
+    }, cc.transfer ? "\xC5terst\xE5ende cykel exkl. moms" : "Totalt 3 \xE5r exkl. moms"), [...(cc.nInit ? [["Initial", sek(prices.pInit)]] : []), ["Periodisk revision ×" + cc.nSurv, sek(prices.pSurv * cc.nSurv)], ["Omcertifiering", sek(prices.pRecert)], ["Totalt", sek(prices.pTotal)]].map(([k, v], j) => /*#__PURE__*/React.createElement("div", {
       key: j,
       style: {
         display: "flex",
@@ -6853,7 +6891,7 @@ function App() {
         color: C.green,
         marginTop: 14
       }
-    }, "Integrerat system sparar ", /*#__PURE__*/React.createElement("strong", null, sek(saving)), " (", savingPct, "%) under 3-\xE5rig certifieringscykel."));
+    }, "Integrerat system sparar ", /*#__PURE__*/React.createElement("strong", null, sek(saving)), " (", savingPct, "%) under ", cc.transfer ? "\xE5terst\xE5ende certifieringscykel." : "3-\xE5rig certifieringscykel."));
   };
 
   // ── COMPARE VIEW ──
@@ -8207,7 +8245,8 @@ ${exportedHTML}
           transferHas9001: false,
           transferHas14001: false,
           transferHas45001: false,
-          transferHas27001: false
+          transferHas27001: false,
+          transferCycle: "surv1"
         }));
       } else {
         set("certType", val);
@@ -8270,7 +8309,7 @@ ${exportedHTML}
       padding: "10px 12px",
       marginBottom: 14
     }
-  }, /*#__PURE__*/React.createElement(InfoNote, null, "IAF MD 2:2023 \xA72.3: Certifieringscykeln forts\xE4tter fr\xE5n utf\xE4rdande organ. Transferreduktionen (\u22120,5 dag per standard) baseras p\xe5 IAF MD 5:2023 \xa78(v)(d)+(e) och aktiveras automatiskt n\xe4r certifieringsorgan anges. \n\nNya i v1.8: flerplatssampling ISO 27001 (27006-1 \xa79.1.5.2.1 a\u2013c \u2014 kvalifikationsfr\xe5gor och platsmotivering, fristende fr\xe5n MD 1:s filialkvalifikation). Tidigare v1.7: koncerncertifikat (IAF MD 1 \xa73.3.1/\xa77.8 \u2014 juridiska enheter per plats), golv-upp\xe5tavrundning (\xa73.9), hoppmeny, prisindikator utan dagspris. Tidigare v1.5: s\xe4song peak (\xa72.3.1), ISMS C.6 personalbaserad, \xa78 SBSC-kalibrering. Tidigare v1.4: \xa78(v)a — ej designansvarig f\xf6r produkt/tj\xe4nst (QMS only, \u22120,5 dag). \xa78(v)b — liten anl\xe4ggning relativt personalstyrkan (\u22120,5 dag)."), /*#__PURE__*/React.createElement(TransferChecklist, null), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(InfoNote, null, "IAF MD 2:2023 \xA72.3.4: Certifieringscykeln forts\xE4tter fr\xE5n utf\xE4rdande organ och SBSC fastst\xE4ller revisionsprogrammet f\xF6r \xE5terstoden av cykeln. Ingen reduktion av revisionstid f\xF6r \xF6vertagandet (MD 2 inneh\xE5ller ingen s\xE5dan) och ingen historikreduktion f\xF6r \xF6vertagna standarder (MD 5 \xA78(v)d avser samma organ) \u2014 kundens historik hos tidigare organ beaktas i mognadsbed\xF6mningen (\xA78(v)c)."), /*#__PURE__*/React.createElement(TransferRutinRef, null), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: MONO,
       fontSize: 11,
@@ -8412,7 +8451,10 @@ ${exportedHTML}
         fontSize: 8
       }
     }, "Gl\xF6m inte Checklista f\xF6r \xF6vertagande \u2014 sparas i certifierings\xE4rendet."));
-  })()), f.certType === "extension" && /*#__PURE__*/React.createElement("div", {
+  })(), /*#__PURE__*/React.createElement(TransferCyclePos, {
+    f: f,
+    set: set
+  })), f.certType === "extension" && /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.goldLt,
       border: `1px solid ${C.goldBd}`,
@@ -9178,8 +9220,10 @@ ${exportedHTML}
       marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, {
-    tip: "Fyll i certifieringsorgan f\xF6r IAF MD 2:2023 transferreduktion. Aktiverar \u22120,5 dags transferreduktion automatiskt."
-  }, "Befintligt ISO 27001-certifikat (valfritt)"), /*#__PURE__*/React.createElement(ExBox, {
+    tip: "Befintligt ISO 27001-certifikat. Angivet certifieringsorgan \xE4r dokumentation och ger ingen reduktion. Vid \xF6vertagande av ISO 27001 anv\xE4nds inte detta f\xE4lt."
+  }, "Befintligt ISO 27001-certifikat (valfritt)"), f.certType === "transfer" && f.transferHas27001 ? /*#__PURE__*/React.createElement("div", {
+    style: { fontFamily: MONO, fontSize: 11, color: C.ink, lineHeight: 1.6 }
+  }, "ISO 27001 \xF6vertas (IAF MD 2:2023) \u2014 ingen historikreduktion; kundens historik beaktas i mognadsbed\xF6mningen.") : /*#__PURE__*/React.createElement(ExBox, {
     std: "27001",
     label: "ISO 27001 (befintligt)",
     purple: true
@@ -10545,7 +10589,7 @@ ${exportedHTML}
       marginBottom: 6
     }
   }, /*#__PURE__*/React.createElement(Lbl, {
-    tip: "Valfritt \u2014 aktiverar prior knowledge-reduktion (IAF MD 5:2023 \xA78(v)d+e) och transferreduktion (IAF MD 2:2023) om certifieringsorgan anges. L\xE4mna tomt om kunden saknar tidigare certifiering."
+    tip: "Valfritt \u2014 aktiverar prior knowledge-reduktion (IAF MD 5:2023 \xA78(v)d+e). Angivet certifieringsorgan \xE4r dokumentation och ger ingen egen reduktion. Standarder som \xF6vertas visas inte h\xE4r (ingen historikreduktion vid \xF6vertagande). L\xE4mna tomt om kunden saknar tidigare certifiering."
   }, "Befintliga certifikat hos annat organ ", /*#__PURE__*/React.createElement("span", {
     style: {
       fontWeight: 400,
@@ -10558,13 +10602,13 @@ ${exportedHTML}
       gap: 6,
       marginBottom: 14
     }
-  }, f.s9001 && !(f.certType === "extension" && f.extHas9001) && /*#__PURE__*/React.createElement(ExBox, {
+  }, f.s9001 && !(f.certType === "extension" && f.extHas9001) && !(f.certType === "transfer" && f.transferHas9001) && /*#__PURE__*/React.createElement(ExBox, {
     std: "9001",
     label: "ISO 9001"
-  }), f.s14001 && !(f.certType === "extension" && f.extHas14001) && /*#__PURE__*/React.createElement(ExBox, {
+  }), f.s14001 && !(f.certType === "extension" && f.extHas14001) && !(f.certType === "transfer" && f.transferHas14001) && /*#__PURE__*/React.createElement(ExBox, {
     std: "14001",
     label: "ISO 14001"
-  }), f.s45001 && !(f.certType === "extension" && f.extHas45001) && /*#__PURE__*/React.createElement(ExBox, {
+  }), f.s45001 && !(f.certType === "extension" && f.extHas45001) && !(f.certType === "transfer" && f.transferHas45001) && /*#__PURE__*/React.createElement(ExBox, {
     std: "45001",
     label: "ISO 45001"
   }), f.certType === "extension" && (f.extHas9001 || f.extHas14001 || f.extHas45001) && /*#__PURE__*/React.createElement("div", {
@@ -11305,11 +11349,13 @@ ${exportedHTML}
       if (!hasMD5tb && !has27001tb) return /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: C.muted, fontStyle: "italic" } }, "V\xe4lj standard f\xf6r att se TB.");
       let tbInit = 0, tbSurv = 0, tbRecert = 0;
       try {
-        if (hasMD5tb) { const m = calcMD5(f); if (m) { tbInit += m.totalInit; tbSurv = Math.max(tbSurv, m.surv); tbRecert = Math.max(tbRecert, m.recert); } }
-        if (has27001tb) { const iv = calc27006(f); if (iv) { tbInit += iv.totalInit; tbSurv = Math.max(tbSurv, iv.surv); tbRecert = Math.max(tbRecert, iv.recert); } }
+        const fTb = f.certType === "transfer" ? buildCalcInput(f, calcEffectiveFte(f).total || parseInt(f.fte) || 0) : f;
+        if (hasMD5tb) { const m = calcMD5(fTb); if (m) { tbInit += m.totalInit; tbSurv = Math.max(tbSurv, m.surv); tbRecert = Math.max(tbRecert, m.recert); } }
+        if (has27001tb) { const iv = calc27006(fTb); if (iv) { tbInit += iv.totalInit; tbSurv = Math.max(tbSurv, iv.surv); tbRecert = Math.max(tbRecert, iv.recert); } }
       } catch(e) {}
-      const visits = 4; // init(1) + surv1(1) + surv2(1) + recert(1)
-      const totalDays = r2(tbInit + tbSurv * 2 + tbRecert);
+      const ccTb = cycleCounts(f);
+      const visits = ccTb.nInit + ccTb.nSurv + ccTb.nRecert; // normal: init + surv1 + surv2 + recert = 4
+      const totalDays = r2(tbInit * ccTb.nInit + tbSurv * ccTb.nSurv + tbRecert * ccTb.nRecert);
       const DR = parseInt(dayRate) || 0;
       const intakt = r2(totalDays * DR);
       const revK = r2(totalDays * (revCost || 0));
@@ -11401,11 +11447,13 @@ ${exportedHTML}
       if (!hasMD5tb && !has27001tb) return /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, color: C.muted, fontStyle: "italic" } }, "V\xe4lj standard f\xf6r att se TB.");
       let tbInit = 0, tbSurv = 0, tbRecert = 0;
       try {
-        if (hasMD5tb) { const m = calcMD5(f); if (m) { tbInit += m.totalInit; tbSurv = Math.max(tbSurv, m.surv); tbRecert = Math.max(tbRecert, m.recert); } }
-        if (has27001tb) { const iv = calc27006(f); if (iv) { tbInit += iv.totalInit; tbSurv = Math.max(tbSurv, iv.surv); tbRecert = Math.max(tbRecert, iv.recert); } }
+        const fTb = f.certType === "transfer" ? buildCalcInput(f, calcEffectiveFte(f).total || parseInt(f.fte) || 0) : f;
+        if (hasMD5tb) { const m = calcMD5(fTb); if (m) { tbInit += m.totalInit; tbSurv = Math.max(tbSurv, m.surv); tbRecert = Math.max(tbRecert, m.recert); } }
+        if (has27001tb) { const iv = calc27006(fTb); if (iv) { tbInit += iv.totalInit; tbSurv = Math.max(tbSurv, iv.surv); tbRecert = Math.max(tbRecert, iv.recert); } }
       } catch(e) {}
-      const visits = 4;
-      const totalDays = r2(tbInit + tbSurv * 2 + tbRecert);
+      const ccTb = cycleCounts(f);
+      const visits = ccTb.nInit + ccTb.nSurv + ccTb.nRecert;
+      const totalDays = r2(tbInit * ccTb.nInit + tbSurv * ccTb.nSurv + tbRecert * ccTb.nRecert);
       const DR = parseInt(dayRate) || 0;
       const intakt = r2(totalDays * DR);
       const revK = r2(totalDays * (revCost || 0));
@@ -11456,9 +11504,11 @@ ${exportedHTML}
     let liveInit = 0,
       liveSurv = 0,
       liveRecert = 0;
+    const fLive = f.certType === "transfer" ? buildCalcInput(f, calcEffectiveFte(f).total || parseInt(f.fte) || 0) : f;
+    const ccL = cycleCounts(f);
     try {
       if (hasMD5) {
-        const m = calcMD5(f);
+        const m = calcMD5(fLive);
         if (m) {
           liveInit += m.totalInit;
           liveSurv = Math.max(liveSurv, m.surv);
@@ -11466,7 +11516,7 @@ ${exportedHTML}
         }
       }
       if (has27001) {
-        const i = calc27006(f);
+        const i = calc27006(fLive);
         if (i) {
           liveInit += i.totalInit;
           liveSurv = Math.max(liveSurv, i.surv);
@@ -11481,10 +11531,10 @@ ${exportedHTML}
     // Samma debiteringsgrund som getPrices (IAF MD 5 §2.1.2, SBSC alt B) — dagtalen förblir fulla
     const liveOb = onsiteBillingActive(f, hasMD5 ? {} : null, has27001 ? {} : null);
     const lb = v => liveOb ? onsiteDays(v) : v;
-    const pInit = Math.round(lb(liveInit) * DR);
+    const pInit = ccL.nInit ? Math.round(lb(liveInit) * DR) : 0;
     const pSurv = Math.round(lb(liveSurv) * DR);
     const pRecert = Math.round(lb(liveRecert) * DR);
-    const pTotal = pInit + pSurv * 2 + pRecert;
+    const pTotal = pInit + pSurv * ccL.nSurv + pRecert;
     const rateOk = DR >= 1000;
     return /*#__PURE__*/React.createElement("div", {
       style: {
@@ -11516,17 +11566,17 @@ ${exportedHTML}
       style: {
         color: "rgba(255,255,255,0.55)"
       }
-    }, "Initial \xB7 Surv\xD72 \xB7 Omcert"), /*#__PURE__*/React.createElement("div", {
+    }, ccL.transfer ? "\xD6vertag \xB7 Surv\xD7" + ccL.nSurv + " \xB7 Omcert" : "Initial \xB7 Surv\xD72 \xB7 Omcert"), /*#__PURE__*/React.createElement("div", {
       style: {
         color: "rgba(255,255,255,0.7)",
         textAlign: "right"
       }
-    }, rateOk ? [/*#__PURE__*/React.createElement(AnimNum, { key: "pi", value: pInit, format: v => sek(Math.round(v)) }), " \xB7 ", /*#__PURE__*/React.createElement(AnimNum, { key: "ps", value: pSurv * 2, format: v => sek(Math.round(v)) }), " \xB7 ", /*#__PURE__*/React.createElement(AnimNum, { key: "pr", value: pRecert, format: v => sek(Math.round(v)) })] : [/*#__PURE__*/React.createElement(AnimNum, { key: "di", value: liveInit, format: v => fmt(Math.round(v * 2) / 2) }), " \xB7 ", /*#__PURE__*/React.createElement(AnimNum, { key: "ds", value: liveSurv * 2, format: v => fmt(Math.round(v * 2) / 2) }), " \xB7 ", /*#__PURE__*/React.createElement(AnimNum, { key: "dr", value: liveRecert, format: v => fmt(Math.round(v * 2) / 2) }), " dag"]), /*#__PURE__*/React.createElement("div", {
+    }, rateOk ? [/*#__PURE__*/React.createElement(AnimNum, { key: "pi", value: pInit, format: v => sek(Math.round(v)) }), " \xB7 ", /*#__PURE__*/React.createElement(AnimNum, { key: "ps", value: pSurv * ccL.nSurv, format: v => sek(Math.round(v)) }), " \xB7 ", /*#__PURE__*/React.createElement(AnimNum, { key: "pr", value: pRecert, format: v => sek(Math.round(v)) })] : [/*#__PURE__*/React.createElement(AnimNum, { key: "di", value: liveInit * ccL.nInit, format: v => fmt(Math.round(v * 2) / 2) }), " \xB7 ", /*#__PURE__*/React.createElement(AnimNum, { key: "ds", value: liveSurv * ccL.nSurv, format: v => fmt(Math.round(v * 2) / 2) }), " \xB7 ", /*#__PURE__*/React.createElement(AnimNum, { key: "dr", value: liveRecert, format: v => fmt(Math.round(v * 2) / 2) }), " dag"]), /*#__PURE__*/React.createElement("div", {
       style: {
         color: C.accent,
         fontWeight: 700
       }
-    }, "Total 3-\xE5rig cykel"), /*#__PURE__*/React.createElement("div", {
+    }, ccL.transfer ? "Total \xE5terst\xE5ende cykel" : "Total 3-\xE5rig cykel"), /*#__PURE__*/React.createElement("div", {
       style: {
         color: C.accent,
         fontWeight: 700,
@@ -12368,6 +12418,8 @@ const DEFAULT_STATE = {
     transferHas14001: false,
     transferHas45001: false,
     transferHas27001: false,
+    transferCycle: "surv1",
+    // Övertagande: nästa revision i pågående cykel — surv1 | surv2 | recert (IAF MD 2:2023 §2.3.4)
     sites: "1",
     tempSites: "no",
     tempSiteDesc: "",
