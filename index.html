@@ -1639,11 +1639,13 @@ if (f.certType === "siteext") {
   const totalInitForParts = md5 ? md5.totalInit : 0;
   const isoInitForParts = f.s27001 && iso27001 ? iso27001.totalInit : 0;
   const combinedInit = integration ? integration.total : r2(totalInitForParts + isoInitForParts);
-  const survForParts = r2(Math.max(combinedInit / 3, 1));
-  const recertForParts = r2(Math.max(combinedInit * (2 / 3), 1));
+  const separateParts = !integration && md5 && iso27001;
+  const survForParts = separateParts ? r2(md5.surv + iso27001.surv) : r2(Math.max(combinedInit / 3, 1));
+  const recertForParts = separateParts ? r2(md5.recert + iso27001.recert) : r2(Math.max(combinedInit * (2 / 3), 1));
   const survRef = iso27001 ? "IAF MD 5:2023 §5 / 27006-1:2024 C.4" : "IAF MD 5:2023 §5";
   const recertRef = iso27001 ? "IAF MD 5:2023 §6 / 27006-1:2024 C.5" : "IAF MD 5:2023 §6";
-  parts.push(`Periodisk revision (år 1 & 2): ${fmt(survForParts)} dag per tillfälle — beräknat som ${fmt(combinedInit)} ÷ 3 = ${(combinedInit / 3).toFixed(2).replace(".", ",")} → avrundat till ${fmt(survForParts)} dag per ${survRef}. Omcertifiering år 3: ${fmt(recertForParts)} dag — beräknat som ${fmt(combinedInit)} × 2/3 = ${(combinedInit * 2 / 3).toFixed(2).replace(".", ",")} → avrundat till ${fmt(recertForParts)} dag per ${recertRef}.`);
+  if (separateParts) parts.push(`Periodisk revision och omcertifiering — separata revisioner (ingen MD 11-integration), tiden beräknas per standard och summeras. Periodisk revision (år 1 & 2): ${md5.stds.join(", ")} ${fmt(md5.surv)} dag (IAF MD 5:2023 §5) + ISO 27001 ${fmt(iso27001.surv)} dag (27006-1:2024 C.4) = ${fmt(survForParts)} dag per tillfälle. Omcertifiering år 3: ${md5.stds.join(", ")} ${fmt(md5.recert)} dag (IAF MD 5:2023 §6) + ISO 27001 ${fmt(iso27001.recert)} dag (27006-1:2024 C.5) = ${fmt(recertForParts)} dag.`);
+  else parts.push(`Periodisk revision (år 1 & 2): ${fmt(survForParts)} dag per tillfälle — beräknat som ${fmt(combinedInit)} ÷ 3 = ${(combinedInit / 3).toFixed(2).replace(".", ",")} → avrundat till ${fmt(survForParts)} dag per ${survRef}. Omcertifiering år 3: ${fmt(recertForParts)} dag — beräknat som ${fmt(combinedInit)} × 2/3 = ${(combinedInit * 2 / 3).toFixed(2).replace(".", ",")} → avrundat till ${fmt(recertForParts)} dag per ${recertRef}.`);
   // ── Övertagande (IAF MD 2:2023) — 2026-09-25 ──
   if (f.certType === "transfer") {
     const trPos = transferPos(f);
@@ -2650,7 +2652,7 @@ const Ref = ({
     }
   }, "Regelverksbas:"), " ", refs.join(" · "), " \xB7 SBSC ackrediteras av SWEDAC");
 };
-const TOOL_VERSION = "1.11";
+const TOOL_VERSION = "1.12";
 const DocFoot = ({
   ds,
   internal
@@ -4583,15 +4585,18 @@ function App() {
       surv = r2(Math.max(totalInit / 3, 1));
       recert = r2(Math.max(totalInit * (2 / 3), 1));
     } else {
+      // 2026-09-25: Utan MD 11-integration revideras MD 5-standarderna och ISO 27001 separat — var
+      // revision har sin egen tid (IAF MD 5:2023 §5–6 resp. 27006-1:2024 C.4–C.5) och tiderna SUMMERAS.
+      // (Tidigare togs max av de två, vilket gav för få dagar för periodisk revision och omcertifiering.)
       if (md5) {
         totalInit += md5.totalInit;
-        surv = Math.max(surv, md5.surv);
-        recert = Math.max(recert, md5.recert);
+        surv += md5.surv;
+        recert += md5.recert;
       }
       if (iso27001) {
         totalInit += iso27001.totalInit;
-        surv = Math.max(surv, iso27001.surv);
-        recert = Math.max(recert, iso27001.recert);
+        surv += iso27001.surv;
+        recert += iso27001.recert;
       }
       surv = r2(surv);
       recert = r2(recert);
@@ -6212,7 +6217,7 @@ function App() {
       rows.push(mkRow("1","Periodisk revision (ca 1/3 av initial audittid)",fmt(prices.surv),sek(prices.pSurv),sek(prices.pSurv1After),prices.rS1||0,false,false));
       rows.push(mkRow("2","Periodisk revision (ca 1/3 av initial audittid)",fmt(prices.surv),sek(prices.pSurv),sek(prices.pSurv2After),prices.rS2||0,false,false));
       }
-      rows.push(mkRow("3","Omcertifiering \u2014 f\xF6rnyad fullst\xE4ndig revision (minst 2/3 av initial)",fmt(prices.recert),sek(prices.pRecert),sek(prices.pRecertAfter),prices.rR||0,false,false));
+      if (f.certType !== "siteext") rows.push(mkRow("3","Omcertifiering \u2014 f\xF6rnyad fullst\xE4ndig revision (minst 2/3 av initial)",fmt(prices.recert),sek(prices.pRecert),sek(prices.pRecertAfter),prices.rR||0,false,false));
 
       let pOrd, totDays;
       if (f.certType === "siteext") {
@@ -11350,8 +11355,8 @@ ${exportedHTML}
       let tbInit = 0, tbSurv = 0, tbRecert = 0;
       try {
         const fTb = f.certType === "transfer" ? buildCalcInput(f, calcEffectiveFte(f).total || parseInt(f.fte) || 0) : f;
-        if (hasMD5tb) { const m = calcMD5(fTb); if (m) { tbInit += m.totalInit; tbSurv = Math.max(tbSurv, m.surv); tbRecert = Math.max(tbRecert, m.recert); } }
-        if (has27001tb) { const iv = calc27006(fTb); if (iv) { tbInit += iv.totalInit; tbSurv = Math.max(tbSurv, iv.surv); tbRecert = Math.max(tbRecert, iv.recert); } }
+        if (hasMD5tb) { const m = calcMD5(fTb); if (m) { tbInit += m.totalInit; tbSurv += m.surv; tbRecert += m.recert; } }
+        if (has27001tb) { const iv = calc27006(fTb); if (iv) { tbInit += iv.totalInit; tbSurv += iv.surv; tbRecert += iv.recert; } }
       } catch(e) {}
       const ccTb = cycleCounts(f);
       const visits = ccTb.nInit + ccTb.nSurv + ccTb.nRecert; // normal: init + surv1 + surv2 + recert = 4
@@ -11448,8 +11453,8 @@ ${exportedHTML}
       let tbInit = 0, tbSurv = 0, tbRecert = 0;
       try {
         const fTb = f.certType === "transfer" ? buildCalcInput(f, calcEffectiveFte(f).total || parseInt(f.fte) || 0) : f;
-        if (hasMD5tb) { const m = calcMD5(fTb); if (m) { tbInit += m.totalInit; tbSurv = Math.max(tbSurv, m.surv); tbRecert = Math.max(tbRecert, m.recert); } }
-        if (has27001tb) { const iv = calc27006(fTb); if (iv) { tbInit += iv.totalInit; tbSurv = Math.max(tbSurv, iv.surv); tbRecert = Math.max(tbRecert, iv.recert); } }
+        if (hasMD5tb) { const m = calcMD5(fTb); if (m) { tbInit += m.totalInit; tbSurv += m.surv; tbRecert += m.recert; } }
+        if (has27001tb) { const iv = calc27006(fTb); if (iv) { tbInit += iv.totalInit; tbSurv += iv.surv; tbRecert += iv.recert; } }
       } catch(e) {}
       const ccTb = cycleCounts(f);
       const visits = ccTb.nInit + ccTb.nSurv + ccTb.nRecert;
@@ -11511,16 +11516,16 @@ ${exportedHTML}
         const m = calcMD5(fLive);
         if (m) {
           liveInit += m.totalInit;
-          liveSurv = Math.max(liveSurv, m.surv);
-          liveRecert = Math.max(liveRecert, m.recert);
+          liveSurv += m.surv;
+          liveRecert += m.recert;
         }
       }
       if (has27001) {
         const i = calc27006(fLive);
         if (i) {
           liveInit += i.totalInit;
-          liveSurv = Math.max(liveSurv, i.surv);
-          liveRecert = Math.max(liveRecert, i.recert);
+          liveSurv += i.surv;
+          liveRecert += i.recert;
         }
       }
     } catch (e) {
