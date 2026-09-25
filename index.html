@@ -926,7 +926,7 @@ function calcMD5(f) {
   });
   if (f.multilang === "yes") adj.push({
     label: "Tillägg — flerspråkig verksamhet / tolk",
-    ref: "IAF MD 5:2023 §8(i)b — faktor; +0,5 d är SBSC:s kalibrering per §3.4",
+    ref: "IAF MD 5:2023 §8(i)b + SS-EN ISO/IEC 17021-1:2015 §9.1.4.4 Not — faktor; +0,5 d är SBSC:s kalibrering per §3.4",
     delta: 0.5,
     red: false
   });
@@ -1163,7 +1163,7 @@ function calc27006(f) {
   // C.3.5: Flerspråkighet / tolk
   if (f.multilang === "yes") adj.push({
     label: "Tillägg — flerspråkig verksamhet / tolk krävs",
-    ref: "27006-1:2024 C.3.5 / IAF MD 5:2023 §8(i)b",
+    ref: "27006-1:2024 C.3.5 / IAF MD 5:2023 §8(i)b / 17021-1:2015 §9.1.4.4 Not",
     delta: 0.5,
     red: false
   });
@@ -1350,7 +1350,7 @@ function buildMotiv(f, md5, iso27001, integration, extCombined) {
   const _org = f.cOrg ? ` (org.nr ${f.cOrg})` : "";
   parts.push(`TEKNISK BEDÖMNING — ${_cName}${_org} | ${_stds} | ${_certLabel}\n` +
     `Adress: ${_addr || "—"} | Handläggare: ${f.createdBy || "—"} | Datum: ${new Date().toLocaleDateString("sv-SE")}\n` +
-    `Obs: Denna bedömning är SBSC:s interna underlag per IAF MD 5:2023 §4.3. Delas ej externt i detta format.`);
+    `Obs: Denna bedömning är SBSC:s interna underlag per IAF MD 5:2023 §4.3 och SS-EN ISO/IEC 17021-1:2015 §9.1.4.3 / §9.9.2 d) (revisionstid och motivering ska dokumenteras). Delas ej externt i detta format.`);
   // Certifieringstyp — formulering per IAF MD 2:2023
   const certTypeLabel = f.certType === "transfer" ? `transfer från ${f.transferOrg || (f.ex27001cb && f.ex27001cb.trim()) || "annat certifieringsorgan"} per IAF MD 2:2023` : f.certType === "extension" ? "utökning av befintligt certifieringsscope" : f.certType === "siteext" ? "anslutning av ny site/bolag till befintligt certifikat per IAF MD 1:2023 §6.2.3" : f.ex27001 || Object.keys(md5?.existing || {}).length > 0 ? "utökning av befintlig certifiering" : "initial certifiering";
   parts.push(`SBSC har beräknat revisionstiden för ${f.cName || "kunden"} avseende ${certTypeLabel} mot ${allStds.join(", ")} i enlighet med tillämpliga regelverkskrav.` + (f.certType === "transfer" ? ` Certifieringscykeln fortsätter utan avbrott från utfärdande organ per IAF MD 2:2023 §2.3.` : ""));
@@ -1539,7 +1539,7 @@ if (f.certType === "siteext") {
     parts.push(`För ISO 27001 tillämpas SS-EN ISO/IEC 27006-1:2024 §9.1.4.2 (normativt krav att använda Annex C).${c34desc} Bastal Table C.1: ${fmt(iso27001.base)} dag för ${iso27001.persons} pers. inom scope (intervall ${personsRange(iso27001.persons)}). ${d4desc} Justerat bastal: ${fmt(iso27001.afterAnnexD)} dag.` + (reds27 ? ` Ytterligare reduktioner per C.3.5: ${reds27}.` : "") + (adds27 ? ` Tillägg per C.3.5: ${adds27}.` : "") + ` C.3.6: max 30% avvikelse mot Table C.1 (golv ${fmt(iso27001.floor)} dag).`);
     if (iso27001.scopeExt > 0) parts.push(`Scopeutökning per C.7: +${fmt(iso27001.scopeExt)} dag (${f.imsScopeExt === "combined" ? "kombinerat med surveillance/omcertifiering" : "separat audit"}).`);
     parts.push(`Steg 1 (${fmt(iso27001.stage1)} dag): granskning av ISMS-dokumentation, riskbedömning, Statement of Applicability (SoA) och riskbehandlingsplan. Steg 2 (${fmt(iso27001.stage2)} dag): fullständig revision på plats av ISMS-implementering och kontroller.`);
-    parts.push(`C.3.7: Faktisk tid på plats ska inte understiga 70% av beräknad total audittid (off-site planering och rapportskrivning inräknat). Resor tillkommer utöver angiven tid.`);
+    parts.push(`C.3.7: Faktisk tid på plats ska inte understiga 70% av beräknad total audittid (off-site planering och rapportskrivning inräknat). Restid ingår inte i beräknade revisionsdagar (SS-EN ISO/IEC 17021-1:2015 §9.1.4.2 Not 1).`);
     if (parseInt(f.sites) > 1) {
       const q1 = f.iso27001SitesQ1 || "ej bedömt";
       const q2 = f.iso27001SitesQ2 || "ej bedömt";
@@ -1591,6 +1591,7 @@ if (f.certType === "siteext") {
       "Samordnad framtida cykel (" + extOld.concat(extNew).join(" + ") + "): periodisk revision " + fmt(extCombined.surv) + " dgr/\xE5r \u00B7 omcertifiering " + fmt(extCombined.recert) + " dgr. Ber\xE4knat med samtliga standarder i scope per IAF MD 5:2023 \xA75\u20136 (surv \u2248 1/3, omcert \u2248 2/3 av initialtid f\xF6r d\xE5varande scope)."
     );
   }
+  regelverk.push("SS-EN ISO/IEC 17021-1:2015 §9.1.4 (dokumenterad procedur för fastställande av revisionstid)");
   parts.push("Beräkningen följer " + regelverk.join(", ") + " inom ramen för SBSC:s ackreditering av SWEDAC.");
   return parts.join("\n\n");
 }
@@ -2535,7 +2536,7 @@ const Ref = ({
     }
   }, "Regelverksbas:"), " ", refs.join(" · "), " \xB7 SBSC ackrediteras av SWEDAC");
 };
-const TOOL_VERSION = "1.8";
+const TOOL_VERSION = "1.9";
 const DocFoot = ({
   ds,
   internal
@@ -4973,7 +4974,7 @@ function App() {
         padding: "6px 10px",
         marginBottom: 4
       }
-    }, "C.3.7: Faktisk tid p\xE5 plats ska inte understiga 70% av ber\xE4knad total audittid (", fmt(r2(iso27001.totalInit * 0.70)), " dag). Resor tillkommer ut\xF6ver audittid.")), integration && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Sec, null, "IAF MD 11:2023 \u2014 Integrationsreduktion (max 20%)", /*#__PURE__*/React.createElement(RegTag, null, "\xA72.1.2")), /*#__PURE__*/React.createElement(Tbl, {
+    }, "C.3.7: Faktisk tid p\xE5 plats ska inte understiga 70% av ber\xE4knad total audittid (", fmt(r2(iso27001.totalInit * 0.70)), " dag). Restid ing\xE5r inte i ber\xE4knade revisionsdagar (SS-EN ISO/IEC 17021-1:2015 \xA79.1.4.2 Not 1).")), integration && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Sec, null, "IAF MD 11:2023 \u2014 Integrationsreduktion (max 20%)", /*#__PURE__*/React.createElement(RegTag, null, "\xA72.1.2")), /*#__PURE__*/React.createElement(Tbl, {
       heads: ["Post", "Underlag", "Dagar"],
       rows: [{
         cells: ["Startpunkt T", `${md5 ? md5.stds.join(",") + ": " + fmt(md5.totalInit) + "d + " : ""}ISO 27001: ${fmt(iso27001?.totalInit)}d`, fmt(integration.combined)],
@@ -6288,13 +6289,13 @@ function App() {
       const isExt = snap.certType === "extension" && result.extCombined;
       const items = isExt ? [
         [`Del 1 \u2014 Ut\xF6kningen: Steg 1 + Steg 2 (${fmt(prices.totalInit)} revisionsdagar)`, initText + " Steg 2 samordnas med ordinarie revision av era befintliga certifikat."],
-        ...(distans ? [["Steg 1 genomf\xF6rs p\xE5 distans", "Dokumentgranskning och beredskapsanalys via digitalt m\xF6te \u2014 ingen resa till er anl\xE4ggning f\xF6r Steg 1."]] : []),
+        ...(distans ? [["Steg 1 genomf\xF6rs p\xE5 distans", "Dokumentgranskning och beredskapsanalys via digitalt m\xF6te \u2014 ingen resa till er anl\xE4ggning f\xF6r Steg 1. Distansformen f\xF6ruts\xE4tter att vi \xE4r \xF6verens om den och att b\xE5da parter har fungerande teknik f\xF6r m\xF6tet (IAF MD 4:2025)."]] : []),
         [`Del 2 \u2014 Gemensam periodisk revision (${fmt(result.extCombined.surv)} revisionsdagar/\xE5r)`, "Efter samordningen revideras samtliga certifikat vid ett och samma tillf\xE4lle per \xE5r \u2014 en revision, en faktura. Ers\xE4tter nuvarande separata revisionsuppl\xE4gg."],
         [`Del 2 \u2014 Gemensam omcertifiering (${fmt(result.extCombined.recert)} revisionsdagar)`, "Samtliga certifikat omcertifieras samtidigt vart tredje \xE5r och f\xF6ljer d\xE4refter samma cykel."],
         ["SWEDAC-ackrediterad certifiering", "SBSC \xE4r ackrediterat av SWEDAC. Certifikaten \xE4r internationellt erk\xE4nda i \xF6ver 90 l\xE4nder via IAF MLA."]
       ] : [
         [`Initial certifiering (${fmt(prices.totalInit)} revisionsdagar)`, initText],
-        ...(distans ? [["Steg 1 genomf\xF6rs p\xE5 distans", "Dokumentgranskning och beredskapsanalys via digitalt m\xF6te \u2014 ingen resa till er anl\xE4ggning f\xF6r Steg 1."]] : []),
+        ...(distans ? [["Steg 1 genomf\xF6rs p\xE5 distans", "Dokumentgranskning och beredskapsanalys via digitalt m\xF6te \u2014 ingen resa till er anl\xE4ggning f\xF6r Steg 1. Distansformen f\xF6ruts\xE4tter att vi \xE4r \xF6verens om den och att b\xE5da parter har fungerande teknik f\xF6r m\xF6tet (IAF MD 4:2025)."]] : []),
         [`Periodisk revision \xE5r 1 & 2 (${fmt(prices.surv)} revisionsdagar/tillf\xE4lle)`, "Uppf\xF6ljande revision som s\xE4kerst\xE4ller att certifieringen h\xE5lls aktiv och att er verksamhet forts\xE4tt uppfyller standardens krav."],
         [`Omcertifiering \xE5r 3 (${fmt(prices.recert)} revisionsdagar)`, "F\xF6rnyad certifiering vart tredje \xE5r. Nytt certifikat utf\xE4rdas f\xF6r ytterligare tre \xE5r."],
         ["SWEDAC-ackrediterad certifiering", "SBSC \xE4r ackrediterat av SWEDAC. Certifikaten \xE4r internationellt erk\xE4nda i \xF6ver 90 l\xE4nder via IAF MLA."]
@@ -9862,7 +9863,7 @@ ${exportedHTML}
              border: `1px solid ${C.purpleBd}`, borderRadius: 4 }
   },
   /*#__PURE__*/React.createElement(Lbl, {
-    tip: "Steg 1 (dokumentgranskning och beredskapsanalys) kan genomf\u00f6ras p\u00e5 distans via digitalt m\u00f6te f\u00f6r alla certifieringstyper. P\u00e5verkar inte antalet revisionsdagar men framg\u00e5r i offerten. Per IAF MD 5:2023 \u00a74.5 och ISO 27006-1:2024 C.3.2."
+    tip: "Steg 1 (dokumentgranskning och beredskapsanalys) kan genomf\u00f6ras p\u00e5 distans via digitalt m\u00f6te f\u00f6r alla certifieringstyper. P\u00e5verkar inte antalet revisionsdagar men framg\u00e5r i offerten. Per IAF MD 5:2023 \u00a74.5 och ISO 27006-1:2024 C.3.2. Distansformen ska vara \u00f6verenskommen med kunden innan den anv\u00e4nds (IAF MD 4:2025 \u00a74.1.2), och ans\u00f6kningsgranskningen ska bekr\u00e4fta att b\u00e5da parter har den tekniska infrastruktur som kr\u00e4vs (\u00a74.2.2). Distans ger ingen grund f\u00f6r reducerad audittid (\u00a74.2.5). Observera: om minst en del av Steg 1 genomf\u00f6rs hos kunden kan det underl\u00e4tta att Steg 1-m\u00e5len uppn\u00e5s (SS-EN ISO/IEC 17021-1:2015 \u00a79.3.1.2.2 Not); kunden ska informeras om eventuella aktiviteter p\u00e5 plats (\u00a79.3.1.2.1)."
   }, "Steg 1 p\u00e5 distans?"),
   /*#__PURE__*/React.createElement(Sel, {
     value: f.imsSteg1Distans,
@@ -9932,7 +9933,7 @@ ${exportedHTML}
       marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement(Lbl, {
-    tip: "IAF MD 1:2023 \xA76.1.3.3: Stickprov = \u221Ax (initial), 0,6\xB7\u221Ax (surveillance). Centralfunktionen auditeras alltid."
+    tip: "IAF MD 1:2023 \xA76.1.3.3: Stickprov = \u221Ax (initial), 0,6\xB7\u221Ax (surveillance). Centralfunktionen auditeras alltid. En virtuell site (t.ex. intran\xE4t/molnmilj\xF6) r\xE4knas som en site vid tidsber\xE4kning (IAF MD 1:2023 \xA72.6 Not 3, IAF MD 4:2025 \xA73.1 Not 2)."
   }, "Antal fasta certifieringsplatser"), /*#__PURE__*/React.createElement(Inp, {
     type: "number",
     min: "1",
@@ -10838,7 +10839,7 @@ ${exportedHTML}
   }, "Nej"), /*#__PURE__*/React.createElement("option", {
     value: "yes"
   }, "Ja"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, {
-    tip: "\xA78(i)b: Tolk kr\xE4vs \u2014 revisorer kan ej arbeta sj\xE4lvst\xE4ndigt."
+    tip: "\xA78(i)b: Tolk kr\xE4vs \u2014 revisorer kan ej arbeta sj\xE4lvst\xE4ndigt. Tolkens tid r\xE4knas inte som revisionstid, men tolk kan kr\xE4va till\xE4ggstid (SS-EN ISO/IEC 17021-1:2015 \xA79.1.4.4 med Not)."
   }, "Flerspr\xE5kig / tolk (\xA78(i)b)"), /*#__PURE__*/React.createElement(Sel, {
     value: f.multilang,
     onChange: v => set("multilang", v)
